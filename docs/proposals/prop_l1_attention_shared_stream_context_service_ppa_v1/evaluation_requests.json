@@ -1,0 +1,28 @@
+{
+  "proposal_id": "prop_l1_attention_shared_stream_context_service_ppa_v1",
+  "source_commit": "TBD",
+  "source_commit_note": "Queue only from the merge commit containing the service, generator, guard, proposal, and L1 task plumbing.",
+  "requested_items": [
+    {
+      "item_id": "l1_attention_shared_stream_context_service_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the complete canonical VC0 shared-SRAM context service on Nangate45.",
+      "status": "pending_after_proposal_merge",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_shared_sram_context_transport",
+      "comparison_role": "phase2_vc0_complete_service_physical_anchor",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_shared_stream_context_service_ppa_l1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_shared_stream_context_service_ppa_l1/sweeps/nangate45_canary.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_shared_stream_context_service_ppa_l1/metrics.csv",
+        "runs/designs/npu_blocks/attention_shared_stream_context_service_ppa_l1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_shared_stream_context_service_ppa_l1/hierarchy_reports/index.json"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ]
+}

@@ -83,14 +83,15 @@ module noc_segmented_mesh_router #(
   reg any_output_stall_r;
   reg any_contention_r;
 
-  integer port_i;
-  integer vc_i;
-  integer input_i;
-  integer output_i;
-  integer scan_i;
+  integer comb_port_i;
+  integer comb_input_i;
+  integer comb_output_i;
+  integer comb_scan_i;
   integer scan_index_i;
   integer accepted_i;
   integer forwarded_i;
+  integer seq_port_i;
+  integer seq_output_i;
 
   function automatic [FLIT_W-1:0] pack_flit;
     input [DEST_W-1:0] destination;
@@ -185,40 +186,40 @@ module noc_segmented_mesh_router #(
     any_input_stall_r = 1'b0;
     any_output_stall_r = 1'b0;
     any_contention_r = 1'b0;
-    for (output_i = 0; output_i < PORTS; output_i = output_i + 1) begin
-      grant_index_r[output_i] = {INPUT_INDEX_W{1'b0}};
-      grant_flit_r[output_i] = {FLIT_W{1'b0}};
-      candidate_count_r[output_i] = 0;
+    for (comb_output_i = 0; comb_output_i < PORTS; comb_output_i = comb_output_i + 1) begin
+      grant_index_r[comb_output_i] = {INPUT_INDEX_W{1'b0}};
+      grant_flit_r[comb_output_i] = {FLIT_W{1'b0}};
+      candidate_count_r[comb_output_i] = 0;
     end
-    for (input_i = 0; input_i < INPUTS; input_i = input_i + 1) begin
+    for (comb_input_i = 0; comb_input_i < INPUTS; comb_input_i = comb_input_i + 1) begin
       occupancy_sum_r = occupancy_sum_r
-          + fifo_occupancy_bus[(input_i * FIFO_COUNT_W) +: FIFO_COUNT_W];
+          + fifo_occupancy_bus[(comb_input_i * FIFO_COUNT_W) +: FIFO_COUNT_W];
     end
-    for (port_i = 0; port_i < PORTS; port_i = port_i + 1) begin
-      if (in_valid[port_i] && !in_ready[port_i])
+    for (comb_port_i = 0; comb_port_i < PORTS; comb_port_i = comb_port_i + 1) begin
+      if (in_valid[comb_port_i] && !in_ready[comb_port_i])
         any_input_stall_r = 1'b1;
-      if (out_valid_q[port_i] && !out_ready[port_i])
+      if (out_valid_q[comb_port_i] && !out_ready[comb_port_i])
         any_output_stall_r = 1'b1;
     end
-    for (output_i = 0; output_i < PORTS; output_i = output_i + 1) begin
-      for (scan_i = 0; scan_i < INPUTS; scan_i = scan_i + 1) begin
-        scan_index_i = rr_cursor_q[output_i] + scan_i;
+    for (comb_output_i = 0; comb_output_i < PORTS; comb_output_i = comb_output_i + 1) begin
+      for (comb_scan_i = 0; comb_scan_i < INPUTS; comb_scan_i = comb_scan_i + 1) begin
+        scan_index_i = rr_cursor_q[comb_output_i] + comb_scan_i;
         if (scan_index_i >= INPUTS)
           scan_index_i = scan_index_i - INPUTS;
         if (fifo_out_valid[scan_index_i]
-            && (route_port(fifo_out_bus[(scan_index_i * FLIT_W) + DEST_LSB +: DEST_W]) == output_i)) begin
-          candidate_count_r[output_i] = candidate_count_r[output_i] + 1;
-          if (!grant_valid_r[output_i]) begin
-            grant_valid_r[output_i] = 1'b1;
-            grant_index_r[output_i] = scan_index_i[INPUT_INDEX_W-1:0];
-            grant_flit_r[output_i] = fifo_out_bus[(scan_index_i * FLIT_W) +: FLIT_W];
+            && (route_port(fifo_out_bus[(scan_index_i * FLIT_W) + DEST_LSB +: DEST_W]) == comb_output_i)) begin
+          candidate_count_r[comb_output_i] = candidate_count_r[comb_output_i] + 1;
+          if (!grant_valid_r[comb_output_i]) begin
+            grant_valid_r[comb_output_i] = 1'b1;
+            grant_index_r[comb_output_i] = scan_index_i[INPUT_INDEX_W-1:0];
+            grant_flit_r[comb_output_i] = fifo_out_bus[(scan_index_i * FLIT_W) +: FLIT_W];
           end
         end
       end
-      if (candidate_count_r[output_i] > 1)
+      if (candidate_count_r[comb_output_i] > 1)
         any_contention_r = 1'b1;
-      if ((!out_valid_q[output_i] || out_ready[output_i]) && grant_valid_r[output_i])
-        fifo_out_ready_r[grant_index_r[output_i]] = 1'b1;
+      if ((!out_valid_q[comb_output_i] || out_ready[comb_output_i]) && grant_valid_r[comb_output_i])
+        fifo_out_ready_r[grant_index_r[comb_output_i]] = 1'b1;
     end
   end
 
@@ -232,31 +233,31 @@ module noc_segmented_mesh_router #(
       arbitration_contention_cycles <= {COUNTER_W{1'b0}};
       max_input_occupancy <= {COUNTER_W{1'b0}};
       route_flit_count <= {(5 * COUNTER_W){1'b0}};
-      for (output_i = 0; output_i < PORTS; output_i = output_i + 1) begin
-        out_flit_q[output_i] <= {FLIT_W{1'b0}};
-        rr_cursor_q[output_i] <= {INPUT_INDEX_W{1'b0}};
+      for (seq_output_i = 0; seq_output_i < PORTS; seq_output_i = seq_output_i + 1) begin
+        out_flit_q[seq_output_i] <= {FLIT_W{1'b0}};
+        rr_cursor_q[seq_output_i] <= {INPUT_INDEX_W{1'b0}};
       end
     end else begin
       accepted_i = 0;
       forwarded_i = 0;
-      for (port_i = 0; port_i < PORTS; port_i = port_i + 1) begin
-        if (in_valid[port_i] && in_ready[port_i])
+      for (seq_port_i = 0; seq_port_i < PORTS; seq_port_i = seq_port_i + 1) begin
+        if (in_valid[seq_port_i] && in_ready[seq_port_i])
           accepted_i = accepted_i + 1;
-        if (out_valid_q[port_i] && out_ready[port_i]) begin
+        if (out_valid_q[seq_port_i] && out_ready[seq_port_i]) begin
           forwarded_i = forwarded_i + 1;
-          route_flit_count[(port_i * COUNTER_W) +: COUNTER_W]
-              <= route_flit_count[(port_i * COUNTER_W) +: COUNTER_W] + 1'b1;
+          route_flit_count[(seq_port_i * COUNTER_W) +: COUNTER_W]
+              <= route_flit_count[(seq_port_i * COUNTER_W) +: COUNTER_W] + 1'b1;
         end
-        if (!out_valid_q[port_i] || out_ready[port_i]) begin
-          if (grant_valid_r[port_i]) begin
-            out_valid_q[port_i] <= 1'b1;
-            out_flit_q[port_i] <= grant_flit_r[port_i];
-            if (grant_index_r[port_i] == (INPUTS - 1))
-              rr_cursor_q[port_i] <= {INPUT_INDEX_W{1'b0}};
+        if (!out_valid_q[seq_port_i] || out_ready[seq_port_i]) begin
+          if (grant_valid_r[seq_port_i]) begin
+            out_valid_q[seq_port_i] <= 1'b1;
+            out_flit_q[seq_port_i] <= grant_flit_r[seq_port_i];
+            if (grant_index_r[seq_port_i] == (INPUTS - 1))
+              rr_cursor_q[seq_port_i] <= {INPUT_INDEX_W{1'b0}};
             else
-              rr_cursor_q[port_i] <= grant_index_r[port_i] + 1'b1;
+              rr_cursor_q[seq_port_i] <= grant_index_r[seq_port_i] + 1'b1;
           end else begin
-            out_valid_q[port_i] <= 1'b0;
+            out_valid_q[seq_port_i] <= 1'b0;
           end
         end
       end

@@ -1,0 +1,12 @@
+{
+  "top_name": "attention_shared_stream_context_service_ppa_l1",
+  "attention_shared_stream_context_service_ppa_activity_harness": {
+    "remote_contexts": 112,
+    "packets_per_context": 68,
+    "hierarchy_area_prefix": "composition/service/"
+  },
+  "report_links": {
+    "proposal_id": "prop_l1_attention_shared_stream_context_service_ppa_v1",
+    "proposal_path": "docs/proposals/prop_l1_attention_shared_stream_context_service_ppa_v1/proposal.json"
+  }
+}
