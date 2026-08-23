@@ -1,0 +1,194 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/noc/l1_attention_score32_exact_aligned_codec/sweeps/nangate45_macro_frontier.json"
+      ],
+      "configs": [
+        "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/config_l1_attention_score32_exact_aligned_codec_w419_f256.json"
+      ],
+      "out_root": "runs/designs/noc",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/config_l1_attention_score32_exact_aligned_codec_w419_f256.json --platform nangate45 --sweep runs/campaigns/noc/l1_attention_score32_exact_aligned_codec/sweeps/nangate45_macro_frontier.json --out_root runs/designs/noc --force_gen --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "metadata": {
+      "acceptance_notes": "Require exact round-trip and no-bubble cadence tests, generated hierarchy checks, and timing/area/power rows for the requested sweep. Treat PPA as codec-plus-full-live-cone compact-harness evidence, not endpoint, mesh, SRAM, reducer, or global-tree evidence."
+    },
+    "objective": "Measure Nangate45 PPA for the exact 419-bit aggregate aligned two-flit codec.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Measure score32 exact aligned transport codec PPA",
+  "result": {
+    "branch": "eval/l1_attention_score32_exact_aligned_transport_codec_ppa_v1/s20260823t102547z",
+    "completed_utc": "2026-08-23T10:25:45.102721Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "1f709df75b2c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260823t102547z][host:1f709df75b2c][item:l1_attention_score32_exact_aligned_transport_codec_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_9b900945",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "1a54053c",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "92755b52",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "1acdb27c",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_9d2242d8",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f4cf59fe",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_5e539e1b",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "7648c5fa",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_bd377f69",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "70a2b609",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_b5227391",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "ca7b000f",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_d69b942d",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "dcc030d0",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_87c8a58f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "1817d7e0",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+      }
+    ],
+    "queue_item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
+    "session_id": "s20260823t102547z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_attention_score32_exact_aligned_transport_codec_ppa_v1/s20260823t102547z",
+    "pr_title": "eval: run measure score32 exact aligned transport codec ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "1f709df75b2c",
+      "session_id": "s20260823t102547z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-08-18T10:01:20.097185Z",
+  "requested_by": "developer-agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "phase2_exact_aligned_codec_physical_anchor",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "ppa",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "Establish the direct field-preserving codec PPA anchor before comparing denser exact packing.",
+      "expected_direction": "measure_exact_aligned_transport_codec"
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l1_attention_score32_exact_aligned_transport_codec_ppa_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "c6ecd326775d9e342ae096ab36a86e6ef338fbf7",
+    "requires_daemon_restart": true
+  },
+  "generation_source_identity": {
+    "clean": true,
+    "proof": "generator_worktree_head_exact",
+    "version": 1,
+    "relation": "exact",
+    "repo_head_sha": "c6ecd326775d9e342ae096ab36a86e6ef338fbf7",
+    "declared_source_commit": "c6ecd326775d9e342ae096ab36a86e6ef338fbf7"
+  },
+  "task_type": "l1_sweep"
+}
