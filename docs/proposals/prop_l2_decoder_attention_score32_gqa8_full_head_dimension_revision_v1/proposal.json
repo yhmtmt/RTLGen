@@ -55,7 +55,7 @@
       }
     },
     {
-      "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2",
+      "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3",
       "task_type": "l2_campaign",
       "objective": "Prove the corrected full-128D score accumulation across GQA8 head bases 0, 8, 16, and 24.",
       "evaluation_mode": "frontier_detail",
@@ -68,9 +68,17 @@
       "requires_materialized_refs": true,
       "run_physical": false,
       "expected_outputs": [
-        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2.json",
-        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2.md"
-      ]
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.md"
+      ],
+      "revision": {
+        "reason": "aggregate_timeout_from_serial_producer_replays",
+        "supersedes_item_ids": [
+          "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2"
+        ],
+        "prior_result": "inconclusive_command_timeout",
+        "replacement_contract": "three independent producer RTL replays under the existing 300 percent CPU ceiling; ordered SRAM, reducer, and global-tree stages"
+      }
     },
     {
       "item_id": "l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1_r2",
@@ -83,7 +91,7 @@
         "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
         "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1",
         "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
-        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2"
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,

@@ -7477,7 +7477,7 @@ def _decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_evid
     )
     four_group_equivalence_json = (
         f"{base}/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__"
-        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2.json"
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.json"
     )
     out = f"{base}/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__{item_id}.json"
     report = f"{base}/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__{item_id}.md"
