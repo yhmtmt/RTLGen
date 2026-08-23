@@ -44,10 +44,30 @@ class ReadinessEvent:
     cluster: int | None = None
     source: int | None = None
     group: int | None = None
+    source_base_addr: int | None = None
+    destination_base_addr: int | None = None
+    packet_count: int | None = None
 
     @classmethod
-    def shared(cls, *, wave: int, cluster: int, cycle: int) -> "ReadinessEvent":
-        return cls(kind="shared", cycle=cycle, wave=wave, cluster=cluster)
+    def shared(
+        cls,
+        *,
+        wave: int,
+        cluster: int,
+        cycle: int,
+        source_base_addr: int | None = None,
+        destination_base_addr: int | None = None,
+        packet_count: int = SHARED_PACKETS_PER_CONTEXT,
+    ) -> "ReadinessEvent":
+        return cls(
+            kind="shared",
+            cycle=cycle,
+            wave=wave,
+            cluster=cluster,
+            source_base_addr=source_base_addr,
+            destination_base_addr=destination_base_addr,
+            packet_count=packet_count,
+        )
 
     @classmethod
     def reduction(cls, *, source: int, group: int, cycle: int) -> "ReadinessEvent":
@@ -84,6 +104,8 @@ class Phase2ContextCommand:
     storage_slot_count: int | None
     storage_slot_policy: str
     completion_binding: str
+    source_base_addr: int | None = None
+    destination_base_addr: int | None = None
     wave: int | None = None
     group: int | None = None
     issue_cycle: int | None = None
@@ -112,6 +134,8 @@ class Phase2ContextCommand:
             "storage_slot_count": self.storage_slot_count,
             "storage_slot_policy": self.storage_slot_policy,
             "completion_binding": self.completion_binding,
+            "source_base_addr": self.source_base_addr,
+            "destination_base_addr": self.destination_base_addr,
             "wave": self.wave,
             "group": self.group,
             "issue_cycle": self.issue_cycle,
@@ -189,13 +213,28 @@ def _coerce_event(value: ReadinessEvent | Mapping[str, Any]) -> ReadinessEvent:
     if cycle is None:
         raise SchedulerError("readiness event lacks cycle/release_cycle")
     try:
+        kind = str(value["kind"])
+        packet_count = value.get("packet_count")
+        if packet_count is None and kind == "shared":
+            packet_count = SHARED_PACKETS_PER_CONTEXT
         return ReadinessEvent(
-            kind=str(value["kind"]),
+            kind=kind,
             cycle=int(cycle),
             wave=None if value.get("wave") is None else int(value["wave"]),
             cluster=None if value.get("cluster") is None else int(value["cluster"]),
             source=None if value.get("source") is None else int(value["source"]),
             group=None if value.get("group") is None else int(value["group"]),
+            source_base_addr=(
+                None
+                if value.get("source_base_addr") is None
+                else int(value["source_base_addr"])
+            ),
+            destination_base_addr=(
+                None
+                if value.get("destination_base_addr") is None
+                else int(value["destination_base_addr"])
+            ),
+            packet_count=None if packet_count is None else int(packet_count),
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise SchedulerError(f"invalid readiness event {value!r}") from exc
@@ -216,6 +255,8 @@ def validate_readiness_events(
                 and event.cluster is not None
                 and 0 <= event.wave < SHARED_WAVE_COUNT
                 and 0 <= event.cluster < CLUSTER_COUNT
+                and event.packet_count is not None
+                and event.packet_count > 0
             )
         elif event.kind == "reduction":
             valid = (
@@ -228,6 +269,15 @@ def validate_readiness_events(
             raise SchedulerError(f"invalid readiness event kind: {event.kind!r}")
         if not valid:
             raise SchedulerError(f"invalid {event.kind} readiness event: {event!r}")
+        if event.kind == "shared":
+            for name, address in (
+                ("source_base_addr", event.source_base_addr),
+                ("destination_base_addr", event.destination_base_addr),
+            ):
+                if address is not None and (address < 0 or (address & 0xFF) != 0):
+                    raise SchedulerError(
+                        f"shared readiness {name} must be a non-negative 256-byte-aligned address"
+                    )
         key = event.event_key
         if key in seen:
             if event.cycle < seen[key]:
@@ -245,8 +295,18 @@ def all_readiness_events(
     *,
     shared_release_cycle: int | Callable[[int, int], int] = 0,
     reduction_release_cycle: int | Callable[[int, int], int] = 100,
+    shared_source_base_addr: int | Callable[[int, int], int] | None = None,
+    shared_destination_base_addr: int | Callable[[int, int], int] | None = None,
+    shared_packet_count: int | Callable[[int, int], int] = SHARED_PACKETS_PER_CONTEXT,
 ) -> tuple[ReadinessEvent, ...]:
     def cycle_of(value: int | Callable[[int, int], int], first: int, second: int) -> int:
+        return value(first, second) if callable(value) else value
+
+    def optional_value_of(
+        value: int | Callable[[int, int], int] | None,
+        first: int,
+        second: int,
+    ) -> int | None:
         return value(first, second) if callable(value) else value
 
     events = [
@@ -254,6 +314,13 @@ def all_readiness_events(
             wave=wave,
             cluster=cluster,
             cycle=cycle_of(shared_release_cycle, wave, cluster),
+            source_base_addr=optional_value_of(
+                shared_source_base_addr, wave, cluster
+            ),
+            destination_base_addr=optional_value_of(
+                shared_destination_base_addr, wave, cluster
+            ),
+            packet_count=cycle_of(shared_packet_count, wave, cluster),
         )
         for wave in range(SHARED_WAVE_COUNT)
         if wave != LOCAL_SHARED_WAVE
@@ -315,10 +382,10 @@ class ExactPhase2CommandScheduler:
                             sources=(_shared_source(wave, cluster),),
                             destination=cluster,
                             vc=0,
-                            packet_count=SHARED_PACKETS_PER_CONTEXT,
-                            flit_count=SHARED_PACKETS_PER_CONTEXT * SHARED_FLITS_PER_PACKET,
+                            packet_count=int(event.packet_count),
+                            flit_count=int(event.packet_count) * SHARED_FLITS_PER_PACKET,
                             packet_flit_counts_per_source=(SHARED_FLITS_PER_PACKET,)
-                            * SHARED_PACKETS_PER_CONTEXT,
+                            * int(event.packet_count),
                             release_cycle=event.cycle,
                             source_release_cycles=(event.cycle,),
                             transport_mode=self.transport_mode,
@@ -326,6 +393,8 @@ class ExactPhase2CommandScheduler:
                             storage_slot_count=None,
                             storage_slot_policy="external_sram_residency_and_completion",
                             completion_binding="external_sram_stream_adapter_completion",
+                            source_base_addr=event.source_base_addr,
+                            destination_base_addr=event.destination_base_addr,
                             wave=wave,
                         ),
                     )
