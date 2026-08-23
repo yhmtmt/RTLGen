@@ -49,6 +49,7 @@ def _mode(
     packet_flits: int,
     shared_packets: int,
     shared_flits: int,
+    shared_contexts: int,
 ) -> JsonDict:
     flits_per_group = _ceil_div(bits_per_group, flit_bits)
     packets_per_group = _ceil_div(flits_per_group, packet_flits)
@@ -56,6 +57,7 @@ def _mode(
     packets_per_cluster = packets_per_group * groups
     reduction_flits = flits_per_cluster * remote_clusters
     reduction_packets = packets_per_cluster * remote_clusters
+    packet_descriptors = shared_packets + reduction_packets
     return {
         "name": name,
         "bits_per_group": bits_per_group,
@@ -66,7 +68,14 @@ def _mode(
         "remote_reduction_flits": reduction_flits,
         "remote_reduction_packets": reduction_packets,
         "total_phase2_flits": shared_flits + reduction_flits,
-        "total_phase2_commands": shared_packets + reduction_packets,
+        "shared_context_commands": shared_contexts,
+        "reduction_context_commands": groups,
+        "total_phase2_context_commands": shared_contexts + groups,
+        "total_phase2_packet_descriptors": packet_descriptors,
+        # Compatibility only. Earlier reports called every endpoint-local
+        # packet descriptor a central command.
+        "total_phase2_commands": packet_descriptors,
+        "total_phase2_commands_semantics": "deprecated_packet_descriptor_count",
     }
 
 
@@ -114,6 +123,7 @@ def build_report(*, exact_manifest: Path, prior_schedule: Path) -> JsonDict:
     packet_flits = 8
     shared_packets = int(flows["remote_shared_packet_count"])
     shared_flits = int(simulation["delivery_flit_count_by_class"]["shared"])
+    shared_contexts = 7 * clusters
 
     aligned_bits_per_group = beats_per_group * _ceil_div(link_bits, flit_bits) * flit_bits
     packed_bits_per_group = beats_per_group * link_bits
@@ -130,6 +140,7 @@ def build_report(*, exact_manifest: Path, prior_schedule: Path) -> JsonDict:
             packet_flits=packet_flits,
             shared_packets=shared_packets,
             shared_flits=shared_flits,
+            shared_contexts=shared_contexts,
         ),
         _mode(
             name="packed_419b_group_bitstream",
@@ -140,6 +151,7 @@ def build_report(*, exact_manifest: Path, prior_schedule: Path) -> JsonDict:
             packet_flits=packet_flits,
             shared_packets=shared_packets,
             shared_flits=shared_flits,
+            shared_contexts=shared_contexts,
         ),
         _mode(
             name="stats_once_ordered_exact",
@@ -150,6 +162,7 @@ def build_report(*, exact_manifest: Path, prior_schedule: Path) -> JsonDict:
             packet_flits=packet_flits,
             shared_packets=shared_packets,
             shared_flits=shared_flits,
+            shared_contexts=shared_contexts,
         ),
     ]
     for mode in modes:
@@ -162,7 +175,7 @@ def build_report(*, exact_manifest: Path, prior_schedule: Path) -> JsonDict:
         )
 
     return {
-        "version": 1,
+        "version": 2,
         "profile": "decoder_attention_score32_noc_phase2_exact_transport_revision",
         "decision": "prior_phase2_reduction_contract_retracted_exact_transport_required",
         "revision": {
@@ -188,9 +201,15 @@ def build_report(*, exact_manifest: Path, prior_schedule: Path) -> JsonDict:
             "partial_payload_bits_per_beat": value_bits,
             "stats_bits_per_head": stats_bits,
             "release_contract": "one aggregate stream per head group after eight local waves",
+            "central_context_contract": (
+                "112 shared SRAM stream contexts plus four atomic fifteen-source "
+                "reduction group contexts"
+            ),
         },
         "prior_quantities": {
+            "scheduled_packet_descriptors": int(simulation["scheduled_packet_count"]),
             "scheduled_commands": int(simulation["scheduled_packet_count"]),
+            "scheduled_commands_semantics": "deprecated_packet_descriptor_count",
             "scheduled_flits": int(simulation["scheduled_flit_count"]),
             "remote_shared_packets": shared_packets,
             "remote_shared_flits": shared_flits,
@@ -200,16 +219,22 @@ def build_report(*, exact_manifest: Path, prior_schedule: Path) -> JsonDict:
             ),
         },
         "exact_transport_modes": modes,
+        "control_boundary": {
+            "central_scheduler": "context_admission_only",
+            "endpoint_adapters": "packet_descriptor_generation_and_two_slot_lifecycle",
+            "mesh": "distributed_flit_arbitration",
+        },
         "recommended_first_implementation": "aligned_419b_two_flits_per_beat",
         "recommended_frontier_candidate": "stats_once_ordered_exact",
         "recommendation": (
             "Implement aligned transport as the direct field-preserving equivalence anchor, "
             "then implement stats-once ordered packing and compare codec PPA plus actual "
-            "producer/root backpressure before rebuilding the Phase-2 command schedule."
+            "producer/root backpressure before rebuilding Phase-2 context admission and "
+            "distributed endpoint/mesh scheduling."
         ),
         "remaining_abstractions": [
             "Mode quantities do not yet include measured serializer/depacketizer PPA.",
-            "Command release must be driven by actual local-reducer valid/ready events.",
+            "Context release must be driven by actual local-reducer valid/ready events.",
             "Shared-tile traffic still requires SRAM-residency-driven release.",
             "HBM/DRAM control remains external by design.",
         ],
@@ -222,16 +247,19 @@ def write_markdown(report: JsonDict, path: Path) -> None:
         "# Llama7B Phase-2 Exact Transport Revision",
         "",
         f"- decision: `{report['decision']}`",
-        f"- prior commands/flits: `{prior['scheduled_commands']}` / `{prior['scheduled_flits']}`",
+        f"- prior packet descriptors/flits: `{prior['scheduled_packet_descriptors']}` / "
+        f"`{prior['scheduled_flits']}`",
         "- exact release: one aggregate stream per head group after eight local waves",
+        "- exact central control: 112 shared contexts plus four atomic reduction-group contexts",
         "",
-        "| Mode | Commands | Flits | Ratio vs prior | Reduction packets/cluster |",
-        "|---|---:|---:|---:|---:|",
+        "| Mode | Context commands | Packet descriptors | Flits | Ratio vs prior | Reduction packets/cluster |",
+        "|---|---:|---:|---:|---:|---:|",
     ]
     for mode in report["exact_transport_modes"]:
         lines.append(
-            f"| `{mode['name']}` | {mode['total_phase2_commands']} | "
-            f"{mode['total_phase2_flits']} | {mode['flit_ratio_vs_prior']:.3f} | "
+            f"| `{mode['name']}` | {mode['total_phase2_context_commands']} | "
+            f"{mode['total_phase2_packet_descriptors']} | {mode['total_phase2_flits']} | "
+            f"{mode['flit_ratio_vs_prior']:.3f} | "
             f"{mode['packets_per_cluster_layer']} |"
         )
     lines.extend(["", "## Recommendation", "", report["recommendation"], ""])
