@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
-  "source_commit": "TBD",
+  "source_commit": "c6ecd326775d9e342ae096ab36a86e6ef338fbf7",
   "requested_items": [
     {
       "item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
@@ -15,7 +15,7 @@
       "expected_outputs": [
         "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
       ],
-      "status": "pending_after_proposal_merge",
+      "status": "merged",
       "comparison_role": "phase2_exact_aligned_codec_physical_anchor",
       "paired_baseline_item_id": "",
       "depends_on_item_ids": [],
@@ -25,7 +25,11 @@
         "direction": "measure_exact_aligned_transport_codec",
         "reason": "Establish the direct field-preserving codec PPA anchor before comparing denser exact packing."
       },
-      "acceptance_notes": "Require exact round-trip and no-bubble cadence tests, generated hierarchy checks, and timing/area/power rows for the requested sweep. Treat PPA as codec-plus-compact-harness evidence, not endpoint, mesh, SRAM, reducer, or global-tree evidence."
+      "acceptance_notes": "Require exact round-trip and no-bubble cadence tests, generated hierarchy checks, and timing/area/power rows for the requested sweep. Treat PPA as codec-plus-compact-harness evidence, not endpoint, mesh, SRAM, reducer, or global-tree evidence.",
+      "merged_pr_number": 1711,
+      "merge_commit": "5eae2358af36dc608ddd187ca90c0093ea6859ce",
+      "merged_utc": "2026-08-23T10:32:29.865608Z",
+      "notes": "Merged via PR #1711 and merge 5eae2358af36dc608ddd187ca90c0093ea6859ce at 2026-08-23T10:32:29.865608Z."
     }
   ]
 }

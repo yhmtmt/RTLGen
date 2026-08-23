@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 1711,
+  "merge_commit": "5eae2358af36dc608ddd187ca90c0093ea6859ce",
+  "merged_utc": "2026-08-23T10:32:29.865608Z"
 }
