@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -85,3 +88,47 @@ def test_upsert_case_from_detection_creates_new_case_for_different_item_same_fin
         assert len(cases) == 2
         assert cases[0].first_item_id == "item-1"
         assert cases[1].first_item_id == "item-2"
+
+
+def test_upsert_migrates_legacy_source_mismatch_hash_without_evidence_change() -> None:
+    first_evidence = {
+        "item_id": "needs-source",
+        "required_sha": "b" * 40,
+        "worker_head": "a" * 40,
+        "last_seen_at": "2026-08-23T11:00:00+00:00",
+    }
+    first = ResolverDetection(
+        fingerprint="assigned_ready_source_mismatch:source_commit_unsatisfied",
+        failure_class="assigned_ready_source_mismatch",
+        owner="eval",
+        severity="high",
+        summary="source mismatch",
+        item_id="needs-source",
+        run_key="no_run",
+        machine_key="eval-source",
+        source_commit="b" * 40,
+        repo_root="/repo",
+        evidence=first_evidence,
+    )
+
+    with make_session() as session:
+        created = upsert_case_from_detection(session, first)
+        case = created.case
+        case.last_evidence_hash = hashlib.sha256(
+            json.dumps(first_evidence, sort_keys=True, default=str).encode("utf-8")
+        ).hexdigest()
+        session.commit()
+
+        second_evidence = {
+            **first_evidence,
+            "last_seen_at": "2026-08-23T11:01:00+00:00",
+        }
+        result = upsert_case_from_detection(
+            session,
+            ResolverDetection(**{**first.__dict__, "evidence": second_evidence}),
+        )
+
+        assert result.created is False
+        assert result.evidence_changed is False
+        assert case.last_evidence_hash == result.evidence_hash
+        assert case.evidence_json["last_seen_at"] == "2026-08-23T11:01:00+00:00"
