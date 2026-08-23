@@ -1,0 +1,255 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-23T11:57:45.569799Z",
+  "item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+  "run_key": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1_run_d967025f30c2b44d",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "1c99dd823b2faf28ac2e0f230b45c842db437ba5",
+  "review_metadata_source_commit": "68a35cfe83f7f3e143efa4a623cfa3c39b6b4f88",
+  "objective": "Model-set revision campaign scaffold that reuses existing physical baselines and reruns mapper+perf reporting.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_score32_exact_manifest": "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/verilog/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_manifest.json",
+      "attention_score32_prior_phase2_schedule": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+      "attention_score32_exact_transport_revision_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json",
+      "attention_score32_exact_transport_revision_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.md"
+    },
+    "worker_resources": {
+      "cpu_quota": "100%",
+      "tasks_max": 64,
+      "memory_max": "2G",
+      "memory_high": "1G",
+      "exclusive_worker": false,
+      "outer_timeout_seconds": 180,
+      "stall_timeout_seconds": 90
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json",
+    "arch_id": "decoder_attention_score32_noc_phase2_exact_transport",
+    "macro_mode": "evidence_only",
+    "outcome": "prior_phase2_reduction_contract_retracted_exact_transport_required"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_exact_transport_revision_v1",
+    "title": "Revise Phase-2 reduction traffic from the embodied exact reducer contract",
+    "primary_question": "What exact packet traffic must connect the embodied local temporal reducers to the root global reducer?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "phase2_exact_transport_revision",
+    "abstraction_layer": "decoder_attention_score32_noc_phase2_exact_transport",
+    "expected_direction": "retract_and_replace_phase2_reduction_transport",
+    "expected_reason": "Use actual 419-bit exact aggregate beats and group-major release before any NoC PPA or frontier recost.",
+    "summary": "Decoder score32 Phase-2 exact transport revision recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json: decision=prior_phase2_reduction_contract_retracted_exact_transport_required; clusters=16; aggregate_beats_per_group_per_cluster=128; partial_link_bits_per_beat=419; prior_scheduled_flits=92128; exact_mode_flits=aligned_419b_two_flits_per_beat:76288,packed_419b_group_bitstream:73528,stats_once_ordered_exact:70948; recommended_frontier_candidate=stats_once_ordered_exact.",
+    "outcome": "prior_phase2_reduction_contract_retracted_exact_transport_required",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_exact_transport_revision_v1",
+    "title": "Revise Phase-2 reduction traffic from the embodied exact reducer contract",
+    "kind": "revision",
+    "primary_question": "What exact packet traffic must connect the embodied local temporal reducers to the root global reducer?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "phase2_exact_transport_revision",
+    "outcome": "prior_phase2_reduction_contract_retracted_exact_transport_required",
+    "summary": "Decoder score32 Phase-2 exact transport revision recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json: decision=prior_phase2_reduction_contract_retracted_exact_transport_required; clusters=16; aggregate_beats_per_group_per_cluster=128; partial_link_bits_per_beat=419; prior_scheduled_flits=92128; exact_mode_flits=aligned_419b_two_flits_per_beat:76288,packed_419b_group_bitstream:73528,stats_once_ordered_exact:70948; recommended_frontier_candidate=stats_once_ordered_exact.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {},
+      "profile": "decoder_attention_score32_noc_phase2_exact_transport_revision",
+      "remaining_abstractions": [
+        "Mode quantities do not yet include measured serializer/depacketizer PPA.",
+        "Command release must be driven by actual local-reducer valid/ready events.",
+        "Shared-tile traffic still requires SRAM-residency-driven release.",
+        "HBM/DRAM control remains external by design."
+      ],
+      "revision": {
+        "invalidates": {
+          "prior_partial_reduction_payload_bytes": 8320,
+          "prior_reduction_release": "once_per_cluster_per_tile_wave",
+          "prior_schedule": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json"
+        },
+        "invalidates_item_ids": [
+          "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+          "l1_noc_llama7b_phase2_command_scheduler_v1",
+          "l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1",
+          "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1",
+          "l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1"
+        ],
+        "reason": "wrong_precision_and_release_contract"
+      },
+      "exact_source": {
+        "aggregate_beats_per_group_per_cluster": 128,
+        "clusters": 16,
+        "head_groups": 4,
+        "heads_per_group": 8,
+        "manifest": "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/verilog/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_manifest.json",
+        "partial_link_bits_per_beat": 419,
+        "partial_payload_bits_per_beat": 328,
+        "persistent_local_waves_per_group": 8,
+        "release_contract": "one aggregate stream per head group after eight local waves",
+        "slices_per_head": 16,
+        "stats_bits_per_head": 65
+      },
+      "prior_quantities": {
+        "remote_reduction_flits": 31200,
+        "remote_reduction_packets": 3960,
+        "remote_shared_flits": 60928,
+        "remote_shared_packets": 7616,
+        "scheduled_commands": 11576,
+        "scheduled_flits": 92128
+      },
+      "exact_transport_modes": [
+        {
+          "bits_per_group": 65536,
+          "flit_ratio_vs_prior": 0.828065,
+          "flit_reduction_vs_prior": 15840,
+          "flits_per_cluster_layer": 1024,
+          "flits_per_group": 256,
+          "name": "aligned_419b_two_flits_per_beat",
+          "packets_per_cluster_layer": 128,
+          "packets_per_group": 32,
+          "remote_reduction_flits": 15360,
+          "remote_reduction_packets": 1920,
+          "total_phase2_commands": 9536,
+          "total_phase2_flits": 76288
+        },
+        {
+          "bits_per_group": 53632,
+          "flit_ratio_vs_prior": 0.798107,
+          "flit_reduction_vs_prior": 18600,
+          "flits_per_cluster_layer": 840,
+          "flits_per_group": 210,
+          "name": "packed_419b_group_bitstream",
+          "packets_per_cluster_layer": 108,
+          "packets_per_group": 27,
+          "remote_reduction_flits": 12600,
+          "remote_reduction_packets": 1620,
+          "total_phase2_commands": 9236,
+          "total_phase2_flits": 73528
+        },
+        {
+          "bits_per_group": 42504,
+          "flit_ratio_vs_prior": 0.770102,
+          "flit_reduction_vs_prior": 21180,
+          "flits_per_cluster_layer": 668,
+          "flits_per_group": 167,
+          "name": "stats_once_ordered_exact",
+          "packets_per_cluster_layer": 84,
+          "packets_per_group": 21,
+          "remote_reduction_flits": 10020,
+          "remote_reduction_packets": 1260,
+          "total_phase2_commands": 8876,
+          "total_phase2_flits": 70948
+        }
+      ],
+      "recommended_first_implementation": "aligned_419b_two_flits_per_beat",
+      "recommended_frontier_candidate": "stats_once_ordered_exact"
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json",
+    "decoder_attention_score32_exact_transport_revision_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json",
+    "decoder_attention_score32_exact_transport_revision_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {},
+    "profile": "decoder_attention_score32_noc_phase2_exact_transport_revision",
+    "remaining_abstractions": [
+      "Mode quantities do not yet include measured serializer/depacketizer PPA.",
+      "Command release must be driven by actual local-reducer valid/ready events.",
+      "Shared-tile traffic still requires SRAM-residency-driven release.",
+      "HBM/DRAM control remains external by design."
+    ],
+    "revision": {
+      "invalidates": {
+        "prior_partial_reduction_payload_bytes": 8320,
+        "prior_reduction_release": "once_per_cluster_per_tile_wave",
+        "prior_schedule": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json"
+      },
+      "invalidates_item_ids": [
+        "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+        "l1_noc_llama7b_phase2_command_scheduler_v1",
+        "l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1",
+        "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1",
+        "l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1"
+      ],
+      "reason": "wrong_precision_and_release_contract"
+    },
+    "exact_source": {
+      "aggregate_beats_per_group_per_cluster": 128,
+      "clusters": 16,
+      "head_groups": 4,
+      "heads_per_group": 8,
+      "manifest": "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/verilog/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_manifest.json",
+      "partial_link_bits_per_beat": 419,
+      "partial_payload_bits_per_beat": 328,
+      "persistent_local_waves_per_group": 8,
+      "release_contract": "one aggregate stream per head group after eight local waves",
+      "slices_per_head": 16,
+      "stats_bits_per_head": 65
+    },
+    "prior_quantities": {
+      "remote_reduction_flits": 31200,
+      "remote_reduction_packets": 3960,
+      "remote_shared_flits": 60928,
+      "remote_shared_packets": 7616,
+      "scheduled_commands": 11576,
+      "scheduled_flits": 92128
+    },
+    "exact_transport_modes": [
+      {
+        "bits_per_group": 65536,
+        "flit_ratio_vs_prior": 0.828065,
+        "flit_reduction_vs_prior": 15840,
+        "flits_per_cluster_layer": 1024,
+        "flits_per_group": 256,
+        "name": "aligned_419b_two_flits_per_beat",
+        "packets_per_cluster_layer": 128,
+        "packets_per_group": 32,
+        "remote_reduction_flits": 15360,
+        "remote_reduction_packets": 1920,
+        "total_phase2_commands": 9536,
+        "total_phase2_flits": 76288
+      },
+      {
+        "bits_per_group": 53632,
+        "flit_ratio_vs_prior": 0.798107,
+        "flit_reduction_vs_prior": 18600,
+        "flits_per_cluster_layer": 840,
+        "flits_per_group": 210,
+        "name": "packed_419b_group_bitstream",
+        "packets_per_cluster_layer": 108,
+        "packets_per_group": 27,
+        "remote_reduction_flits": 12600,
+        "remote_reduction_packets": 1620,
+        "total_phase2_commands": 9236,
+        "total_phase2_flits": 73528
+      },
+      {
+        "bits_per_group": 42504,
+        "flit_ratio_vs_prior": 0.770102,
+        "flit_reduction_vs_prior": 21180,
+        "flits_per_cluster_layer": 668,
+        "flits_per_group": 167,
+        "name": "stats_once_ordered_exact",
+        "packets_per_cluster_layer": 84,
+        "packets_per_group": 21,
+        "remote_reduction_flits": 10020,
+        "remote_reduction_packets": 1260,
+        "total_phase2_commands": 8876,
+        "total_phase2_flits": 70948
+      }
+    ],
+    "recommended_first_implementation": "aligned_419b_two_flits_per_beat",
+    "recommended_frontier_candidate": "stats_once_ordered_exact"
+  }
+}

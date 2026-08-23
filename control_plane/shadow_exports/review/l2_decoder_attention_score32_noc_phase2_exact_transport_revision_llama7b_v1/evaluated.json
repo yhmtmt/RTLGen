@@ -1,0 +1,124 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_score32_exact_manifest": "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/verilog/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_manifest.json",
+        "attention_score32_prior_phase2_schedule": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+        "attention_score32_exact_transport_revision_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json",
+        "attention_score32_exact_transport_revision_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.md"
+      },
+      "worker_resources": {
+        "cpu_quota": "100%",
+        "tasks_max": 64,
+        "memory_max": "2G",
+        "memory_high": "1G",
+        "exclusive_worker": false,
+        "outer_timeout_seconds": 180,
+        "stall_timeout_seconds": 90
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 control_plane/scripts/run_bounded_command.py --memory-high 1G --memory-max 2G --cpu-quota 100% --tasks-max 64 --runtime-max-sec 120 -- python3 npu/eval/revise_llm_decoder_attention_score32_noc_phase2_exact_transport.py --exact-manifest runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/verilog/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_manifest.json --prior-schedule runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json --report runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.md",
+        "name": "revise_attention_score32_noc_phase2_exact_transport"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Model-set revision campaign scaffold that reuses existing physical baselines and reruns mapper+perf reporting.",
+    "acceptance": [
+      "Require the merged exact manifest to declare 16 clusters and 419-bit partial links",
+      "Require four groups, eight local waves, and 128 aggregate beats per group",
+      "Compare aligned, packed, and stats-once transports without narrowing 41-bit numerators",
+      "Record revision metadata for every invalidated Phase-2 schedule descendant",
+      "Do not claim cycle closure before producer and root ready/valid composition",
+      "Write exactly one JSON and one Markdown report"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Layer2 campaign npu_e2e_eval_mlp_smoke_v2_reuse on nangate45",
+  "result": {
+    "branch": "eval/l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1/s20260823t115746z",
+    "completed_utc": "2026-08-23T11:57:44.667502Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "1f709df75b2c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260823t115746z][host:1f709df75b2c][item:l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+    "session_id": "s20260823t115746z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1/s20260823t115746z",
+    "pr_title": "eval: run layer2 campaign npu_e2e_eval_mlp_smoke_v2_reuse on nangate45",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "1f709df75b2c",
+      "session_id": "s20260823t115746z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-08-23T10:19:16.413634Z",
+  "requested_by": "developer-agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "phase2_exact_transport_revision",
+      "paired_baseline_item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1"
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Use actual 419-bit exact aggregate beats and group-major release before any NoC PPA or frontier recost.",
+      "expected_direction": "retract_and_replace_phase2_reduction_transport"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score32_noc_phase2_exact_transport"
+    },
+    "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_exact_transport_revision_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_noc_phase2_exact_transport_revision_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "1c99dd823b2faf28ac2e0f230b45c842db437ba5",
+    "requires_daemon_restart": true
+  },
+  "generation_source_identity": {
+    "clean": true,
+    "proof": "generator_worktree_head_exact",
+    "version": 1,
+    "relation": "exact",
+    "repo_head_sha": "1c99dd823b2faf28ac2e0f230b45c842db437ba5",
+    "declared_source_commit": "1c99dd823b2faf28ac2e0f230b45c842db437ba5"
+  },
+  "task_type": "l2_campaign"
+}

@@ -1,0 +1,94 @@
+{
+  "decision": "prior_phase2_reduction_contract_retracted_exact_transport_required",
+  "exact_source": {
+    "aggregate_beats_per_group_per_cluster": 128,
+    "clusters": 16,
+    "head_groups": 4,
+    "heads_per_group": 8,
+    "manifest": "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/verilog/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_manifest.json",
+    "partial_link_bits_per_beat": 419,
+    "partial_payload_bits_per_beat": 328,
+    "persistent_local_waves_per_group": 8,
+    "release_contract": "one aggregate stream per head group after eight local waves",
+    "slices_per_head": 16,
+    "stats_bits_per_head": 65
+  },
+  "exact_transport_modes": [
+    {
+      "bits_per_group": 65536,
+      "flit_ratio_vs_prior": 0.828065,
+      "flit_reduction_vs_prior": 15840,
+      "flits_per_cluster_layer": 1024,
+      "flits_per_group": 256,
+      "name": "aligned_419b_two_flits_per_beat",
+      "packets_per_cluster_layer": 128,
+      "packets_per_group": 32,
+      "remote_reduction_flits": 15360,
+      "remote_reduction_packets": 1920,
+      "total_phase2_commands": 9536,
+      "total_phase2_flits": 76288
+    },
+    {
+      "bits_per_group": 53632,
+      "flit_ratio_vs_prior": 0.798107,
+      "flit_reduction_vs_prior": 18600,
+      "flits_per_cluster_layer": 840,
+      "flits_per_group": 210,
+      "name": "packed_419b_group_bitstream",
+      "packets_per_cluster_layer": 108,
+      "packets_per_group": 27,
+      "remote_reduction_flits": 12600,
+      "remote_reduction_packets": 1620,
+      "total_phase2_commands": 9236,
+      "total_phase2_flits": 73528
+    },
+    {
+      "bits_per_group": 42504,
+      "flit_ratio_vs_prior": 0.770102,
+      "flit_reduction_vs_prior": 21180,
+      "flits_per_cluster_layer": 668,
+      "flits_per_group": 167,
+      "name": "stats_once_ordered_exact",
+      "packets_per_cluster_layer": 84,
+      "packets_per_group": 21,
+      "remote_reduction_flits": 10020,
+      "remote_reduction_packets": 1260,
+      "total_phase2_commands": 8876,
+      "total_phase2_flits": 70948
+    }
+  ],
+  "prior_quantities": {
+    "remote_reduction_flits": 31200,
+    "remote_reduction_packets": 3960,
+    "remote_shared_flits": 60928,
+    "remote_shared_packets": 7616,
+    "scheduled_commands": 11576,
+    "scheduled_flits": 92128
+  },
+  "profile": "decoder_attention_score32_noc_phase2_exact_transport_revision",
+  "recommendation": "Implement aligned transport as the direct field-preserving equivalence anchor, then implement stats-once ordered packing and compare codec PPA plus actual producer/root backpressure before rebuilding the Phase-2 command schedule.",
+  "recommended_first_implementation": "aligned_419b_two_flits_per_beat",
+  "recommended_frontier_candidate": "stats_once_ordered_exact",
+  "remaining_abstractions": [
+    "Mode quantities do not yet include measured serializer/depacketizer PPA.",
+    "Command release must be driven by actual local-reducer valid/ready events.",
+    "Shared-tile traffic still requires SRAM-residency-driven release.",
+    "HBM/DRAM control remains external by design."
+  ],
+  "revision": {
+    "invalidates": {
+      "prior_partial_reduction_payload_bytes": 8320,
+      "prior_reduction_release": "once_per_cluster_per_tile_wave",
+      "prior_schedule": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json"
+    },
+    "invalidates_item_ids": [
+      "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+      "l1_noc_llama7b_phase2_command_scheduler_v1",
+      "l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1",
+      "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1",
+      "l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1"
+    ],
+    "reason": "wrong_precision_and_release_contract"
+  },
+  "version": 1
+}
