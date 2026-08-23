@@ -91,9 +91,13 @@
         "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w512_s2/metrics.csv",
         "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w512_s2/timing_debug_report.md"
       ],
-      "status": "pending_after_proposal_merge",
+      "status": "merged",
       "requires_merged_inputs": true,
-      "requires_materialized_refs": true
+      "requires_materialized_refs": true,
+      "merged_pr_number": 1741,
+      "merge_commit": "c41a254ec51092045c241b94291dd7bc0b000feb",
+      "merged_utc": "2026-08-23T23:46:09.745689Z",
+      "notes": "Merged via PR #1741 and merge c41a254ec51092045c241b94291dd7bc0b000feb at 2026-08-23T23:46:09.745689Z."
     }
   ]
 }
