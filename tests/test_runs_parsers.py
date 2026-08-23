@@ -2,6 +2,7 @@
 """Regression tests for runs metrics parsing in validation/index scripts."""
 
 import importlib.util
+import csv
 import json
 import os
 import shutil
@@ -82,6 +83,41 @@ class RunsParserRegressionTest(unittest.TestCase):
             self.validate_runs.EVAL_QUEUE_ROOT,
             self.validate_runs.MODELS_ROOT,
         ) = old
+
+    def test_run_sweep_append_index_writes_standard_csv(self):
+        with tempfile.TemporaryDirectory() as td:
+            circuit_root = Path(td)
+            record = {
+                "design": "codec_wrapper",
+                "platform": "nangate45",
+                "config_hash": "config123",
+                "param_hash": "param123",
+                "tag": "quoted_params",
+                "status": "ok",
+                "metrics": {
+                    "critical_path_ns": 1.25,
+                    "die_area": 42000.0,
+                    "total_power_mw": 0.031,
+                },
+                "flow_params": {
+                    "CLOCK_PERIOD": 2.0,
+                    "CORE_AREA": "10 10 200 200",
+                    "LABEL": 'matched, exact "codec"',
+                },
+                "result_path": "runs/designs/noc/codec_wrapper/work/param123/result.json",
+            }
+
+            self.run_sweep.append_index(circuit_root, record)
+            self.run_sweep.append_index(circuit_root, {**record, "param_hash": "param456"})
+
+            with (circuit_root / "metrics.csv").open(newline="", encoding="utf-8") as handle:
+                rows = list(csv.DictReader(handle))
+
+        self.assertEqual(2, len(rows))
+        self.assertNotIn(None, rows[0])
+        self.assertEqual(record["flow_params"], json.loads(rows[0]["params_json"]))
+        self.assertEqual(record["result_path"], rows[0]["result_path"])
+        self.assertEqual("param456", rows[1]["param_hash"])
 
     def test_validate_runs_parses_unquoted_and_csv_quoted_params_json(self):
         legacy_row = (
