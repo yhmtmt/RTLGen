@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1",
   "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1/proposal.json",
-  "source_commit": "TBD",
+  "source_commit": "8886192007592abc57a8e1928d8c3122462b6922",
   "source_commit_note": "Replace TBD with the merge commit containing the 128D probe, tightened task acceptance, and this revision package before dispatch.",
   "requested_items": [
     {
@@ -15,7 +15,7 @@
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "run_physical": false,
-      "status": "pending_after_proposal_merge",
+      "status": "merged",
       "expected_outputs": [
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8.json",
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8.md"
@@ -36,7 +36,12 @@
         "direction": "retract_one_dimension_evidence_and_prove_full_head",
         "reason": "The current Llama7B frontier cannot cite full GQA8 equivalence until all 128 score dimensions traverse the RTL producer accumulation path."
       },
-      "acceptance_notes": "Require head_dimension=128, score_accumulation_beats_per_block=128, producer_handshake_count=1048576, exact row equality, and zero protocol errors."
+      "acceptance_notes": "Require head_dimension=128, score_accumulation_beats_per_block=128, producer_handshake_count=1048576, exact row equality, and zero protocol errors.",
+      "merged_pr_number": 1707,
+      "merge_commit": "f2fdbbc11d7cab95b5cf4bbf45ec4258b3c8eb85",
+      "merged_utc": "2026-08-23T10:03:35.410636Z",
+      "notes": "Merged via PR #1707 and merge f2fdbbc11d7cab95b5cf4bbf45ec4258b3c8eb85 at 2026-08-23T10:03:35.410636Z.",
+      "revision_of_decision": "pending"
     },
     {
       "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2",

@@ -32,14 +32,18 @@
         "direction": "prove_full_composed_equivalence_or_diagnose",
         "reason": "Only a complete structured-row and protocol pass can promote this composed path into the measured Llama7B architecture model."
       },
-      "status": "merged",
+      "status": "retracted",
       "notes": "Dispatch only to eval-daemon-b7c2d9c80c1c with the bounded resource contract in evaluation_gate.md. The launcher may use user-systemd cgroups or the documented portable fallback; timeout, OOM, or resource kill remains inconclusive. Merged via PR #1497 and merge 14bec9df81598f7d17383977cb75b5c90aa9b2b2 at 2026-07-29T05:58:41.251581Z.",
       "prior_item_ids": [
         "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1"
       ],
       "merged_pr_number": 1497,
       "merge_commit": "14bec9df81598f7d17383977cb75b5c90aa9b2b2",
-      "merged_utc": "2026-07-29T05:58:41.251581Z"
+      "merged_utc": "2026-07-29T05:58:41.251581Z",
+      "retracted_utc": "2026-08-23T10:03:35.410687Z",
+      "retracted_by_item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
+      "retraction_reason": "wrong_head_dimension_stimulus",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8.json"
     }
   ],
   "source_commit": "6ae44a18be7e187e1f0e53eb04d50574d09091d3"

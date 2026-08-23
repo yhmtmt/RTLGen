@@ -1,0 +1,24 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1",
+  "candidate_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
+  "decision": "iterate",
+  "reason": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8.json: decision=decoder_evidence_recorded.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
+    "run:l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8_run_6c6a63b2fd72a871",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8.json",
+    "pr:#1707",
+    "https://github.com/yhmtmt/RTLGen/pull/1707"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
+  "requires_human_approval": false,
+  "revision": {
+    "reason": "wrong_head_dimension_stimulus",
+    "invalidated_item_ids": [
+      "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r7",
+      "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1",
+      "l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1"
+    ],
+    "replacement_item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8"
+  }
+}

@@ -22,11 +22,15 @@
         "direction": "record_score32_exact_reduction_gqa8_full_equivalence_rerank",
         "reason": "The recost must fail closed unless exact reduction, quality-aware frontier, and both full GQA8 equivalence gates all agree."
       },
-      "status": "merged",
+      "status": "retracted",
       "merged_pr_number": 1507,
       "merge_commit": "f269213062847cf953a97fa45f60057c74f04769",
       "merged_utc": "2026-07-30T11:30:39.611159Z",
-      "notes": "Merged via PR #1507 and merge f269213062847cf953a97fa45f60057c74f04769 at 2026-07-30T11:30:39.611159Z."
+      "notes": "Merged via PR #1507 and merge f269213062847cf953a97fa45f60057c74f04769 at 2026-07-30T11:30:39.611159Z.",
+      "retracted_utc": "2026-08-23T10:03:35.410687Z",
+      "retracted_by_item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
+      "retraction_reason": "wrong_head_dimension_stimulus",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8.json"
     }
   ],
   "source_commit": "8cc94346b4b3f0bf6d7a9b52df47cb8f3329d64e"
