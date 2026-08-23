@@ -77,7 +77,10 @@ def is_transportable_expected_output(path_text: str) -> bool:
         ):
             return True
     if rel_path.startswith("runs/designs/"):
-        name = PurePosixPath(rel_path).name
+        path = PurePosixPath(rel_path)
+        name = path.name
         if name == "timing_debug_report.md" or name.endswith("_fsm_diagnostic.json"):
+            return True
+        if name == "index.json" and path.parent.name == "hierarchy_reports":
             return True
     return any(rel_path.endswith(suffix) for suffix in _ALLOWED_RUNS_SUFFIXES)
