@@ -1,0 +1,246 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-23T10:25:49.894281Z",
+  "control_plane_source_commit": "a39136fc11ccc0558e9d390d5dc62b91f2cff19e",
+  "review_metadata_source_commit": "a39136fc11ccc0558e9d390d5dc62b91f2cff19e",
+  "item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
+  "run_key": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1_run_5b2040f545566a02",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "c6ecd326775d9e342ae096ab36a86e6ef338fbf7",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_attention_score32_exact_aligned_transport_codec_ppa_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l1_attention_score32_exact_aligned_transport_codec_ppa_v1/s20260823t102547z",
+      "completed_utc": "2026-08-23T10:25:45.102721Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "1f709df75b2c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260823t102547z][host:1f709df75b2c][item:l1_attention_score32_exact_aligned_transport_codec_ppa_v1]",
+      "metrics_rows": [
+        {
+          "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_9b900945",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "1a54053c",
+          "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+        },
+        {
+          "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_d64a96fd",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "92755b52",
+          "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+        },
+        {
+          "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_5137e93f",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "1acdb27c",
+          "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+        },
+        {
+          "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_9d2242d8",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f4cf59fe",
+          "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+        },
+        {
+          "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_5e539e1b",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "7648c5fa",
+          "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+        },
+        {
+          "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_bd377f69",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "70a2b609",
+          "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+        },
+        {
+          "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_b5227391",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "ca7b000f",
+          "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+        },
+        {
+          "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_d69b942d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "dcc030d0",
+          "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+        },
+        {
+          "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_87c8a58f",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "1817d7e0",
+          "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+        }
+      ],
+      "queue_item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
+      "session_id": "s20260823t102547z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_attention_score32_exact_aligned_transport_codec_ppa_v1.json",
+    "storage_mode": "repo",
+    "sha256": "15023d3eb925b6f941a5963d149fac914265a0f63d9f0cc2221d7c5e5de9dd0d",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-08-23T10:25:46.453620Z",
+      "item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
+      "run_key": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1_run_5b2040f545566a02",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "c6ecd326775d9e342ae096ab36a86e6ef338fbf7",
+      "objective": "Measure Nangate45 PPA for the exact 419-bit aggregate aligned two-flit codec.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/campaigns/noc/l1_attention_score32_exact_aligned_codec/sweeps/nangate45_macro_frontier.json"
+        ],
+        "configs": [
+          "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/config_l1_attention_score32_exact_aligned_codec_w419_f256.json"
+        ],
+        "out_root": "runs/designs/noc",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 1,
+      "evaluation_record": {
+        "evaluation_mode": "ppa",
+        "abstraction_layer": "architecture_block",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+        "timing_feasible": true,
+        "clock_period_ns": 1.0,
+        "timing_slack_ns": 0.6526000000000001
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "1acdb27c",
+            "tag": "l1_attention_score32_exact_aligned_codec_nangate45_macro_frontier_5137e93f",
+            "result_path": "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/work/1acdb27c/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.3474,
+            "die_area": 28696.36,
+            "total_power_mw": 0.0196
+          }
+        }
+      ],
+      "trial_summary": {
+        "item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
+        "completed_trials": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "partial_metrics_count": 0,
+        "metrics": {
+          "critical_path_ns": {
+            "best": 0.3474,
+            "mean": 0.3474,
+            "median": 0.3474,
+            "max": 0.3474,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "die_area": {
+            "best": 28696.36,
+            "mean": 28696.36,
+            "median": 28696.36,
+            "max": 28696.36,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "total_power_mw": {
+            "best": 0.0196,
+            "mean": 0.0196,
+            "median": 0.0196,
+            "max": 0.0196,
+            "range": 0.0,
+            "stddev": 0.0
+          }
+        },
+        "aggregation_scope": "current_run_checkout_commit",
+        "aggregation_source_commit": "c6ecd326775d9e342ae096ab36a86e6ef338fbf7",
+        "aggregation_included_attempts": 1,
+        "aggregation_excluded_attempts": 0,
+        "aggregation_excluded_source_commits": {},
+        "aggregation_excluded_attempt_run_keys": [],
+        "aggregation_excluded_attempt_run_keys_truncated": false
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_attention_score32_exact_aligned_transport_codec_ppa_v1/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_attention_score32_exact_aligned_transport_codec_ppa_v1/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_attention_score32_exact_aligned_transport_codec_ppa_v1/trial_table.csv"
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "phase2_exact_aligned_codec_physical_anchor",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "ppa",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "Establish the direct field-preserving codec PPA anchor before comparing denser exact packing.",
+      "expected_direction": "measure_exact_aligned_transport_codec"
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l1_attention_score32_exact_aligned_transport_codec_ppa_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l1_attention_score32_exact_aligned_transport_codec_ppa_v1/s20260823t102547z",
+    "title": "eval: run measure score32 exact aligned transport codec ppa",
+    "body_fields": {
+      "host": "1f709df75b2c",
+      "session_id": "s20260823t102547z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l1_attention_score32_exact_aligned_transport_codec_ppa_v1`\n- run_key: `l1_attention_score32_exact_aligned_transport_codec_ppa_v1_run_5b2040f545566a02`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_attention_score32_exact_aligned_transport_codec_ppa_v1/evaluated.json`\n- metrics_rows_count: `9`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_attention_score32_exact_aligned_transport_codec_ppa_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l1_attention_score32_exact_aligned_transport_codec_ppa_v1`\n- proposal_path: `docs/proposals/prop_l1_attention_score32_exact_aligned_transport_codec_ppa_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l1_attention_score32_exact_aligned_transport_codec_ppa_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `c6ecd326775d9e342ae096ab36a86e6ef338fbf7`\n- review_metadata_source_commit: `a39136fc11ccc0558e9d390d5dc62b91f2cff19e`\n\n## Evaluation Mode\n- evaluation_mode: `ppa`\n- abstraction_layer: `architecture_block`\n- evaluation_summary: `Physical metrics recorded from a completed, timing-feasible Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}

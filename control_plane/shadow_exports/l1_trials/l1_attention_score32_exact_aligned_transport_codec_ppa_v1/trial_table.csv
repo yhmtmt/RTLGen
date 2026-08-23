@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_attention_score32_exact_aligned_transport_codec_ppa_v1_run_5b2040f545566a02,1,1,0,succeeded,runs/designs/noc/l1_attention_score32_exact_aligned_codec_w419_f256_wrapper/metrics.csv,0.3474,28696.36,0.0196,none,,
