@@ -1400,7 +1400,7 @@ def test_build_report_selects_fine_compositional_backend(monkeypatch: Any) -> No
             "component_metadata": {
                 "proof": "fine_grained_concrete_rtl_composition",
                 "strict_generated_top_guard": "passed",
-                "producer_replay_parallelism": 1,
+                "producer_replay_parallelism": 3,
             },
         }
 
@@ -1414,6 +1414,7 @@ def test_build_report_selects_fine_compositional_backend(monkeypatch: Any) -> No
         timeout_sec=11,
         compile_timeout_sec=19,
         sim_backend=FINE_COMPOSITIONAL_ICARUS_BACKEND,
+        producer_jobs=3,
     )
 
     assert report["passed"] is True
@@ -1421,12 +1422,22 @@ def test_build_report_selects_fine_compositional_backend(monkeypatch: Any) -> No
     assert report["compile_timeout_sec"] == 19
     assert report["simulation_timeout_sec"] == 11
     assert report["sim_backend_metadata"]["proof"] == "fine_grained_concrete_rtl_composition"
-    assert report["sim_backend_metadata"]["producer_replay_parallelism"] == 1
+    assert report["sim_backend_metadata"]["producer_replay_parallelism"] == 3
     assert report["compositional_components"]["strict_generated_top_guard"] == "passed"
-    assert report["compositional_components"]["producer_replay_parallelism"] == 1
+    assert report["compositional_components"]["producer_replay_parallelism"] == 3
     assert captured["compile_timeout_sec"] == 19
     assert captured["simulation_timeout_sec"] == 11
     assert captured["logical_head_groups"] == 1
+    assert captured["producer_jobs"] == 3
+
+
+def test_build_report_rejects_nonpositive_producer_jobs() -> None:
+    with pytest.raises(ValueError, match="producer_jobs must be positive"):
+        build_report(
+            config=_minimal_probe_config(),
+            sim_backend=FINE_COMPOSITIONAL_ICARUS_BACKEND,
+            producer_jobs=0,
+        )
 
 
 def test_checked_in_config_rejects_partition_drift() -> None:

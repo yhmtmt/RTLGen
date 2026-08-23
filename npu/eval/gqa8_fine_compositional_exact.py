@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import contextlib
+from concurrent.futures import ThreadPoolExecutor
 import io
 from pathlib import Path
 import re
@@ -709,6 +710,7 @@ def run_fine_compositional_exact(
     output_ready_pattern: tuple[bool, ...],
     compile_timeout_sec: int,
     simulation_timeout_sec: int,
+    producer_jobs: int = 1,
 ) -> JsonDict:
     from npu.eval import probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 as probe
 
@@ -789,6 +791,9 @@ def run_fine_compositional_exact(
             return _failure(failure=failure, phase_records=phase_records)
         binaries[key] = sim_path
 
+    resolved_producer_jobs = int(producer_jobs)
+    if resolved_producer_jobs < 1:
+        raise ValueError("producer_jobs must be positive")
     producer_rows: list[list[list[JsonDict]]] = [
         [[] for _ in range(producers)] for producers in probe.CLUSTER_PRODUCERS
     ]
@@ -798,65 +803,95 @@ def run_fine_compositional_exact(
     producer_handshakes_by_cluster = [0 for _ in range(probe.CLUSTERS)]
     producer_replays = 0
     producer_replays_by_type = {"p54": 0, "p53": 0}
-    for cluster, producers in enumerate(probe.CLUSTER_PRODUCERS):
+
+    def replay_producer(task: tuple[int, int]) -> JsonDict:
+        cluster, producer = task
+        producers = probe.CLUSTER_PRODUCERS[cluster]
         key = "p54_producer" if producers == 54 else "p53_producer"
-        for producer in range(producers):
-            case = _producer_case(
-                cluster=cluster,
-                producer=producer,
-                logical_head_groups=logical_head_groups,
+        case = _producer_case(
+            cluster=cluster,
+            producer=producer,
+            logical_head_groups=logical_head_groups,
+        )
+        run_dir = work_dir / f"producer_{cluster:02d}_{producer:02d}"
+        run_dir.mkdir()
+        try:
+            _write_producer_sidecars(
+                run_dir,
+                case,
+                value_block_capacity=producer_block_capacity[key],
             )
-            run_dir = work_dir / f"producer_{cluster:02d}_{producer:02d}"
-            run_dir.mkdir()
-            try:
-                _write_producer_sidecars(
-                    run_dir,
-                    case,
-                    value_block_capacity=producer_block_capacity[key],
+            result, failure = _run_process(
+                [probe._tool("vvp"), str(binaries[key])],
+                cwd=run_dir,
+                timeout_sec=simulation_timeout_sec,
+                phase=f"run_producer_c{cluster}_p{producer}",
+            )
+        finally:
+            shutil.rmtree(run_dir, ignore_errors=True)
+        if failure:
+            return {"failure": failure}
+        rows, requests, summary = _parse_producer(result.stdout or "")
+        row_audit = probe.compare_full_rows(case["expected_rows"], rows)
+        request_audit = _check_request_metadata(requests, list(case["block_counts"]))
+        commands = len(case["commands"])
+        summary_ok = bool(
+            summary
+            and summary["outputs"] == len(case["expected_rows"])
+            and summary["commands"] == commands
+            and summary["completed"] == commands
+            and summary["merge"] == len(case["expected_rows"])
+            and summary["stream0_accept"] == commands
+            and summary["stream1_accept"] == commands
+            and summary["stream0_complete"] == commands
+            and summary["stream1_complete"] == commands
+            and summary["protocol_error"] == 0
+        )
+        if not row_audit["passed"] or not request_audit["passed"] or not summary_ok:
+            return {
+                "mismatch": (
+                    f"phase=run_producer_c{cluster}_p{producer}\n"
+                    f"row_audit={row_audit} request_audit={request_audit} summary_ok={summary_ok}"
                 )
-                result, failure = _run_process(
-                    [probe._tool("vvp"), str(binaries[key])],
-                    cwd=run_dir,
-                    timeout_sec=simulation_timeout_sec,
-                    phase=f"run_producer_c{cluster}_p{producer}",
-                )
-            finally:
-                shutil.rmtree(run_dir, ignore_errors=True)
+            }
+        return {
+            "cluster": cluster,
+            "producer": producer,
+            "producer_type": "p54" if producers == 54 else "p53",
+            "rows": rows,
+            "requests": requests,
+            "handshakes": len(case["query_words"]),
+        }
+
+    producer_tasks = tuple(
+        (cluster, producer)
+        for cluster, producers in enumerate(probe.CLUSTER_PRODUCERS)
+        for producer in range(producers)
+    )
+    with ThreadPoolExecutor(max_workers=min(resolved_producer_jobs, len(producer_tasks))) as executor:
+        for replay in executor.map(replay_producer, producer_tasks):
             producer_replays += 1
-            producer_replays_by_type["p54" if producers == 54 else "p53"] += 1
-            if failure:
+            failure = replay.get("failure")
+            if isinstance(failure, dict):
+                executor.shutdown(wait=False, cancel_futures=True)
                 phase_records.append({"phase": failure["phase"], "returncode": failure["returncode"]})
                 return _failure(failure=failure, phase_records=phase_records)
-            rows, requests, summary = _parse_producer(result.stdout or "")
-            row_audit = probe.compare_full_rows(case["expected_rows"], rows)
-            request_audit = _check_request_metadata(requests, list(case["block_counts"]))
-            commands = len(case["commands"])
-            summary_ok = bool(
-                summary
-                and summary["outputs"] == len(case["expected_rows"])
-                and summary["commands"] == commands
-                and summary["completed"] == commands
-                and summary["merge"] == len(case["expected_rows"])
-                and summary["stream0_accept"] == commands
-                and summary["stream1_accept"] == commands
-                and summary["stream0_complete"] == commands
-                and summary["stream1_complete"] == commands
-                and summary["protocol_error"] == 0
-            )
-            if not row_audit["passed"] or not request_audit["passed"] or not summary_ok:
+            mismatch = str(replay.get("mismatch") or "")
+            if mismatch:
+                executor.shutdown(wait=False, cancel_futures=True)
                 return {
                     "simulation_status": "component_mismatch",
                     "returncode": 1,
-                    "stderr": (
-                        f"phase=run_producer_c{cluster}_p{producer}\n"
-                        f"row_audit={row_audit} request_audit={request_audit} summary_ok={summary_ok}"
-                    ),
+                    "stderr": mismatch,
                     "stdout": "",
                     "phase_records": phase_records,
                 }
-            producer_rows[cluster][producer] = rows
-            producer_requests[cluster][producer] = requests
-            producer_handshakes_by_cluster[cluster] += len(case["query_words"])
+            cluster = int(replay["cluster"])
+            producer = int(replay["producer"])
+            producer_rows[cluster][producer] = list(replay["rows"])
+            producer_requests[cluster][producer] = list(replay["requests"])
+            producer_handshakes_by_cluster[cluster] += int(replay["handshakes"])
+            producer_replays_by_type[str(replay["producer_type"])] += 1
     phase_records.extend(
         {
             "phase": f"run_{label}_single_producer_serial",
@@ -1163,7 +1198,7 @@ def run_fine_compositional_exact(
             "proof": "fine_grained_concrete_rtl_composition",
             "strict_generated_top_guard": "passed",
             "producer_replays": producer_replays,
-            "producer_replay_parallelism": 1,
+            "producer_replay_parallelism": min(resolved_producer_jobs, producer_replays),
             "sram_endpoint_replays": probe.CLUSTERS,
             "reducer_replays": probe.CLUSTERS,
             "global_tree_simulations": 1,

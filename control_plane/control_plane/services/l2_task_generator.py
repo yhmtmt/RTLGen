@@ -12011,6 +12011,8 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
         "1200",
         "--logical-head-groups",
         "4",
+        "--producer-jobs",
+        "3",
         "--timeout-sec",
         "3600",
         "--root-ready-pattern",
@@ -12036,8 +12038,8 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
             "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_report": report,
             "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_scope": (
                 "Run the bounded fine-grained concrete compositional four-head-group RTL equivalence "
-                "probe under exclusive resources. Require the strict generated-top guard, serial exact "
-                "single-producer replays, concrete p54/p53 SRAM endpoint and reducer/temporal-merge "
+                "probe under exclusive resources. Require the strict generated-top guard, bounded three-way "
+                "exact single-producer replays, concrete p54/p53 SRAM endpoint and reducer/temporal-merge "
                 "replays, and concrete global-tree simulation with exact producer/fill/SRAM/root "
                 "counts, rotated 0/8/16/24 ownership, zero protocol errors, and full row audits."
             ),
@@ -12064,7 +12066,7 @@ def _decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotat
             "Require report passed=true, classification=passed, and counts_passed=true",
             "Require report head_dimension=128 and score_accumulation_beats_per_block=128",
             "Require compositional_components.strict_generated_top_guard=passed",
-            "Require compositional_components.producer_replay_parallelism=1",
+            "Require compositional_components.producer_replay_parallelism=3",
             (
                 "Require compositional_components.global_sidecar."
                 "value_packing=canonical_pack_numerators"
