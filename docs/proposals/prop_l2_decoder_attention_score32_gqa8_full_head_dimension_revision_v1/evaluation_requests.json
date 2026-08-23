@@ -44,7 +44,7 @@
       "revision_of_decision": "pending"
     },
     {
-      "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2",
+      "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3",
       "task_type": "l2_campaign",
       "objective": "Prove the corrected full-128D score accumulation across GQA8 head bases 0, 8, 16, and 24.",
       "evaluation_mode": "frontier_detail",
@@ -56,16 +56,24 @@
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "run_physical": false,
-      "status": "pending_after_one_group_pass",
+      "status": "pending_after_parallel_replay_fix",
       "expected_outputs": [
-        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2.json",
-        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2.md"
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.md"
       ],
       "expected_result": {
         "direction": "prove_full_head_gqa8_rotation_or_diagnose",
         "reason": "One group does not prove rotated ownership for all four Llama7B GQA8 groups."
       },
-      "acceptance_notes": "Require head_dimension=128, score_accumulation_beats_per_block=128, producer_handshake_count=4194304, head_bases=[0,8,16,24], exact row equality, and zero protocol errors."
+      "acceptance_notes": "Require producer_replay_parallelism=3, head_dimension=128, score_accumulation_beats_per_block=128, producer_handshake_count=4194304, head_bases=[0,8,16,24], exact row equality, and zero protocol errors. Preserve r2 as an inconclusive aggregate timeout, not failed equivalence.",
+      "revision": {
+        "reason": "aggregate_timeout_from_serial_producer_replays",
+        "supersedes_item_ids": [
+          "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2"
+        ],
+        "prior_result": "inconclusive_command_timeout",
+        "replacement_contract": "three independent producer RTL replays under the existing 300 percent CPU ceiling; ordered SRAM, reducer, and global-tree stages"
+      }
     },
     {
       "item_id": "l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1_r2",
@@ -78,7 +86,7 @@
         "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
         "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1",
         "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
-        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2"
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,

@@ -8054,7 +8054,7 @@ def test_generate_l2_campaign_task_adds_score32_exact_reduction_full_gqa8_rerank
                         "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
                         "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1",
                         "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
-                        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2",
+                        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3",
                     ],
                     requires_merged_inputs=True,
                     requires_materialized_refs=True,
@@ -8090,7 +8090,7 @@ def test_generate_l2_campaign_task_adds_score32_exact_reduction_full_gqa8_rerank
             )
             assert decoder_inputs["attention_score32_four_group_gqa8_equivalence_json"].endswith(
                 "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__"
-                "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2.json"
+                "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.json"
             )
             assert decoder_inputs["attention_score32_exact_reduction_gqa8_full_equivalence_rerank_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
@@ -8105,7 +8105,7 @@ def test_generate_l2_campaign_task_adds_score32_exact_reduction_full_gqa8_rerank
                     "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1",
                     "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1",
                     "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
-                    "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r2",
+                    "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3",
                 ],
                 "requires_merged_inputs": True,
                 "requires_materialized_refs": True,
