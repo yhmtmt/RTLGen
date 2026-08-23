@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_stats_once_transport_codec_ppa_v1",
+  "decision": "promote",
+  "pr_number": 1727,
+  "merge_commit": "e290b5e284ff1a39b84c707d76107abec23bb6b1",
+  "merged_utc": "2026-08-23T23:22:44.175977Z"
+}

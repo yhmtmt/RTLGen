@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_attention_score32_exact_stats_once_transport_codec_ppa_v1",
-  "source_commit": "TBD",
+  "source_commit": "3db4f8efc2b7ead6257b09d4d1df9e070f8bb6b1",
   "requested_items": [
     {
       "item_id": "l1_attention_score32_exact_stats_once_transport_codec_ppa_v1",
@@ -17,7 +17,7 @@
         "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/metrics.csv",
         "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/metrics.csv"
       ],
-      "status": "pending_after_proposal_merge",
+      "status": "merged",
       "comparison_role": "phase2_exact_transport_matched_codec_tradeoff",
       "paired_baseline_item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1",
       "depends_on_item_ids": [],
@@ -27,7 +27,11 @@
         "direction": "measure_exact_stats_once_codec_tradeoff",
         "reason": "Determine whether 34.8 percent fewer exact transport flits outweigh bounded-reservoir codec cost at 15-pair architecture scale."
       },
-      "acceptance_notes": "Require exact round-trip, matched generated hierarchy, and paired timing-feasible rows from the same source/tool settings. Keep endpoint, mesh, SRAM, reducer, root tree, and HBM outside this PPA claim."
+      "acceptance_notes": "Require exact round-trip, matched generated hierarchy, and paired timing-feasible rows from the same source/tool settings. Keep endpoint, mesh, SRAM, reducer, root tree, and HBM outside this PPA claim.",
+      "merged_pr_number": 1727,
+      "merge_commit": "e290b5e284ff1a39b84c707d76107abec23bb6b1",
+      "merged_utc": "2026-08-23T23:22:44.175977Z",
+      "notes": "Merged via PR #1727 and merge e290b5e284ff1a39b84c707d76107abec23bb6b1 at 2026-08-23T23:22:44.175977Z."
     }
   ]
 }

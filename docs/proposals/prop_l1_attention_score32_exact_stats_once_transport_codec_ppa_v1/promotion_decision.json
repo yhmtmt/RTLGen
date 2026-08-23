@@ -1,6 +1,15 @@
 {
   "proposal_id": "prop_l1_attention_score32_exact_stats_once_transport_codec_ppa_v1",
-  "decision": "pending_evaluation",
-  "reason": "Exact RTL exists, but the matched Nangate45 codec tradeoff has not been measured.",
-  "next_action": "run l1_attention_score32_exact_stats_once_transport_codec_ppa_v1"
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #1727 for the current candidate.",
+  "next_action": "inspect the next dependent item",
+  "candidate_id": "l1_attention_score32_exact_stats_once_transport_codec_ppa_v1",
+  "evidence_refs": [
+    "item:l1_attention_score32_exact_stats_once_transport_codec_ppa_v1",
+    "run:l1_attention_score32_exact_stats_once_transport_codec_ppa_v1_run_124cac9c70f2e42a",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_attention_score32_exact_stats_once_transport_codec_ppa_v1.json",
+    "pr:#1727",
+    "https://github.com/yhmtmt/RTLGen/pull/1727"
+  ],
+  "requires_human_approval": false
 }
