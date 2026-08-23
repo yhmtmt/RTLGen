@@ -71,6 +71,7 @@ VERILATOR_BUILD_JOBS = 3
 VERILATOR_CONTROL_FILE_NAME = "verilator_hier.vlt"
 VERILATOR_BINARY_NAME = "simv"
 DEFAULT_VERILATOR_COMPILE_TIMEOUT_SEC = 1200
+DEFAULT_PRODUCER_JOBS = 1
 ROWS_PER_STREAM = ROWS_PER_BUFFER // STREAMS
 
 EXPECTED_TOTALS = {
@@ -555,6 +556,7 @@ def _sim_backend_metadata(
     top_name: str,
     compile_timeout_sec: int,
     simulation_timeout_sec: int,
+    producer_jobs: int = DEFAULT_PRODUCER_JOBS,
 ) -> JsonDict:
     metadata: JsonDict = {
         "compile_tool": "verilator" if sim_backend == VERILATOR_HIERARCHICAL_BACKEND else "iverilog",
@@ -591,7 +593,7 @@ def _sim_backend_metadata(
                     "local_reducer_temporal_merge",
                     "global_tree",
                 ],
-                "producer_replay_parallelism": 1,
+                "producer_replay_parallelism": int(producer_jobs),
                 "avoids_cluster_wrapper_elaboration": True,
             }
         )
@@ -1267,6 +1269,7 @@ def build_report(
     timeout_sec: int = DEFAULT_SUBPROCESS_TIMEOUT_SEC,
     compile_timeout_sec: int | None = None,
     sim_backend: str = DEFAULT_SIM_BACKEND,
+    producer_jobs: int = DEFAULT_PRODUCER_JOBS,
     proposal_id: str | None = None,
     proposal_path: str | None = None,
 ) -> JsonDict:
@@ -1288,6 +1291,9 @@ def build_report(
     resolved_groups = int(logical_head_groups)
     if resolved_groups < 1 or resolved_groups > MAX_LOGICAL_HEAD_GROUPS:
         raise ValueError(f"logical_head_groups must be in [1, {MAX_LOGICAL_HEAD_GROUPS}]")
+    resolved_producer_jobs = int(producer_jobs)
+    if resolved_producer_jobs < 1:
+        raise ValueError("producer_jobs must be positive")
     reference = _reference(logical_head_groups=resolved_groups)
     simulation_status = "ok"
     returncode: int | None = 0
@@ -1330,6 +1336,7 @@ def build_report(
                     output_ready_pattern=tuple(bool(value) for value in output_ready_pattern),
                     compile_timeout_sec=resolved_compile_timeout_sec,
                     simulation_timeout_sec=int(timeout_sec),
+                    producer_jobs=resolved_producer_jobs,
                 )
                 simulation_status = str(compositional["simulation_status"])
                 returncode = int(compositional["returncode"])
@@ -1493,6 +1500,7 @@ def build_report(
                 top_name=str(resolved_config["top_name"]),
                 compile_timeout_sec=resolved_compile_timeout_sec,
                 simulation_timeout_sec=int(timeout_sec),
+                producer_jobs=resolved_producer_jobs,
             ),
             "compositional_components": component_metadata,
             "component_phase_records": phase_records,
@@ -1572,6 +1580,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout-sec", type=int, default=DEFAULT_SUBPROCESS_TIMEOUT_SEC)
     parser.add_argument("--compile-timeout-sec", type=int)
     parser.add_argument("--sim-backend", choices=SIM_BACKEND_CHOICES, default=DEFAULT_SIM_BACKEND)
+    parser.add_argument("--producer-jobs", type=int, default=DEFAULT_PRODUCER_JOBS)
     parser.add_argument("--proposal-id", type=str)
     parser.add_argument("--proposal-path", type=str)
     parser.add_argument("--out", type=Path)
@@ -1587,6 +1596,7 @@ def main(argv: list[str] | None = None) -> int:
         timeout_sec=args.timeout_sec,
         compile_timeout_sec=args.compile_timeout_sec,
         sim_backend=str(args.sim_backend),
+        producer_jobs=int(args.producer_jobs),
         proposal_id=str(args.proposal_id or "").strip() or None,
         proposal_path=str(args.proposal_path or "").strip() or None,
     )
@@ -1601,6 +1611,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 __all__ = [
+    "DEFAULT_PRODUCER_JOBS",
     "DEFAULT_ROOT_READY_PATTERN",
     "DEFAULT_SIM_BACKEND",
     "DEFAULT_SUBPROCESS_TIMEOUT_SEC",
