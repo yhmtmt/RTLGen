@@ -90,8 +90,14 @@ esac
 
 case "${ROLE}" in
   server)
-    echo "Developer/server role is not an execution node; worker/completion stay disabled unless started explicitly"
-    echo "Skipping completion loop autostart for server role"
+    echo "Developer/server role is not an execution node; worker stays disabled"
+    if [[ "${AUTOSTART_COMPLETIONS:-0}" == "1" ]]; then
+      export RTLCP_AUTODISPATCH_READY="${RTLCP_AUTODISPATCH_READY:-1}"
+      export RTLCP_PROCESS_COMPLETIONS_IN_LOOP="${RTLCP_PROCESS_COMPLETIONS_IN_LOOP:-1}"
+      /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start completions
+    else
+      echo "Skipping completion loop autostart for server role"
+    fi
     if [[ "${AUTOSTART_API:-1}" == "1" ]]; then
       /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start api
     else

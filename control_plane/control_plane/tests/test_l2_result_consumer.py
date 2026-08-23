@@ -206,6 +206,123 @@ def test_decoder_evidence_paths_recognizes_score32_noc_phase2_schedule(tmp_path:
     }
 
 
+def test_consume_l2_result_recognizes_score32_exact_transport_revision(
+    tmp_path: Path,
+) -> None:
+    evidence_rel = "runs/datasets/demo/score32_exact_transport_revision.json"
+    report_rel = "runs/datasets/demo/score32_exact_transport_revision.md"
+    evidence_payload = {
+        "profile": "decoder_attention_score32_noc_phase2_exact_transport_revision",
+        "decision": "prior_phase2_reduction_contract_retracted_exact_transport_required",
+        "revision": {"reason": "wrong_precision_and_release_contract"},
+        "exact_source": {
+            "clusters": 16,
+            "aggregate_beats_per_group_per_cluster": 128,
+            "partial_link_bits_per_beat": 419,
+        },
+        "prior_quantities": {"scheduled_flits": 100000},
+        "exact_transport_modes": [
+            {"name": "aligned_419b_two_flits_per_beat", "total_phase2_flits": 90000},
+            {"name": "stats_once_ordered_exact", "total_phase2_flits": 80000},
+        ],
+        "recommended_frontier_candidate": "stats_once_ordered_exact",
+        "remaining_abstractions": ["serializer PPA"],
+    }
+    _write(tmp_path / evidence_rel, json.dumps(evidence_payload) + "\n")
+    _write(tmp_path / report_rel, "# Exact transport revision\n")
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    item_id = "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1"
+
+    with Session(engine) as session:
+        task_request = TaskRequest(
+            request_key=f"l2_campaign:{item_id}",
+            source="test",
+            requested_by="@tester",
+            title="Layer2 exact transport revision",
+            description="Replace the invalid Phase-2 reduction transport.",
+            layer=LayerName.LAYER2,
+            flow=FlowName.OPENROAD,
+            priority=1,
+            request_payload={
+                "item_id": item_id,
+                "developer_loop": {
+                    "evaluation": {"mode": "frontier_detail"},
+                    "comparison": {"role": "phase2_exact_transport_revision"},
+                    "abstraction": {
+                        "layer": "decoder_attention_score32_noc_phase2_exact_transport"
+                    },
+                },
+            },
+            source_commit="deadbeef",
+        )
+        session.add(task_request)
+        session.flush()
+        work_item = WorkItem(
+            work_item_key=f"l2_campaign:{item_id}",
+            task_request_id=task_request.id,
+            item_id=item_id,
+            layer=LayerName.LAYER2,
+            flow=FlowName.OPENROAD,
+            platform="nangate45",
+            task_type="l2_campaign",
+            state=WorkItemState.ARTIFACT_SYNC,
+            priority=1,
+            source_mode="src_verilog",
+            input_manifest={
+                "decoder_contract": {
+                    "attention_score32_exact_transport_revision_out": evidence_rel,
+                    "attention_score32_exact_transport_revision_report": report_rel,
+                }
+            },
+            command_manifest=[],
+            expected_outputs=[evidence_rel, report_rel],
+            acceptance_rules=[],
+            source_commit="deadbeef",
+        )
+        session.add(work_item)
+        session.flush()
+        session.add(
+            Run(
+                run_key=f"{item_id}_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                result_summary="2/2 commands succeeded",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+        )
+        session.commit()
+
+        result = consume_l2_result(
+            session,
+            Layer2ConsumeRequest(repo_root=str(tmp_path), item_id=item_id),
+        )
+
+        assert result.recommended_arch_id == (
+            "decoder_attention_score32_noc_phase2_exact_transport"
+        )
+        assert result.recommended_macro_mode == "evidence_only"
+        decision_path = (
+            tmp_path
+            / "control_plane"
+            / "shadow_exports"
+            / "l2_decisions"
+            / f"{item_id}.json"
+        )
+        decision = json.loads(decision_path.read_text(encoding="utf-8"))
+        assert decision["proposal_assessment"]["outcome"] == evidence_payload["decision"]
+        assert decision["decoder_quality"]["exact_source"] == evidence_payload["exact_source"]
+        assert decision["source_refs"][
+            "decoder_attention_score32_exact_transport_revision_out"
+        ] == evidence_rel
+        assert "best_point_json" not in decision["source_refs"]
+
+
 def test_decoder_evidence_paths_recognizes_score32_noc_composed_mesh_reroute(tmp_path: Path) -> None:
     evidence_rel = "runs/datasets/demo/score32_noc_composed_mesh_reroute.json"
     report_rel = "runs/datasets/demo/score32_noc_composed_mesh_reroute.md"

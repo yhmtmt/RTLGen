@@ -591,6 +591,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
         "attention_score32_noc_phase2_schedule_report",
     ),
     (
+        "attention_score32_exact_transport_revision_out",
+        "attention_score32_exact_transport_revision_report",
+    ),
+    (
         "attention_score32_noc_phase2_composed_mesh_reroute_out",
         "attention_score32_noc_phase2_composed_mesh_reroute_report",
     ),
@@ -861,6 +865,12 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
         "comparison_limits",
         "next_measurements",
         "schedule",
+        "revision",
+        "exact_source",
+        "prior_quantities",
+        "exact_transport_modes",
+        "recommended_first_implementation",
+        "recommended_frontier_candidate",
         "physical_accounting",
         "boundary_evidence",
         "composition_quantities",
@@ -1231,6 +1241,36 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
                 "collision_free_reuse_proven="
                 f"{tag_semantics.get('collision_free_reuse_proven')}"
             )
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+    if (
+        str(evidence_payload.get("profile", "")).strip()
+        == "decoder_attention_score32_noc_phase2_exact_transport_revision"
+    ):
+        outcome = str(
+            evidence_payload.get("decision")
+            or "prior_phase2_reduction_contract_retracted_exact_transport_required"
+        )
+        exact_source = dict(evidence_payload.get("exact_source") or {})
+        prior = dict(evidence_payload.get("prior_quantities") or {})
+        modes = [
+            row
+            for row in (evidence_payload.get("exact_transport_modes") or [])
+            if isinstance(row, dict)
+        ]
+        mode_flits = ",".join(
+            f"{row.get('name')}:{row.get('total_phase2_flits')}"
+            for row in modes
+        )
+        parts = [
+            f"Decoder score32 Phase-2 exact transport revision recorded from {evidence_ref}: decision={outcome}",
+            f"clusters={exact_source.get('clusters')}",
+            f"aggregate_beats_per_group_per_cluster={exact_source.get('aggregate_beats_per_group_per_cluster')}",
+            f"partial_link_bits_per_beat={exact_source.get('partial_link_bits_per_beat')}",
+            f"prior_scheduled_flits={prior.get('scheduled_flits')}",
+            f"exact_mode_flits={mode_flits}",
+            f"recommended_frontier_candidate={evidence_payload.get('recommended_frontier_candidate')}",
+        ]
         summary = "; ".join(parts)
         return outcome, summary if summary.endswith(".") else summary + "."
 

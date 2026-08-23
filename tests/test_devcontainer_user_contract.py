@@ -125,6 +125,39 @@ def test_server_starts_api_before_resolver() -> None:
     assert server_case.index("start api") < server_case.index("start resolver")
 
 
+def test_server_honors_completion_autostart_and_enables_dispatch() -> None:
+    startup = (DEVCONTAINER / "start_control_plane_services.sh").read_text(
+        encoding="utf-8"
+    )
+    server_case = startup.rsplit("  server)", maxsplit=1)[1].split(
+        "    ;;", maxsplit=1
+    )[0]
+
+    assert '${AUTOSTART_COMPLETIONS:-0}' in server_case
+    assert 'export RTLCP_AUTODISPATCH_READY="${RTLCP_AUTODISPATCH_READY:-1}"' in server_case
+    assert (
+        'export RTLCP_PROCESS_COMPLETIONS_IN_LOOP='
+        '"${RTLCP_PROCESS_COMPLETIONS_IN_LOOP:-1}"'
+    ) in server_case
+    assert "start completions" in server_case
+
+
+def test_maintenance_loop_helpers_are_executable() -> None:
+    maintenance = (DEVCONTAINER / "run_maintenance_loop.sh").read_text(
+        encoding="utf-8"
+    )
+    scripts = REPO_ROOT / "control_plane" / "scripts"
+
+    for script_name in (
+        "dispatch_ready_items_service.sh",
+        "poll_github_service.sh",
+        "refresh_blocked_dependents_service.sh",
+        "report_failure_issues_service.sh",
+    ):
+        assert script_name in maintenance
+        assert (scripts / script_name).stat().st_mode & 0o111
+
+
 def test_service_bootstrap_rejects_stale_image_helper_before_starting_daemons() -> None:
     startup = (DEVCONTAINER / "start_control_plane_services.sh").read_text(
         encoding="utf-8"
