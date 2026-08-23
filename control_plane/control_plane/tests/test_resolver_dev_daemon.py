@@ -799,6 +799,12 @@ def test_dev_resolver_continues_after_retryable_github_error() -> None:
         "control_plane.services.resolver_dev_daemon.fetch_issue",
         side_effect=[ResolverIssueBridgeCommandError("gh api failed"), type("Issue", (), {"state": "open"})()],
     ) as fetch_mock, patch(
+        "control_plane.services.resolver_dev_daemon.open_issue_for_case",
+        return_value=ResolverIssueCreateResult(
+            issue_number=179,
+            issue_url="https://github.com/yhmtmt/RTLGen/issues/179",
+        ),
+    ) as open_issue_mock, patch(
         "control_plane.services.resolver_dev_daemon.time.sleep"
     ), patch.object(engine, "dispose") as dispose_mock:
         result = run_dev_resolver(
@@ -809,6 +815,7 @@ def test_dev_resolver_continues_after_retryable_github_error() -> None:
 
     assert result.poll_count == 2
     assert fetch_mock.call_count >= 1
+    assert open_issue_mock.call_count == 1
     assert dispose_mock.call_count == 1
     assert any("resolver-dev db_unavailable" in message for message in log_messages)
 

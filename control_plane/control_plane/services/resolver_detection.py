@@ -52,6 +52,14 @@ _VOLATILE_EVIDENCE_FIELDS = {
 }
 
 
+def normalized_evidence_hash(failure_class: str, evidence: dict[str, Any]) -> str:
+    stable_evidence = dict(evidence)
+    for field in _VOLATILE_EVIDENCE_FIELDS.get(failure_class, ()):
+        stable_evidence.pop(field, None)
+    payload = json.dumps(stable_evidence, sort_keys=True, default=str).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
 def _latest_run(session: Session, work_item_id: str) -> Run | None:
     return (
         session.query(Run)
@@ -112,11 +120,7 @@ class ResolverDetection:
 
     @property
     def evidence_hash(self) -> str:
-        stable_evidence = dict(self.evidence)
-        for field in _VOLATILE_EVIDENCE_FIELDS.get(self.failure_class, ()):
-            stable_evidence.pop(field, None)
-        payload = json.dumps(stable_evidence, sort_keys=True, default=str).encode("utf-8")
-        return hashlib.sha256(payload).hexdigest()
+        return normalized_evidence_hash(self.failure_class, self.evidence)
 
 
 def _latest_event(session: Session, run_id: str) -> RunEvent | None:

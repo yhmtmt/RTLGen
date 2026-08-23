@@ -13,7 +13,7 @@ from control_plane.clock import utcnow
 from control_plane.models.resolver_actions import ResolverAction
 from control_plane.models.resolver_cases import ResolverCase
 from control_plane.models.resolver_observations import ResolverObservation
-from control_plane.services.resolver_detection import ResolverDetection
+from control_plane.services.resolver_detection import ResolverDetection, normalized_evidence_hash
 
 _ACTIVE_CASE_STATUSES = ("open", "diagnosing", "fix_in_progress", "awaiting_remote", "awaiting_retry")
 
@@ -76,15 +76,19 @@ def upsert_case_from_detection(session: Session, detection: ResolverDetection) -
         session.commit()
         return CaseUpsertResult(case=case, created=True, evidence_changed=True, evidence_hash=evidence_hash)
 
-    evidence_changed = case.last_evidence_hash != evidence_hash
+    stored_evidence_hash = normalized_evidence_hash(
+        case.failure_class or detection.failure_class,
+        case.evidence_json if isinstance(case.evidence_json, dict) else {},
+    )
+    evidence_changed = stored_evidence_hash != evidence_hash
     case.latest_item_id = detection.item_id
     case.latest_run_key = detection.run_key
     case.machine_key = detection.machine_key
     case.source_commit = detection.source_commit
     case.repo_root = detection.repo_root
+    case.evidence_json = detection.evidence
+    case.last_evidence_hash = evidence_hash
     if evidence_changed:
-        case.evidence_json = detection.evidence
-        case.last_evidence_hash = evidence_hash
         session.add(
             ResolverObservation(
                 case_id=case.id,
