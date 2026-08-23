@@ -9,7 +9,7 @@
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_score32_finite_endpoint_final_frontier",
       "comparison_role": "frontier_decision",
-      "status": "pending_after_dependency_merge",
+      "status": "retracted",
       "depends_on_item_ids": [
         "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1"
       ],
@@ -19,7 +19,11 @@
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_finite_endpoint_final_frontier__l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1.json",
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_finite_endpoint_final_frontier__l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1.md"
       ],
-      "acceptance_notes": "Separate arithmetic from structural quality. Reject Mistral-7B GQA4 evidence as structural proof for GQA8 hardware, keep invalid and planning-only rows out of promotion, and report engineering Pareto metrics separately from the promotable exact-model frontier."
+      "acceptance_notes": "Separate arithmetic from structural quality. Reject Mistral-7B GQA4 evidence as structural proof for GQA8 hardware, keep invalid and planning-only rows out of promotion, and report engineering Pareto metrics separately from the promotable exact-model frontier.",
+      "retracted_utc": "2026-08-23T23:10:07.386179Z",
+      "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+      "retraction_reason": "wrong_precision_and_release_contract",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json"
     }
   ]
 }

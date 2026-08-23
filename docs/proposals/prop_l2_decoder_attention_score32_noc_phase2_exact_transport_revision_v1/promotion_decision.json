@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_exact_transport_revision_v1",
+  "candidate_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder score32 Phase-2 exact transport revision recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json: decision=prior_phase2_reduction_contract_retracted_exact_transport_required; clusters=16; aggregate_beats_per_group_per_cluster=128; partial_link_bits_per_beat=419; prior_scheduled_flits=92128; exact_mode_flits=aligned_419b_two_flits_per_beat:76288,packed_419b_group_bitstream:73528,stats_once_ordered_exact:70948; recommended_frontier_candidate=stats_once_ordered_exact.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+    "run:l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1_run_d967025f30c2b44d",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json",
+    "pr:#1728",
+    "https://github.com/yhmtmt/RTLGen/pull/1728"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+  "requires_human_approval": false,
+  "revision": {
+    "reason": "wrong_precision_and_release_contract",
+    "invalidated_item_ids": [
+      "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+      "l1_noc_llama7b_phase2_command_scheduler_v1",
+      "l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1",
+      "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1",
+      "l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1"
+    ],
+    "replacement_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1"
+  }
+}

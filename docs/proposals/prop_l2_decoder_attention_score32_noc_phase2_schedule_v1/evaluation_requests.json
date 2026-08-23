@@ -50,12 +50,16 @@
       },
       "paired_baseline_item_id": "",
       "depends_on_item_ids": [],
-      "status": "merged",
+      "status": "retracted",
       "supersedes_item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1",
       "merged_pr_number": 1670,
       "merge_commit": "c5285382fc6e6da31f747aaa40a2fe610253c042",
       "merged_utc": "2026-08-16T10:20:36.454891Z",
-      "notes": "Merged via PR #1670 and merge c5285382fc6e6da31f747aaa40a2fe610253c042 at 2026-08-16T10:20:36.454891Z."
+      "notes": "Merged via PR #1670 and merge c5285382fc6e6da31f747aaa40a2fe610253c042 at 2026-08-16T10:20:36.454891Z.",
+      "retracted_utc": "2026-08-23T23:10:07.386179Z",
+      "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+      "retraction_reason": "wrong_precision_and_release_contract",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json"
     }
   ],
   "source_commit": "b6cff4447a0f71a7e5c6e45a452f4475517c9e47"

@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_exact_transport_revision_v1",
-  "source_commit": "TBD",
+  "source_commit": "1c99dd823b2faf28ac2e0f230b45c842db437ba5",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
@@ -13,7 +13,7 @@
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json",
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.md"
       ],
-      "status": "pending_after_proposal_merge",
+      "status": "merged",
       "comparison_role": "phase2_exact_transport_revision",
       "paired_baseline_item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
       "depends_on_item_ids": [],
@@ -37,7 +37,12 @@
         "direction": "retract_and_replace_phase2_reduction_transport",
         "reason": "Use actual 419-bit exact aggregate beats and group-major release before any NoC PPA or frontier recost."
       },
-      "acceptance_notes": "Require the checked exact manifest fields clusters=16, partial_link_bits_per_beat=419, partial_payload_bits_per_beat=328, four groups, eight local waves, and 128 aggregate beats per group. Record aligned, packed, and stats-once exact quantities and explicit revision metadata."
+      "acceptance_notes": "Require the checked exact manifest fields clusters=16, partial_link_bits_per_beat=419, partial_payload_bits_per_beat=328, four groups, eight local waves, and 128 aggregate beats per group. Record aligned, packed, and stats-once exact quantities and explicit revision metadata.",
+      "merged_pr_number": 1728,
+      "merge_commit": "075aa2d4a2b6476aef887a7cf9b627a69aa79891",
+      "merged_utc": "2026-08-23T23:10:07.386098Z",
+      "notes": "Merged via PR #1728 and merge 075aa2d4a2b6476aef887a7cf9b627a69aa79891 at 2026-08-23T23:10:07.386098Z.",
+      "revision_of_decision": "pending"
     }
   ]
 }

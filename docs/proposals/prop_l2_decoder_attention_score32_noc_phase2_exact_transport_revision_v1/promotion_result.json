@@ -1,0 +1,19 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_phase2_exact_transport_revision_v1",
+  "decision": "iterate",
+  "pr_number": 1728,
+  "merge_commit": "075aa2d4a2b6476aef887a7cf9b627a69aa79891",
+  "merged_utc": "2026-08-23T23:10:07.386098Z",
+  "revision": {
+    "reason": "wrong_precision_and_release_contract",
+    "invalidated_item_ids": [
+      "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+      "l1_noc_llama7b_phase2_command_scheduler_v1",
+      "l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1",
+      "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1",
+      "l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1"
+    ],
+    "replacement_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+    "previous_decision": "pending"
+  }
+}

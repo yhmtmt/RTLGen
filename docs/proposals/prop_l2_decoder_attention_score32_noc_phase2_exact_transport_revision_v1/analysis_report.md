@@ -1,0 +1,32 @@
+# Analysis Report
+
+## Candidate
+- `proposal_id`: `prop_l2_decoder_attention_score32_noc_phase2_exact_transport_revision_v1`
+- `candidate_id`: `l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1`
+
+## Evaluations Consumed
+- `l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1`
+- `l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1_run_d967025f30c2b44d`
+- source commit: `1c99dd823b2faf28ac2e0f230b45c842db437ba5`
+- review: PR #1728
+
+## Baseline Comparison
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `prior_phase2_reduction_contract_retracted_exact_transport_required`
+- summary: Decoder score32 Phase-2 exact transport revision recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json: decision=prior_phase2_reduction_contract_retracted_exact_transport_required; clusters=16; aggregate_beats_per_group_per_cluster=128; partial_link_bits_per_beat=419; prior_scheduled_flits=92128; exact_mode_flits=aligned_419b_two_flits_per_beat:76288,packed_419b_group_bitstream:73528,stats_once_ordered_exact:70948; recommended_frontier_candidate=stats_once_ordered_exact.
+
+## Result
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Decoder score32 Phase-2 exact transport revision recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json: decision=prior_phase2_reduction_contract_retracted_exact_transport_required; clusters=16; aggregate_beats_per_group_per_cluster=128; partial_link_bits_per_beat=419; prior_scheduled_flits=92128; exact_mode_flits=aligned_419b_two_flits_per_beat:76288,packed_419b_group_bitstream:73528,stats_once_ordered_exact:70948; recommended_frontier_candidate=stats_once_ordered_exact.
+
+## Failures and Caveats
+- no additional caveats recorded during automatic finalization
+
+## Recommendation
+- `iterate`
+- reason: Decoder score32 Phase-2 exact transport revision recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_exact_transport_revision__l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json: decision=prior_phase2_reduction_contract_retracted_exact_transport_required; clusters=16; aggregate_beats_per_group_per_cluster=128; partial_link_bits_per_beat=419; prior_scheduled_flits=92128; exact_mode_flits=aligned_419b_two_flits_per_beat:76288,packed_419b_group_bitstream:73528,stats_once_ordered_exact:70948; recommended_frontier_candidate=stats_once_ordered_exact.
+- next_action: inspect follow-on work after l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1

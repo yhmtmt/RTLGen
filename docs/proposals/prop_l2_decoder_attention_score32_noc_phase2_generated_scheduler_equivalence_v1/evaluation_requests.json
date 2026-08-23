@@ -25,7 +25,9 @@
       },
       "acceptance_notes": "Do not dispatch. The 11576-command/92128-flit workload uses the invalidated per-wave 16-bit reduction contract.",
       "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
-      "retraction_reason": "wrong_precision_and_release_contract"
+      "retraction_reason": "wrong_precision_and_release_contract",
+      "retracted_utc": "2026-08-23T23:10:07.386179Z",
+      "replacement_artifact": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1.json"
     }
   ]
 }
