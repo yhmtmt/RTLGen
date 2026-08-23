@@ -109,6 +109,57 @@ def test_storage_binding_matches_embodied_adapter_ownership() -> None:
     assert all(command.storage_binding == "external_shared_sram_residency_completion" for command in shared)
 
 
+def test_shared_context_preserves_producer_addresses_and_variable_packet_count() -> None:
+    commands = derive_commands(
+        [
+            ReadinessEvent.shared(
+                wave=0,
+                cluster=3,
+                cycle=7,
+                source_base_addr=0x0100_3000,
+                destination_base_addr=0x0200_3000,
+                packet_count=3,
+            )
+        ]
+    )
+
+    assert len(commands) == 1
+    command = commands[0]
+    assert command.packet_count == 3
+    assert command.flit_count == 24
+    assert command.source_base_addr == 0x0100_3000
+    assert command.destination_base_addr == 0x0200_3000
+    assert command.metadata["source_base_addr"] == 0x0100_3000
+
+    legacy_mapping = derive_commands(
+        [{"kind": "shared", "wave": 0, "cluster": 0, "cycle": 0}]
+    )[0]
+    assert legacy_mapping.packet_count == 68
+
+
+@pytest.mark.parametrize(
+    "event",
+    [
+        ReadinessEvent.shared(wave=0, cluster=0, cycle=0, packet_count=0),
+        ReadinessEvent.shared(
+            wave=0,
+            cluster=0,
+            cycle=0,
+            source_base_addr=0x101,
+        ),
+        ReadinessEvent.shared(
+            wave=0,
+            cluster=0,
+            cycle=0,
+            destination_base_addr=-256,
+        ),
+    ],
+)
+def test_shared_context_rejects_invalid_physical_metadata(event: ReadinessEvent) -> None:
+    with pytest.raises(SchedulerError):
+        ExactPhase2CommandScheduler([event])
+
+
 def test_round_robin_context_arbitration_is_deterministic_and_fair() -> None:
     events = (
         ReadinessEvent.shared(wave=0, cluster=0, cycle=0),
