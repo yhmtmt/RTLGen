@@ -2,13 +2,13 @@
 
 ## Candidate
 - `proposal_id`: `prop_l1_attention_shared_sram_read_group_adapter_ppa_v1`
-- `candidate_id`: `l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1`
+- `candidate_id`: `l1_attention_shared_sram_read_group_adapter_w512_s1_ppa_v1`
 
 ## Evaluations Consumed
-- `l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1`
-- `l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1_run_fb7fd5f9e6d02f87`
+- `l1_attention_shared_sram_read_group_adapter_w512_s1_ppa_v1`
+- `l1_attention_shared_sram_read_group_adapter_w512_s1_ppa_v1_run_721afc1e20d522d6`
 - source commit: `8886192007592abc57a8e1928d8c3122462b6922`
-- review: PR #1737
+- review: PR #1739
 
 ## Baseline Comparison
 - not applicable
@@ -25,5 +25,5 @@
 
 ## Recommendation
 - `promote`
-- reason: Accepted Layer 1 physical metrics were merged in PR #1737 for the current candidate.
+- reason: Accepted Layer 1 physical metrics were merged in PR #1739 for the current candidate.
 - next_action: inspect the next dependent item

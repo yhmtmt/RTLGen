@@ -67,9 +67,13 @@
         "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w512_s1/metrics.csv",
         "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w512_s1/timing_debug_report.md"
       ],
-      "status": "pending_after_proposal_merge",
+      "status": "merged",
       "requires_merged_inputs": true,
-      "requires_materialized_refs": true
+      "requires_materialized_refs": true,
+      "merged_pr_number": 1739,
+      "merge_commit": "dc3f92f962060dde92b5081a026cd759465de42e",
+      "merged_utc": "2026-08-23T23:44:54.010778Z",
+      "notes": "Merged via PR #1739 and merge dc3f92f962060dde92b5081a026cd759465de42e at 2026-08-23T23:44:54.010778Z."
     },
     {
       "item_id": "l1_attention_shared_sram_read_group_adapter_w512_s2_ppa_v1",
