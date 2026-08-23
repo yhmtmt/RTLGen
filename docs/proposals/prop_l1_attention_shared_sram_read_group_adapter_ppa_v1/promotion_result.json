@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_attention_shared_sram_read_group_adapter_ppa_v1",
   "decision": "promote",
-  "pr_number": 1736,
-  "merge_commit": "b11926a2e7a9ac5e59be2f2cfd5dce006b3a0347",
-  "merged_utc": "2026-08-23T23:44:44.042139Z"
+  "pr_number": 1737,
+  "merge_commit": "a75e45ae103166275334b5125958549c04821818",
+  "merged_utc": "2026-08-23T23:44:49.091409Z"
 }

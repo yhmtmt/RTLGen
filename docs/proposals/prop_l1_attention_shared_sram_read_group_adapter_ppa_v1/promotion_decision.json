@@ -1,14 +1,14 @@
 {
   "proposal_id": "prop_l1_attention_shared_sram_read_group_adapter_ppa_v1",
-  "candidate_id": "l1_attention_shared_sram_read_group_adapter_w256_s1_ppa_v1",
+  "candidate_id": "l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1",
   "decision": "promote",
-  "reason": "Accepted Layer 1 physical metrics were merged in PR #1736 for the current candidate.",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #1737 for the current candidate.",
   "evidence_refs": [
-    "item:l1_attention_shared_sram_read_group_adapter_w256_s1_ppa_v1",
-    "run:l1_attention_shared_sram_read_group_adapter_w256_s1_ppa_v1_run_0131f27dbfc84100",
-    "artifact:control_plane/shadow_exports/l1_promotions/l1_attention_shared_sram_read_group_adapter_w256_s1_ppa_v1.json",
-    "pr:#1736",
-    "https://github.com/yhmtmt/RTLGen/pull/1736"
+    "item:l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1",
+    "run:l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1_run_fb7fd5f9e6d02f87",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1.json",
+    "pr:#1737",
+    "https://github.com/yhmtmt/RTLGen/pull/1737"
   ],
   "next_action": "inspect the next dependent item",
   "requires_human_approval": false
