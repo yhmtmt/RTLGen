@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l1_attention_shared_stream_context_service_ppa_v1",
+  "created_utc": "2026-08-23T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Complete VC0 shared-stream context service physical calibration",
+  "abstraction_layer": "decoder_attention_shared_sram_context_transport",
+  "hypothesis": "The embodied 112-context admission, descriptor engine, sixteen packet endpoints, and 4x4 VC0 mesh provide a measurable dual-network baseline whose PPA can replace the analytic shared-transport allowance in the Llama7B Phase-2 frontier.",
+  "direct_comparison": {
+    "primary_question": "What timing, standard-cell area, and whole-harness power bound are required by the complete canonical VC0 service?",
+    "include": [
+      "112 producer-residency contexts",
+      "producer-supplied source and destination byte addresses",
+      "68 packets and 544 flits per context",
+      "sixteen descriptor-generating packet endpoints",
+      "bounded receive windows and completion-owned endpoint release",
+      "one real 4x4 deterministic-XY VC0 mesh",
+      "hierarchical area under composition/service/"
+    ],
+    "exclude": [
+      "source and destination SRAM bitcell capacity",
+      "VC1 exact reduction transport, which is measured separately",
+      "a zero-cost assumption for future VC0/VC1 mesh sharing",
+      "HBM/DRAM controller and off-chip service",
+      "workload-derived switching power"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l1_attention_shared_stream_context_service_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the complete canonical VC0 shared-SRAM context service on Nangate45.",
+      "status": "pending_implementation_merge",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_shared_sram_context_transport",
+      "comparison_role": "phase2_vc0_complete_service_physical_anchor",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_shared_stream_context_service_ppa_l1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_shared_stream_context_service_ppa_l1/sweeps/nangate45_canary.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_shared_stream_context_service_ppa_l1/metrics.csv",
+        "runs/designs/npu_blocks/attention_shared_stream_context_service_ppa_l1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_shared_stream_context_service_ppa_l1/hierarchy_reports/index.json"
+      ],
+      "expected_result": {
+        "direction": "replace_vc0_shared_transport_analytic_cost",
+        "reason": "Use the measured complete-service PPA with the separate exact VC1 canary to establish a fully embodied dual-network Phase-2 transport point before evaluating physical mesh sharing."
+      },
+      "acceptance_notes": "Require model-to-RTL context equivalence, exact address/payload/write-once checks, 112/7616/60928 manifest quantities, retained service hierarchy, and hierarchical area for each successful physical row. Treat total_power_mw as a whole-harness upper bound."
+    }
+  ],
+  "remaining_abstractions": [
+    "Source and destination SRAM capacity is accounted by separate macro evidence.",
+    "The first embodied point uses separate VC0 and VC1 meshes; a shared-mesh arbitration point remains to be built and compared.",
+    "HBM/DRAM service remains external by design.",
+    "Whole-harness vectorless power remains an upper bound."
+  ],
+  "source_refs": [
+    "npu/sim/rtl/attention_shared_stream_context_service.sv",
+    "npu/sim/rtl/attention_shared_stream_context_service_ppa_activity_harness.sv",
+    "npu/eval/model_llama7b_phase2_exact_command_scheduler.py",
+    "npu/docs/attention_phase2_shared_stream_transport_contract.md"
+  ]
+}
