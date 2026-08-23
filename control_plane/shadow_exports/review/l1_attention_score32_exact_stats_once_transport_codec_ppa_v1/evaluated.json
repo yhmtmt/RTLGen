@@ -1,0 +1,259 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/noc/l1_attention_score32_exact_matched_codec/sweeps/nangate45_macro_frontier.json"
+      ],
+      "configs": [
+        "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/config_l1_attention_score32_exact_matched_aligned_codec_w419_f256.json",
+        "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/config_l1_attention_score32_exact_matched_stats_once_codec_w419_f256.json"
+      ],
+      "out_root": "runs/designs/noc",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/config_l1_attention_score32_exact_matched_aligned_codec_w419_f256.json runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/config_l1_attention_score32_exact_matched_stats_once_codec_w419_f256.json --platform nangate45 --sweep runs/campaigns/noc/l1_attention_score32_exact_matched_codec/sweeps/nangate45_macro_frontier.json --out_root runs/designs/noc --force_gen --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "metadata": {
+      "acceptance_notes": "Require exact round-trip gates and paired feasible rows from identical source/tool settings; keep endpoint, mesh, SRAM, reducer, root tree, and HBM outside this claim."
+    },
+    "objective": "Measure paired Nangate45 timing, area, and power for exact aligned and stats-once aggregate codecs under identical canonical source and sink support.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/metrics.csv",
+      "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Measure matched exact aligned and stats-once codec PPA",
+  "result": {
+    "branch": "eval/l1_attention_score32_exact_stats_once_transport_codec_ppa_v1/s20260823t115702z",
+    "completed_utc": "2026-08-23T11:56:59.448749Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "1f709df75b2c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260823t115702z][host:1f709df75b2c][item:l1_attention_score32_exact_stats_once_transport_codec_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_9b900945",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "6fb817c7",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "34bad270",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "6819c5d8",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_9d2242d8",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "24a0127f",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_5e539e1b",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f2b50a0a",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_bd377f69",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "1dbda127",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_b5227391",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "6f34256c",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_d69b942d",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3fd1ecdd",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_87c8a58f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "e4d80f55",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_aligned_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_9b900945",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "6fb817c7",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "34bad270",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "6819c5d8",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_9d2242d8",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "24a0127f",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_5e539e1b",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f2b50a0a",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_bd377f69",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "1dbda127",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_b5227391",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "6f34256c",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_d69b942d",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3fd1ecdd",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_attention_score32_exact_matched_codec_nangate45_macro_frontier_87c8a58f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "e4d80f55",
+        "metrics_csv": "runs/designs/noc/l1_attention_score32_exact_matched_stats_once_codec_w419_f256_wrapper/metrics.csv"
+      }
+    ],
+    "queue_item_id": "l1_attention_score32_exact_stats_once_transport_codec_ppa_v1",
+    "session_id": "s20260823t115702z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_attention_score32_exact_stats_once_transport_codec_ppa_v1/s20260823t115702z",
+    "pr_title": "eval: run measure matched exact aligned and stats-once codec ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "1f709df75b2c",
+      "session_id": "s20260823t115702z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_attention_score32_exact_stats_once_transport_codec_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_attention_score32_exact_stats_once_transport_codec_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 100,
+  "created_utc": "2026-08-19T10:07:09.269757Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "phase2_exact_transport_matched_codec_tradeoff",
+      "paired_baseline_item_id": "l1_attention_score32_exact_aligned_transport_codec_ppa_v1"
+    },
+    "evaluation": {
+      "mode": "ppa",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "Determine whether 34.8 percent fewer exact transport flits outweigh bounded-reservoir codec cost at 15-pair architecture scale.",
+      "expected_direction": "measure_exact_stats_once_codec_tradeoff"
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_attention_score32_exact_stats_once_transport_codec_ppa_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l1_attention_score32_exact_stats_once_transport_codec_ppa_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "3db4f8efc2b7ead6257b09d4d1df9e070f8bb6b1",
+    "requires_daemon_restart": true
+  },
+  "generation_source_identity": {
+    "clean": true,
+    "proof": "generator_worktree_head_exact",
+    "version": 1,
+    "relation": "exact",
+    "repo_head_sha": "3db4f8efc2b7ead6257b09d4d1df9e070f8bb6b1",
+    "declared_source_commit": "3db4f8efc2b7ead6257b09d4d1df9e070f8bb6b1"
+  },
+  "task_type": "l1_sweep"
+}
