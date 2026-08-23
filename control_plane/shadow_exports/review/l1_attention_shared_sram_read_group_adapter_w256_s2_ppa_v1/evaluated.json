@@ -1,0 +1,185 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/attention_shared_sram_read_group_adapter_ppa_v1/sweeps/nangate45.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_shared_sram_read_group_adapter_ppa_harness.py --config runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/config.json --out runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/verilog",
+        "name": "generate_attention_shared_sram_read_group_adapter_ppa_harness_rtl"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_shared_sram_read_group_adapter_ppa_guard.py --design-dir runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2",
+        "name": "check_attention_shared_sram_read_group_adapter_ppa_guard"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2 --platform nangate45 --top attention_shared_sram_read_group_adapter_w256_s2 --sweep runs/campaigns/npu/attention_shared_sram_read_group_adapter_ppa_v1/sweeps/nangate45.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2 --out runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_shared_sram_read_group_adapter_ppa_harness_timing_paths"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure overlapped 256-bit shared-SRAM adaptation.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/metrics.csv",
+      "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Shared SRAM read group adapter w256 s2 PPA",
+  "result": {
+    "branch": "eval/l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1/s20260823t233357z",
+    "completed_utc": "2026-08-23T23:33:54.952999Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "1f709df75b2c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260823t233357z][host:1f709df75b2c][item:l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_shared_sram_read_group_adapter_ppa_v1_07ed8cb5",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "07ed8cb5",
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/work/07ed8cb5/result.json"
+      },
+      {
+        "tag": "attention_shared_sram_read_group_adapter_ppa_v1_3b1fff1f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3b1fff1f",
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/work/3b1fff1f/result.json"
+      },
+      {
+        "tag": "attention_shared_sram_read_group_adapter_ppa_v1_8574f558",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "8574f558",
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/work/8574f558/result.json"
+      },
+      {
+        "tag": "attention_shared_sram_read_group_adapter_ppa_v1_ea04ba90",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "ea04ba90",
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/work/ea04ba90/result.json"
+      },
+      {
+        "tag": "attention_shared_sram_read_group_adapter_ppa_v1_1fd76a90",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "1fd76a90",
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/work/1fd76a90/result.json"
+      },
+      {
+        "tag": "attention_shared_sram_read_group_adapter_ppa_v1_77ace606",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "77ace606",
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/work/77ace606/result.json"
+      }
+    ],
+    "queue_item_id": "l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1",
+    "session_id": "s20260823t233357z",
+    "status": "ok",
+    "summary": "6/6 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1/s20260823t233357z",
+    "pr_title": "eval: run shared sram read group adapter w256 s2 ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "1f709df75b2c",
+      "session_id": "s20260823t233357z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 79,
+  "created_utc": "2026-08-22T09:57:53.230220Z",
+  "requested_by": "@control_plane",
+  "developer_loop": {
+    "comparison": {
+      "role": "remote_throughput_candidate",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "physical_calibration",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "",
+      "expected_direction": ""
+    },
+    "abstraction": {
+      "layer": "decoder_attention_shared_sram_macro_port_adapter"
+    },
+    "proposal_id": "prop_l1_attention_shared_sram_read_group_adapter_ppa_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l1_attention_shared_sram_read_group_adapter_ppa_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "8886192007592abc57a8e1928d8c3122462b6922",
+    "requires_daemon_restart": true
+  },
+  "generation_source_identity": {
+    "clean": true,
+    "proof": "generator_worktree_head_exact",
+    "version": 1,
+    "relation": "exact",
+    "repo_head_sha": "8886192007592abc57a8e1928d8c3122462b6922",
+    "declared_source_commit": "8886192007592abc57a8e1928d8c3122462b6922"
+  },
+  "task_type": "l1_sweep"
+}
