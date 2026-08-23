@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 import tempfile
@@ -19,6 +20,7 @@ from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
 from control_plane.services.resolver_detection import (
+    ResolverDetection,
     detect_assigned_ready_source_mismatches,
     detect_blocked_submission_items,
     detect_orphaned_running_items,
@@ -426,6 +428,45 @@ def test_detect_assigned_ready_source_mismatch() -> None:
     assert detection.machine_key == "eval-source"
     assert detection.evidence["required_sha"] == "b" * 40
     assert detection.evidence["worker_head"] == "a" * 40
+
+
+def test_assigned_ready_source_mismatch_hash_ignores_heartbeat_only_change() -> None:
+    evidence = {
+        "item_id": "needs-source",
+        "required_sha": "b" * 40,
+        "worker_head": "a" * 40,
+        "last_seen_at": "2026-08-23T11:00:00+00:00",
+    }
+    first = ResolverDetection(
+        fingerprint="assigned_ready_source_mismatch:source_commit_unsatisfied",
+        failure_class="assigned_ready_source_mismatch",
+        owner="eval",
+        severity="high",
+        summary="source mismatch",
+        item_id="needs-source",
+        run_key="no_run",
+        machine_key="eval-source",
+        source_commit="b" * 40,
+        repo_root="/repo",
+        evidence=evidence,
+    )
+    second = replace(
+        first,
+        evidence={
+            **evidence,
+            "last_seen_at": "2026-08-23T11:01:00+00:00",
+        },
+    )
+    changed_source = replace(
+        first,
+        evidence={
+            **evidence,
+            "worker_head": "c" * 40,
+        },
+    )
+
+    assert first.evidence_hash == second.evidence_hash
+    assert first.evidence_hash != changed_source.evidence_hash
 
 
 def test_detect_assigned_ready_source_mismatch_skips_matching_head() -> None:

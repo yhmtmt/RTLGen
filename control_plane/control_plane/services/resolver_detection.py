@@ -47,6 +47,10 @@ _SUBMISSION_RECENT_PROGRESS_EVENT_TYPES = {
     "submission_prepared",
 }
 
+_VOLATILE_EVIDENCE_FIELDS = {
+    "assigned_ready_source_mismatch": frozenset({"last_seen_at"}),
+}
+
 
 def _latest_run(session: Session, work_item_id: str) -> Run | None:
     return (
@@ -108,7 +112,10 @@ class ResolverDetection:
 
     @property
     def evidence_hash(self) -> str:
-        payload = json.dumps(self.evidence, sort_keys=True, default=str).encode("utf-8")
+        stable_evidence = dict(self.evidence)
+        for field in _VOLATILE_EVIDENCE_FIELDS.get(self.failure_class, ()):
+            stable_evidence.pop(field, None)
+        payload = json.dumps(stable_evidence, sort_keys=True, default=str).encode("utf-8")
         return hashlib.sha256(payload).hexdigest()
 
 
