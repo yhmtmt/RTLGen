@@ -1,0 +1,133 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.json",
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_scope": "Run the bounded fine-grained concrete compositional four-head-group RTL equivalence probe under exclusive resources. Require the strict generated-top guard, bounded three-way exact single-producer replays, concrete p54/p53 SRAM endpoint and reducer/temporal-merge replays, and concrete global-tree simulation with exact producer/fill/SRAM/root counts, rotated 0/8/16/24 ownership, zero protocol errors, and full row audits.",
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_config": "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/config.json",
+        "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.md"
+      },
+      "worker_resources": {
+        "cpu_quota": "300%",
+        "tasks_max": 512,
+        "memory_max": "8G",
+        "memory_high": "6G",
+        "exclusive_worker": true,
+        "outer_timeout_seconds": 7200,
+        "stall_timeout_seconds": 1500
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 control_plane/scripts/run_bounded_command.py --memory-high 6G --memory-max 8G --cpu-quota 300% --tasks-max 512 --runtime-max-sec 7200 -- python3 npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py --config runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/config.json --sim-backend fine_compositional_icarus --compile-timeout-sec 1200 --logical-head-groups 4 --producer-jobs 3 --timeout-sec 3600 --root-ready-pattern 1,1,0,1 --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.md --proposal-id prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1 --proposal-path docs/proposals/prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1/proposal.json",
+        "name": "probe_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Replace the inconclusive serial timeout with exact full-128D score accumulation proof across GQA8 head bases 0, 8, 16, and 24 using bounded independent producer replay parallelism.",
+    "acceptance": [
+      "Write exactly the bounded JSON and Markdown probe reports declared in expected_outputs",
+      "Require report passed=true, classification=passed, and counts_passed=true",
+      "Require report head_dimension=128 and score_accumulation_beats_per_block=128",
+      "Require compositional_components.strict_generated_top_guard=passed",
+      "Require compositional_components.producer_replay_parallelism=3",
+      "Require compositional_components.global_sidecar.value_packing=canonical_pack_numerators",
+      "Require exact totals in report.summary: producer_handshake_count=4194304, fill_target_accept_count=512, fill_row_accept_count=1048576, sram_request_accept_count=1048576, sram_response_accept_count=1048576, cluster_row_count=8192, root_row_count=512, command_accept_count=32, cadence_command_accept_count=32, protocol_error=0",
+      "Require 16 cluster_summaries with errors=0 and exact per-cluster counts: wave_command_accept_count=32, completed_command_count=4, emitted_beat_count=512, fill_target_accept_count=32, fill_row_accept_count=65536, request_accept_count=65536, response_accept_count=65536, command_accept_count=32, command_release_count=32",
+      "Require report.command_ids=[33280, 33281, 33282, 33283] and report.head_bases=[0, 8, 16, 24]",
+      "Require full_row_audit.passed=true for every cluster stream and the root stream",
+      "Treat timeout, OOM, or bounded resource failures as inconclusive; treat mismatches as conclusive",
+      "Keep evidence artifact paths repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Full-128D four-group GQA8 rotation equivalence bounded-parallel replacement",
+  "result": {
+    "branch": "eval/l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3/s20260824t012108z",
+    "completed_utc": "2026-08-24T01:21:06.128944Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "1f709df75b2c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260824t012108z][host:1f709df75b2c][item:l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3",
+    "session_id": "s20260824t012108z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3/s20260824t012108z",
+    "pr_title": "eval: run full-128d four-group gqa8 rotation equivalence bounded-parallel replacement",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "1f709df75b2c",
+      "session_id": "s20260824t012108z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 99,
+  "created_utc": "2026-08-23T23:41:30.099708Z",
+  "requested_by": "@control_plane",
+  "developer_loop": {
+    "comparison": {
+      "role": "corrective_equivalence_check",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "The r2 serial replay exhausted the aggregate wall-time bound without a mismatch; r3 must preserve exact four-group coverage with three bounded independent producer replays.",
+      "expected_direction": "prove_full_head_gqa8_rotation_or_diagnose"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence"
+    },
+    "proposal_id": "prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "36c98fa0866aade221bc3afe21fd1fd66b3aedd2",
+    "requires_daemon_restart": true
+  },
+  "generation_source_identity": {
+    "clean": true,
+    "proof": "generator_worktree_head_exact",
+    "version": 1,
+    "relation": "exact",
+    "repo_head_sha": "36c98fa0866aade221bc3afe21fd1fd66b3aedd2",
+    "declared_source_commit": "36c98fa0866aade221bc3afe21fd1fd66b3aedd2"
+  },
+  "task_type": "l2_campaign"
+}
