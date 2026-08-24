@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1",
+  "candidate_id": "l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #1746 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1",
+    "run:l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1_run_1e3a07564a774435",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1.json",
+    "pr:#1746",
+    "https://github.com/yhmtmt/RTLGen/pull/1746"
+  ],
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false
+}

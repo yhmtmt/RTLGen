@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1",
-  "source_commit": "TBD",
+  "source_commit": "8886192007592abc57a8e1928d8c3122462b6922",
   "source_commit_note": "Queue only after merge and pin source_requirement.required_sha to the merged origin/master commit containing the model, RTL, exact-data tests, physical harness, guard, config, sweep, and task-generator support.",
   "requested_items": [
     {
@@ -19,9 +19,13 @@
         "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/metrics.csv",
         "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/timing_debug_report.md"
       ],
-      "status": "pending_after_proposal_merge",
+      "status": "merged",
       "requires_merged_inputs": true,
-      "requires_materialized_refs": true
+      "requires_materialized_refs": true,
+      "merged_pr_number": 1746,
+      "merge_commit": "d1c6b7a54680b3367d2fb813fe19dee1eeeef1a0",
+      "merged_utc": "2026-08-24T10:46:57.408106Z",
+      "notes": "Merged via PR #1746 and merge d1c6b7a54680b3367d2fb813fe19dee1eeeef1a0 at 2026-08-24T10:46:57.408106Z."
     }
   ]
 }
