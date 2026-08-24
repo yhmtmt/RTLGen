@@ -1,9 +1,9 @@
 {
   "proposal_id": "prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1",
   "decision": "iterate",
-  "pr_number": 1707,
-  "merge_commit": "f2fdbbc11d7cab95b5cf4bbf45ec4258b3c8eb85",
-  "merged_utc": "2026-08-23T10:03:35.410636Z",
+  "pr_number": 1744,
+  "merge_commit": "be756ee9343e0d0fca7e6b9087a4cc6b767f18f0",
+  "merged_utc": "2026-08-24T10:46:18.317661Z",
   "revision": {
     "reason": "wrong_head_dimension_stimulus",
     "invalidated_item_ids": [

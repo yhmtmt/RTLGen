@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1",
   "proposal_path": "docs/proposals/prop_l2_decoder_attention_score32_gqa8_full_head_dimension_revision_v1/proposal.json",
-  "source_commit": "8886192007592abc57a8e1928d8c3122462b6922",
+  "source_commit": "36c98fa0866aade221bc3afe21fd1fd66b3aedd2",
   "source_commit_note": "Replace TBD with the merge commit containing the 128D probe, tightened task acceptance, and this revision package before dispatch.",
   "requested_items": [
     {
@@ -56,7 +56,7 @@
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "run_physical": false,
-      "status": "pending_after_parallel_replay_fix",
+      "status": "merged",
       "expected_outputs": [
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.json",
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.md"
@@ -73,7 +73,11 @@
         ],
         "prior_result": "inconclusive_command_timeout",
         "replacement_contract": "three independent producer RTL replays under the existing 300 percent CPU ceiling; ordered SRAM, reducer, and global-tree stages"
-      }
+      },
+      "merged_pr_number": 1744,
+      "merge_commit": "be756ee9343e0d0fca7e6b9087a4cc6b767f18f0",
+      "merged_utc": "2026-08-24T10:46:18.317661Z",
+      "notes": "Merged via PR #1744 and merge be756ee9343e0d0fca7e6b9087a4cc6b767f18f0 at 2026-08-24T10:46:18.317661Z."
     },
     {
       "item_id": "l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1_r2",
