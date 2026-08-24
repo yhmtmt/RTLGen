@@ -1,0 +1,4 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1_run_d575a452ed28afce,1,1,0,succeeded,runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/metrics.csv,3.8432,1210000.0,0.0463,worker_error,worker,"heartbeat_error=(psycopg.errors.ConnectionTimeout) connection timeout expired
+(Background on this error at: https://sqlalche.me/e/20/e3q8)"
+l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1_run_1e3a07564a774435,2,1,0,succeeded,runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/metrics.csv,3.8432,1210000.0,0.0463,none,,

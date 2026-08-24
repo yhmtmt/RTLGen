@@ -1,0 +1,106 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-24T07:00:31.799421Z",
+  "item_id": "l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1",
+  "run_key": "l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1_run_1e3a07564a774435",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "8886192007592abc57a8e1928d8c3122462b6922",
+  "objective": "Measure the exact 17-bank double-buffered K round scheduler on Nangate45.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/attention_shared_sram_k_round_scheduler_ppa_v1/sweeps/nangate45.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "physical_calibration",
+    "abstraction_layer": "decoder_attention_shared_sram_k_prefetch_scheduler",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+    "timing_feasible": true,
+    "clock_period_ns": 10.0,
+    "timing_slack_ns": 6.1568000000000005
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "e820f91b",
+        "tag": "attention_shared_sram_k_round_scheduler_ppa_v1_e820f91b",
+        "result_path": "/orfs/flow/reports/nangate45/attention_shared_sram_k_round_scheduler_b17_w17/base/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/work/e820f91b/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 3.8432,
+        "die_area": 1210000.0,
+        "total_power_mw": 0.0463
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1",
+    "completed_trials": 2,
+    "success_count": 2,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "partial_metrics_count": 0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 3.8432,
+        "mean": 3.8432,
+        "median": 3.8432,
+        "max": 3.8432,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 1210000.0,
+        "mean": 1210000.0,
+        "median": 1210000.0,
+        "max": 1210000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.0463,
+        "mean": 0.0463,
+        "median": 0.0463,
+        "max": 0.0463,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    },
+    "aggregation_scope": "current_run_checkout_commit",
+    "aggregation_source_commit": "8886192007592abc57a8e1928d8c3122462b6922",
+    "aggregation_included_attempts": 2,
+    "aggregation_excluded_attempts": 0,
+    "aggregation_excluded_source_commits": {},
+    "aggregation_excluded_attempt_run_keys": [],
+    "aggregation_excluded_attempt_run_keys_truncated": false
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1/trial_table.csv"
+  }
+}
