@@ -66,9 +66,14 @@ def test_generator_and_guard_prove_complete_vc0_service(tmp_path: Path) -> None:
 
 def test_canary_uses_two_explicit_clock_points() -> None:
     sweep = json.loads(SWEEP.read_text(encoding="utf-8"))
-    assert sweep["flow_params"]["CLOCK_PERIOD"] == [5.0, 8.0]
-    assert sweep["flow_params"]["CORE_UTILIZATION"] == [45]
-    assert sweep["flow_params"]["PLACE_DENSITY"] == [0.52]
+    flow = sweep["flow_params"]
+    assert flow["CLOCK_PERIOD"] == [5.0, 8.0]
+    assert flow["CORE_UTILIZATION"] == [45]
+    assert flow["PLACE_DENSITY"] == [0.52]
+    assert flow["SYNTH_HIERARCHICAL"] == [1]
+    assert flow["SYNTH_HIER_SEPARATOR"] == ["/"]
+    assert "SYNTH_KEEP_MODULES" not in flow
+    assert "CHECK_SYNTH_KEEP_MODULES" not in flow
 
 
 def test_segmented_mesh_router_has_no_yosys_driver_conflicts(tmp_path: Path) -> None:

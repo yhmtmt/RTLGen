@@ -14,10 +14,6 @@
     "CORE_AREA": ["100 100 3900 3900"],
     "PLACE_DENSITY": [0.30],
     "SYNTH_HIERARCHICAL": [1],
-    "SYNTH_HIER_SEPARATOR": ["/"],
-    "SYNTH_KEEP_MODULES": [
-      "attention_score32_exact_shared_root_transport_ppa_activity_l1 local_reducer_aggregate_stats_once_exact_shared_root_transport_ppa_activity_harness local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper local_reducer_aggregate_stats_once_exact_shared_root_global_tree_composition attention_score32_exact_banked_finalized_tree_factored_c16_r2_l8_b59 local_reducer_aggregate_stats_once_exact_shared_root_storage_fabric local_reducer_aggregate_stats_once_exact_shared_root_rx_adapter fakeram45_64x32"
-    ],
-    "CHECK_SYNTH_KEEP_MODULES": [1]
+    "SYNTH_HIER_SEPARATOR": ["/"]
   }
 }

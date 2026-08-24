@@ -68,6 +68,10 @@ def test_canary_uses_two_clocks_in_a_conservative_fixed_envelope() -> None:
     assert flow["DIE_AREA"] == ["0 0 4000 4000"]
     assert flow["CORE_AREA"] == ["100 100 3900 3900"]
     assert flow["PLACE_DENSITY"] == [0.30]
+    assert flow["SYNTH_HIERARCHICAL"] == [1]
+    assert flow["SYNTH_HIER_SEPARATOR"] == ["/"]
+    assert "SYNTH_KEEP_MODULES" not in flow
+    assert "CHECK_SYNTH_KEEP_MODULES" not in flow
 
 
 def test_generic_l1_task_manifest_contains_physical_plumbing() -> None:
