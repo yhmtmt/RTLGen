@@ -1,0 +1,105 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-24T10:55:35.897002Z",
+  "item_id": "l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1",
+  "run_key": "l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1_run_8b9937d9e26848c5",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "59a047f1a947437b0378b4d9cda79e0244131880",
+  "review_metadata_source_commit": "719cdfecd7213cf92d54cf7620428ff7c3214de3",
+  "objective": "Verify all four adapter RTL traces against the cycle model and recost their local service frontier from merged physical evidence.",
+  "input_manifest": {
+    "decoder_contract": {
+      "attention_shared_sram_adapter_frontier_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.json",
+      "attention_shared_sram_adapter_physical_items": [
+        "l1_attention_shared_sram_read_group_adapter_w256_s1_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w512_s1_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w512_s2_ppa_v1"
+      ],
+      "attention_shared_sram_adapter_frontier_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.md"
+    },
+    "worker_resources": {
+      "cpu_quota": "100%",
+      "tasks_max": 64,
+      "memory_max": "2G",
+      "memory_high": "1G",
+      "exclusive_worker": false,
+      "outer_timeout_seconds": 180,
+      "stall_timeout_seconds": 90
+    }
+  },
+  "recommendation": {
+    "source": "decoder_evidence",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.json",
+    "arch_id": "decoder_attention_shared_sram_read_group_adapter_frontier",
+    "macro_mode": "evidence_only",
+    "outcome": "adapter_frontier_measured_exact"
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_attention_shared_sram_read_group_adapter_frontier_v1",
+    "title": "Exact shared-SRAM read-group adapter frontier",
+    "primary_question": "Which embodied adapter width and slot count best serves the shared-SRAM read path before scheduler, endpoint, NoC, and macro costs are composed?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "shared_sram_adapter_exact_service_frontier",
+    "abstraction_layer": "decoder_attention_shared_sram_read_group_adapter_frontier",
+    "expected_direction": "record_exact_adapter_service_frontier",
+    "expected_reason": "Replace width and slot assumptions with exact RTL cycles and common-clock PPA without claiming system token throughput.",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.json: decision=adapter_frontier_measured_exact; recommended_next_step=compose the selected adapter with measured scheduler, endpoint, NoC, and SRAM macro service.",
+    "outcome": "adapter_frontier_measured_exact",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_attention_shared_sram_read_group_adapter_frontier_v1",
+    "title": "Exact shared-SRAM read-group adapter frontier",
+    "kind": "architecture",
+    "primary_question": "Which embodied adapter width and slot count best serves the shared-SRAM read path before scheduler, endpoint, NoC, and macro costs are composed?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "shared_sram_adapter_exact_service_frontier",
+    "outcome": "adapter_frontier_measured_exact",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.json: decision=adapter_frontier_measured_exact; recommended_next_step=compose the selected adapter with measured scheduler, endpoint, NoC, and SRAM macro service.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.json",
+    "decoder_quality": {
+      "diagnosis": {
+        "decision": "adapter_frontier_measured_exact",
+        "recommended_next_step": "compose the selected adapter with measured scheduler, endpoint, NoC, and SRAM macro service"
+      },
+      "profile": "decoder_attention_shared_sram_read_group_adapter_frontier",
+      "dimension_winners": {
+        "adapter_group_service_throughput": "attention_shared_sram_read_group_adapter_w512_s2",
+        "adapter_instance_area": "attention_shared_sram_read_group_adapter_w512_s1",
+        "adapter_vectorless_total_energy_proxy": "attention_shared_sram_read_group_adapter_w512_s2",
+        "precision": "all_variants_exact"
+      },
+      "passed": true,
+      "classification": "passed"
+    }
+  },
+  "source_refs": {
+    "decoder_evidence_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.json",
+    "decoder_attention_shared_sram_adapter_frontier_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.json",
+    "decoder_attention_shared_sram_adapter_frontier_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.md"
+  },
+  "decoder_quality": {
+    "diagnosis": {
+      "decision": "adapter_frontier_measured_exact",
+      "recommended_next_step": "compose the selected adapter with measured scheduler, endpoint, NoC, and SRAM macro service"
+    },
+    "profile": "decoder_attention_shared_sram_read_group_adapter_frontier",
+    "dimension_winners": {
+      "adapter_group_service_throughput": "attention_shared_sram_read_group_adapter_w512_s2",
+      "adapter_instance_area": "attention_shared_sram_read_group_adapter_w512_s1",
+      "adapter_vectorless_total_energy_proxy": "attention_shared_sram_read_group_adapter_w512_s2",
+      "precision": "all_variants_exact"
+    },
+    "passed": true,
+    "classification": "passed"
+  }
+}
