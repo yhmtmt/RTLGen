@@ -5373,6 +5373,91 @@ def _decoder_attention_score32_noc_phase2_exact_transport_revision_evidence(
     }
 
 
+def _decoder_attention_shared_sram_read_group_adapter_frontier_evidence(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None,
+    proposal_id: str | None,
+    proposal_path: str | None,
+) -> dict[str, Any]:
+    expected_item_id = "l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1"
+    expected_proposal_id = "prop_l2_attention_shared_sram_read_group_adapter_frontier_v1"
+    expected_dependencies = [
+        "l1_attention_shared_sram_read_group_adapter_w256_s1_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w512_s1_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w512_s2_ppa_v1",
+    ]
+    if item_id != expected_item_id:
+        raise Layer2TaskGenerationError(
+            "shared-SRAM adapter frontier only permits its registered item"
+        )
+    if str(proposal_id or "").strip() != expected_proposal_id:
+        raise Layer2TaskGenerationError("shared-SRAM adapter frontier proposal_id mismatch")
+    if str(proposal_path or "").strip() != f"docs/proposals/{expected_proposal_id}/proposal.json":
+        raise Layer2TaskGenerationError("shared-SRAM adapter frontier proposal_path mismatch")
+    if list(depends_on_item_ids or []) != expected_dependencies:
+        raise Layer2TaskGenerationError(
+            "shared-SRAM adapter frontier requires the four ordered adapter PPA items"
+        )
+
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    stem = f"decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__{item_id}"
+    out = f"{base}/{stem}.json"
+    report = f"{base}/{stem}.md"
+    command = _bounded_launcher_command(
+        memory_high="1G",
+        memory_max="2G",
+        cpu_quota="100%",
+        tasks_max=64,
+        runtime_max_sec=120,
+        child_command=[
+            "python3",
+            "npu/eval/evaluate_attention_shared_sram_read_group_adapter_frontier.py",
+            "--clock-period-ns",
+            "2.0",
+            "--out",
+            out,
+            "--out-md",
+            report,
+        ],
+    )
+    return {
+        "inputs": {
+            "attention_shared_sram_adapter_frontier_out": out,
+            "attention_shared_sram_adapter_frontier_report": report,
+            "attention_shared_sram_adapter_physical_items": expected_dependencies,
+        },
+        "commands": [
+            {
+                "name": "evaluate_attention_shared_sram_read_group_adapter_frontier",
+                "run": command,
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+        "worker_resources": {
+            "exclusive_worker": False,
+            "memory_high": "1G",
+            "memory_max": "2G",
+            "cpu_quota": "100%",
+            "tasks_max": 64,
+            "outer_timeout_seconds": 180,
+            "stall_timeout_seconds": 90,
+        },
+        "acceptance": [
+            "Require all four w256/w512 and s1/s2 RTL traces to match the cycle model exactly",
+            "Require exact request, macro-read, response, stall, fold, and protocol counters",
+            "Require one 1024-bit macro read per complete read group and lossless precision",
+            "Compare latency, instance area, vectorless total power, and energy proxy at a common 2 ns clock",
+            "Use instance_area_um2 rather than the fixed floorplan die area",
+            "Disclose that SRAM bitcell area and workload-activity power are not included",
+            "Do not claim system token throughput before scheduler, endpoint, NoC, and SRAM service composition",
+            "Write exactly one JSON and one Markdown report",
+        ],
+    }
+
+
 def _validate_score32_noc_closure_request(
     *,
     item_id: str,
@@ -13168,6 +13253,7 @@ def _build_payload(
         "decoder_attention_kv_onchip_service_schedule",
         "decoder_attention_score32_noc_phase2_schedule",
         "decoder_attention_score32_noc_phase2_exact_transport",
+        "decoder_attention_shared_sram_read_group_adapter_frontier",
         "decoder_attention_score32_noc_phase2_measured_router_closure",
         "decoder_attention_score32_noc_phase2_measured_router_clock_reroute",
         "decoder_attention_score32_noc_phase2_composed_mesh_reroute",
@@ -13407,6 +13493,15 @@ def _build_payload(
         elif abstraction_layer_name == "decoder_attention_score32_noc_phase2_exact_transport":
             decoder_evidence = (
                 _decoder_attention_score32_noc_phase2_exact_transport_revision_evidence(
+                    item_id=item_id,
+                    depends_on_item_ids=depends_on_item_ids,
+                    proposal_id=proposal_id,
+                    proposal_path=proposal_path,
+                )
+            )
+        elif abstraction_layer_name == "decoder_attention_shared_sram_read_group_adapter_frontier":
+            decoder_evidence = (
+                _decoder_attention_shared_sram_read_group_adapter_frontier_evidence(
                     item_id=item_id,
                     depends_on_item_ids=depends_on_item_ids,
                     proposal_id=proposal_id,

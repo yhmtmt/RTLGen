@@ -14726,6 +14726,60 @@ def test_generate_l2_campaign_task_rejects_noncanonical_score32_noc_phase2_item(
             )
 
 
+def test_generate_l2_campaign_task_adds_shared_sram_adapter_frontier() -> None:
+    dependencies = [
+        "l1_attention_shared_sram_read_group_adapter_w256_s1_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w512_s1_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w512_s2_ppa_v1",
+    ]
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                _make_l2_request(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l2_attention_shared_sram_read_group_adapter_frontier_v1",
+                    proposal_path=(
+                        "docs/proposals/prop_l2_attention_shared_sram_read_group_adapter_frontier_v1/"
+                        "proposal.json"
+                    ),
+                    abstraction_layer="decoder_attention_shared_sram_read_group_adapter_frontier",
+                    evaluation_mode="frontier_detail",
+                    depends_on_item_ids=dependencies,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = "\n".join(command["run"] for command in work_item.command_manifest)
+            assert work_item.state == WorkItemState.BLOCKED
+            assert "evaluate_attention_shared_sram_read_group_adapter_frontier.py" in run
+            assert "--clock-period-ns 2.0" in run
+            assert "--runtime-max-sec 120" in run
+            assert work_item.input_manifest["worker_resources"]["exclusive_worker"] is False
+            assert (
+                work_item.task_request.request_payload["developer_loop"]["dependencies"]["item_ids"]
+                == dependencies
+            )
+            assert any("cycle model exactly" in str(rule) for rule in work_item.acceptance_rules)
+            assert work_item.expected_outputs[0].endswith(
+                "decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__"
+                "l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.json"
+            )
+
+
 def test_generate_l2_campaign_task_adds_score32_noc_measured_router_closure() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

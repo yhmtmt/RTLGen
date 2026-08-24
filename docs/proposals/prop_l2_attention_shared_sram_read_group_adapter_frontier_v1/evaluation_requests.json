@@ -1,0 +1,32 @@
+{
+  "proposal_id": "prop_l2_attention_shared_sram_read_group_adapter_frontier_v1",
+  "source_commit_note": "Dispatch only after this implementation is merged; pin source_requirement.required_sha to the merge commit or a descendant.",
+  "requested_items": [
+    {
+      "item_id": "l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Verify all four adapter RTL traces against the cycle model and recost their local service frontier from merged physical evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_shared_sram_read_group_adapter_frontier",
+      "comparison_role": "shared_sram_adapter_exact_service_frontier",
+      "depends_on_item_ids": [
+        "l1_attention_shared_sram_read_group_adapter_w256_s1_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w512_s1_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w512_s2_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.md"
+      ],
+      "expected_result": {
+        "direction": "record_exact_adapter_service_frontier",
+        "reason": "Require exact RTL/model agreement and avoid treating local adapter proxies as system token metrics."
+      },
+      "acceptance_notes": "Require four exact RTL/model matches, common 2 ns physical rows, lossless precision, instance-area comparison, and explicit SRAM/system-composition caveats.",
+      "status": "ready_to_dispatch_after_implementation_merge"
+    }
+  ]
+}
