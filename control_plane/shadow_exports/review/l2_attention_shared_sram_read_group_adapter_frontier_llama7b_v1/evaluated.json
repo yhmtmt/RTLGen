@@ -1,0 +1,135 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "decoder_contract": {
+        "attention_shared_sram_adapter_frontier_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.json",
+        "attention_shared_sram_adapter_physical_items": [
+          "l1_attention_shared_sram_read_group_adapter_w256_s1_ppa_v1",
+          "l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1",
+          "l1_attention_shared_sram_read_group_adapter_w512_s1_ppa_v1",
+          "l1_attention_shared_sram_read_group_adapter_w512_s2_ppa_v1"
+        ],
+        "attention_shared_sram_adapter_frontier_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.md"
+      },
+      "worker_resources": {
+        "cpu_quota": "100%",
+        "tasks_max": 64,
+        "memory_max": "2G",
+        "memory_high": "1G",
+        "exclusive_worker": false,
+        "outer_timeout_seconds": 180,
+        "stall_timeout_seconds": 90
+      }
+    },
+    "commands": [
+      {
+        "run": "python3 control_plane/scripts/run_bounded_command.py --memory-high 1G --memory-max 2G --cpu-quota 100% --tasks-max 64 --runtime-max-sec 120 -- python3 npu/eval/evaluate_attention_shared_sram_read_group_adapter_frontier.py --clock-period-ns 2.0 --out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.json --out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.md",
+        "name": "evaluate_attention_shared_sram_read_group_adapter_frontier"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Verify all four adapter RTL traces against the cycle model and recost their local service frontier from merged physical evidence.",
+    "acceptance": [
+      "Require all four w256/w512 and s1/s2 RTL traces to match the cycle model exactly",
+      "Require exact request, macro-read, response, stall, fold, and protocol counters",
+      "Require one 1024-bit macro read per complete read group and lossless precision",
+      "Compare latency, instance area, vectorless total power, and energy proxy at a common 2 ns clock",
+      "Use instance_area_um2 rather than the fixed floorplan die area",
+      "Disclose that SRAM bitcell area and workload-activity power are not included",
+      "Do not claim system token throughput before scheduler, endpoint, NoC, and SRAM service composition",
+      "Write exactly one JSON and one Markdown report"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.json",
+      "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__shared_sram_read_group_adapter_frontier__l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1.md"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Exact shared-SRAM read-group adapter frontier",
+  "result": {
+    "branch": "eval/l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1/s20260824t105536z",
+    "completed_utc": "2026-08-24T10:49:39.840692Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "1f709df75b2c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260824t105536z][host:1f709df75b2c][item:l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1]",
+    "metrics_rows": [],
+    "metrics_exempt_reason": "evidence_only_decoder_evidence",
+    "queue_item_id": "l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1",
+    "session_id": "s20260824t105536z",
+    "status": "ok",
+    "summary": "2/2 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1/s20260824t105536z",
+    "pr_title": "eval: run exact shared-sram read-group adapter frontier",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "1f709df75b2c",
+      "session_id": "s20260824t105536z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_attention_shared_sram_read_group_adapter_frontier_llama7b_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 2,
+  "created_utc": "2026-08-24T10:49:12.695551Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "shared_sram_adapter_exact_service_frontier",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Replace width and slot assumptions with exact RTL cycles and common-clock PPA without claiming system token throughput.",
+      "expected_direction": "record_exact_adapter_service_frontier"
+    },
+    "abstraction": {
+      "layer": "decoder_attention_shared_sram_read_group_adapter_frontier"
+    },
+    "proposal_id": "prop_l2_attention_shared_sram_read_group_adapter_frontier_v1",
+    "dependencies": {
+      "item_ids": [
+        "l1_attention_shared_sram_read_group_adapter_w256_s1_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w256_s2_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w512_s1_ppa_v1",
+        "l1_attention_shared_sram_read_group_adapter_w512_s2_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_attention_shared_sram_read_group_adapter_frontier_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "59a047f1a947437b0378b4d9cda79e0244131880",
+    "requires_daemon_restart": true
+  },
+  "generation_source_identity": {
+    "clean": true,
+    "proof": "generator_worktree_head_exact",
+    "version": 1,
+    "relation": "exact",
+    "repo_head_sha": "59a047f1a947437b0378b4d9cda79e0244131880",
+    "declared_source_commit": "59a047f1a947437b0378b4d9cda79e0244131880"
+  },
+  "task_type": "l2_campaign"
+}

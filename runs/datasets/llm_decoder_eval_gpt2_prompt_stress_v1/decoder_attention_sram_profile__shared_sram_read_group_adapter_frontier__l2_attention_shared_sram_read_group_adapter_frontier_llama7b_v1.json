@@ -1,0 +1,269 @@
+{
+  "classification": "passed",
+  "clock_period_ns": 2.0,
+  "decision": "adapter_frontier_measured_exact",
+  "diagnosis": {
+    "decision": "adapter_frontier_measured_exact",
+    "recommended_next_step": "compose the selected adapter with measured scheduler, endpoint, NoC, and SRAM macro service"
+  },
+  "dimension_winners": {
+    "adapter_group_service_throughput": "attention_shared_sram_read_group_adapter_w512_s2",
+    "adapter_instance_area": "attention_shared_sram_read_group_adapter_w512_s1",
+    "adapter_vectorless_total_energy_proxy": "attention_shared_sram_read_group_adapter_w512_s2",
+    "precision": "all_variants_exact"
+  },
+  "interpretation": {
+    "adapter_only": true,
+    "power_kind": "vectorless_openroad_at_common_clock",
+    "sram_bitcell_area_included": false,
+    "system_selection_requires_composed_scheduler_and_transport_recost": true
+  },
+  "model": "llm_decoder_attention_shared_sram_adapter_frontier_llama7b_v1",
+  "passed": true,
+  "profile": "decoder_attention_shared_sram_read_group_adapter_frontier",
+  "variants": [
+    {
+      "beat_width": 256,
+      "design": "attention_shared_sram_read_group_adapter_w256_s1",
+      "equivalence_mismatches": {},
+      "equivalence_passed": true,
+      "group_slots": 1,
+      "model": {
+        "access_reduction_proven": true,
+        "beat_request_count": 256,
+        "beat_request_stall_count": 419,
+        "beat_response_count": 256,
+        "beat_response_stall_count": 42,
+        "beat_width": 256,
+        "cycle_count": 682,
+        "folded_result": 0,
+        "group_slots": 1,
+        "groups": 64,
+        "macro_read_count": 64,
+        "macro_request_stall_count": 0,
+        "macro_response_stall_count": 0,
+        "protocol_error": false,
+        "segments_per_macro_read": 4
+      },
+      "physical": {
+        "clock_period_ns": 2.0,
+        "critical_path_ns": 0.6452,
+        "instance_area_um2": 5482.53,
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s1/metrics.csv",
+        "param_hash": "07ed8cb5",
+        "sram_bitcell_area_included": false,
+        "stdcell_count": 3172,
+        "total_power_mw": 0.00286
+      },
+      "precision_status": "exact_lossless_no_precision_change",
+      "rtl": {
+        "access_reduction_proven": true,
+        "beat_request_count": 256,
+        "beat_request_stall_count": 419,
+        "beat_response_count": 256,
+        "beat_response_stall_count": 42,
+        "cycle_count": 682,
+        "folded_result": 0,
+        "macro_read_count": 64,
+        "macro_request_stall_count": 0,
+        "macro_response_stall_count": 0,
+        "protocol_error": false
+      },
+      "service": {
+        "cycles": 682,
+        "energy_per_group_pj": 0.06095375,
+        "energy_pj": 3.90104,
+        "group_throughput_per_s": 46920821.114369504,
+        "groups": 64,
+        "groups_per_cycle": 0.093841642228739,
+        "latency_ns": 1364.0
+      }
+    },
+    {
+      "beat_width": 256,
+      "design": "attention_shared_sram_read_group_adapter_w256_s2",
+      "equivalence_mismatches": {},
+      "equivalence_passed": true,
+      "group_slots": 2,
+      "model": {
+        "access_reduction_proven": true,
+        "beat_request_count": 256,
+        "beat_request_stall_count": 83,
+        "beat_response_count": 256,
+        "beat_response_stall_count": 42,
+        "beat_width": 256,
+        "cycle_count": 346,
+        "folded_result": 0,
+        "group_slots": 2,
+        "groups": 64,
+        "macro_read_count": 64,
+        "macro_request_stall_count": 0,
+        "macro_response_stall_count": 0,
+        "protocol_error": false,
+        "segments_per_macro_read": 4
+      },
+      "physical": {
+        "clock_period_ns": 2.0,
+        "critical_path_ns": 0.6831,
+        "instance_area_um2": 6729.27,
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w256_s2/metrics.csv",
+        "param_hash": "07ed8cb5",
+        "sram_bitcell_area_included": false,
+        "stdcell_count": 3890,
+        "total_power_mw": 0.00361
+      },
+      "precision_status": "exact_lossless_no_precision_change",
+      "rtl": {
+        "access_reduction_proven": true,
+        "beat_request_count": 256,
+        "beat_request_stall_count": 83,
+        "beat_response_count": 256,
+        "beat_response_stall_count": 42,
+        "cycle_count": 346,
+        "folded_result": 0,
+        "macro_read_count": 64,
+        "macro_request_stall_count": 0,
+        "macro_response_stall_count": 0,
+        "protocol_error": false
+      },
+      "service": {
+        "cycles": 346,
+        "energy_per_group_pj": 0.039033125,
+        "energy_pj": 2.49812,
+        "group_throughput_per_s": 92485549.13294798,
+        "groups": 64,
+        "groups_per_cycle": 0.18497109826589594,
+        "latency_ns": 692.0
+      }
+    },
+    {
+      "beat_width": 512,
+      "design": "attention_shared_sram_read_group_adapter_w512_s1",
+      "equivalence_mismatches": {},
+      "equivalence_passed": true,
+      "group_slots": 1,
+      "model": {
+        "access_reduction_proven": true,
+        "beat_request_count": 128,
+        "beat_request_stall_count": 277,
+        "beat_response_count": 128,
+        "beat_response_stall_count": 25,
+        "beat_width": 512,
+        "cycle_count": 409,
+        "folded_result": 0,
+        "group_slots": 1,
+        "groups": 64,
+        "macro_read_count": 64,
+        "macro_request_stall_count": 0,
+        "macro_response_stall_count": 0,
+        "protocol_error": false,
+        "segments_per_macro_read": 2
+      },
+      "physical": {
+        "clock_period_ns": 2.0,
+        "critical_path_ns": 0.6493,
+        "instance_area_um2": 5458.59,
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w512_s1/metrics.csv",
+        "param_hash": "07ed8cb5",
+        "sram_bitcell_area_included": false,
+        "stdcell_count": 3174,
+        "total_power_mw": 0.00284
+      },
+      "precision_status": "exact_lossless_no_precision_change",
+      "rtl": {
+        "access_reduction_proven": true,
+        "beat_request_count": 128,
+        "beat_request_stall_count": 277,
+        "beat_response_count": 128,
+        "beat_response_stall_count": 25,
+        "cycle_count": 409,
+        "folded_result": 0,
+        "macro_read_count": 64,
+        "macro_request_stall_count": 0,
+        "macro_response_stall_count": 0,
+        "protocol_error": false
+      },
+      "service": {
+        "cycles": 409,
+        "energy_per_group_pj": 0.03629875,
+        "energy_pj": 2.32312,
+        "group_throughput_per_s": 78239608.80195598,
+        "groups": 64,
+        "groups_per_cycle": 0.15647921760391198,
+        "latency_ns": 818.0
+      }
+    },
+    {
+      "beat_width": 512,
+      "design": "attention_shared_sram_read_group_adapter_w512_s2",
+      "equivalence_mismatches": {},
+      "equivalence_passed": true,
+      "group_slots": 2,
+      "model": {
+        "access_reduction_proven": true,
+        "beat_request_count": 128,
+        "beat_request_stall_count": 75,
+        "beat_response_count": 128,
+        "beat_response_stall_count": 26,
+        "beat_width": 512,
+        "cycle_count": 208,
+        "folded_result": 0,
+        "group_slots": 2,
+        "groups": 64,
+        "macro_read_count": 64,
+        "macro_request_stall_count": 0,
+        "macro_response_stall_count": 0,
+        "protocol_error": false,
+        "segments_per_macro_read": 2
+      },
+      "physical": {
+        "clock_period_ns": 2.0,
+        "critical_path_ns": 0.6542,
+        "instance_area_um2": 6754.54,
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_read_group_adapter_w512_s2/metrics.csv",
+        "param_hash": "07ed8cb5",
+        "sram_bitcell_area_included": false,
+        "stdcell_count": 3869,
+        "total_power_mw": 0.0035
+      },
+      "precision_status": "exact_lossless_no_precision_change",
+      "rtl": {
+        "access_reduction_proven": true,
+        "beat_request_count": 128,
+        "beat_request_stall_count": 75,
+        "beat_response_count": 128,
+        "beat_response_stall_count": 26,
+        "cycle_count": 208,
+        "folded_result": 0,
+        "macro_read_count": 64,
+        "macro_request_stall_count": 0,
+        "macro_response_stall_count": 0,
+        "protocol_error": false
+      },
+      "service": {
+        "cycles": 208,
+        "energy_per_group_pj": 0.02275,
+        "energy_pj": 1.456,
+        "group_throughput_per_s": 153846153.84615383,
+        "groups": 64,
+        "groups_per_cycle": 0.3076923076923077,
+        "latency_ns": 416.0
+      }
+    }
+  ],
+  "version": 1,
+  "workload": {
+    "groups": 64,
+    "response_ready_pattern": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      1
+    ],
+    "shared_macro_width_bits": 1024
+  }
+}
