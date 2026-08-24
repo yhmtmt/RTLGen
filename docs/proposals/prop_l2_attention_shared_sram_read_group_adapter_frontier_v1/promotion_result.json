@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_attention_shared_sram_read_group_adapter_frontier_v1",
+  "decision": "iterate",
+  "pr_number": 1752,
+  "merge_commit": "95d00cc3f35369ad4728774a926b279e888c32f7",
+  "merged_utc": "2026-08-24T10:57:26.217478Z"
+}

@@ -26,7 +26,12 @@
         "reason": "Require exact RTL/model agreement and avoid treating local adapter proxies as system token metrics."
       },
       "acceptance_notes": "Require four exact RTL/model matches, common 2 ns physical rows, lossless precision, instance-area comparison, and explicit SRAM/system-composition caveats.",
-      "status": "ready_to_dispatch_after_implementation_merge"
+      "status": "merged",
+      "merged_pr_number": 1752,
+      "merge_commit": "95d00cc3f35369ad4728774a926b279e888c32f7",
+      "merged_utc": "2026-08-24T10:57:26.217478Z",
+      "notes": "Merged via PR #1752 and merge 95d00cc3f35369ad4728774a926b279e888c32f7 at 2026-08-24T10:57:26.217478Z."
     }
-  ]
+  ],
+  "source_commit": "59a047f1a947437b0378b4d9cda79e0244131880"
 }
