@@ -38,10 +38,10 @@
   },
   "required_evaluations": [
     {
-      "item_id": "l1_attention_score32_exact_shared_root_transport_ppa_activity_v1",
+      "item_id": "l1_attention_score32_exact_shared_root_transport_ppa_activity_v1_r2",
       "task_type": "l1_sweep",
       "objective": "Measure the compact exact stats-once reduction-transport composition with the exact global tree and 15-bank fakeram root storage.",
-      "status": "pending",
+      "status": "pending_after_paramod_keep_fix",
       "evaluation_mode": "physical_calibration",
       "abstraction_layer": "decoder_attention_exact_shared_root_transport",
       "comparison_role": "exact_transport_composed_physical_canary",
@@ -61,7 +61,15 @@
         "direction": "establish_exact_composed_reduction_transport_ppa_anchor",
         "reason": "Use physical evidence to replace reduction-transport and shared-root fabric abstractions before composing shared-SRAM traffic and recosting the Llama7B schedule."
       },
-      "acceptance_notes": "Require the generated top/guard to prove 35 input bits, 128 output bits, composition/exact_transport_wrapper/ hierarchy, exact c16/r2/l8/b59 tree, PHYSICAL_BANKS=15, USE_FAKERAM=1, and exactly 120 fakeram45_64x32 macros. Attach hierarchical area to metrics.csv after each successful OpenROAD result. Treat this as reduction-traffic evidence only, treat total_power_mw as a whole-harness upper bound, and do not restore retracted L2 frontier artifacts."
+      "acceptance_notes": "Require the generated top/guard to prove 35 input bits, 128 output bits, composition/exact_transport_wrapper/ hierarchy, exact c16/r2/l8/b59 tree, PHYSICAL_BANKS=15, USE_FAKERAM=1, and exactly 120 fakeram45_64x32 macros. Attach hierarchical area to metrics.csv after each successful OpenROAD result. Treat this as reduction-traffic evidence only, treat total_power_mw as a whole-harness upper bound, and do not restore retracted L2 frontier artifacts. Preserve v1 as an invalid-configuration failure before synthesis, not physical infeasibility.",
+      "revision": {
+        "reason": "source_module_names_disappeared_after_yosys_parameter_elaboration",
+        "supersedes_item_ids": [
+          "l1_attention_score32_exact_shared_root_transport_ppa_activity_v1"
+        ],
+        "prior_result": "invalid_synth_keep_modules_configuration",
+        "replacement_contract": "SYNTH_HIERARCHICAL retains the elaborated hierarchy without selecting vanished pre-elaboration module names"
+      }
     }
   ],
   "remaining_abstractions": [
