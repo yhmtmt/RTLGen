@@ -1,0 +1,185 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/attention_shared_sram_k_round_scheduler_ppa_v1/sweeps/nangate45.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/config.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen_attention_shared_sram_k_round_scheduler_ppa_harness.py --config runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/config.json --out runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/verilog",
+        "name": "generate_attention_shared_sram_k_round_scheduler_ppa_harness_rtl"
+      },
+      {
+        "run": "python3 npu/eval/check_attention_shared_sram_k_round_scheduler_ppa_guard.py --design-dir runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17",
+        "name": "check_attention_shared_sram_k_round_scheduler_ppa_guard"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17 --platform nangate45 --top attention_shared_sram_k_round_scheduler_b17_w17 --sweep runs/campaigns/npu/attention_shared_sram_k_round_scheduler_ppa_v1/sweeps/nangate45.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep"
+      },
+      {
+        "run": "python3 npu/eval/extract_openroad_timing_summary.py --design-dir runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17 --out runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/timing_debug_report.md --max-paths 8",
+        "name": "extract_attention_shared_sram_k_round_scheduler_ppa_harness_timing_paths"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure the exact 17-bank double-buffered K round scheduler on Nangate45.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/metrics.csv",
+      "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/timing_debug_report.md"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Shared SRAM K-round scheduler b17 w17 PPA",
+  "result": {
+    "branch": "eval/l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1/s20260824t070030z",
+    "completed_utc": "2026-08-24T07:00:27.377102Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "1f709df75b2c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260824t070030z][host:1f709df75b2c][item:l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_shared_sram_k_round_scheduler_ppa_v1_f93ade3a",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f93ade3a",
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/work/f93ade3a/result.json"
+      },
+      {
+        "tag": "attention_shared_sram_k_round_scheduler_ppa_v1_e78926cb",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "e78926cb",
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/work/e78926cb/result.json"
+      },
+      {
+        "tag": "attention_shared_sram_k_round_scheduler_ppa_v1_fd384b8e",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "fd384b8e",
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/work/fd384b8e/result.json"
+      },
+      {
+        "tag": "attention_shared_sram_k_round_scheduler_ppa_v1_e820f91b",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "e820f91b",
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/work/e820f91b/result.json"
+      },
+      {
+        "tag": "attention_shared_sram_k_round_scheduler_ppa_v1_13bdc83f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "13bdc83f",
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/work/13bdc83f/result.json"
+      },
+      {
+        "tag": "attention_shared_sram_k_round_scheduler_ppa_v1_a5744a21",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "a5744a21",
+        "metrics_csv": "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17/work/a5744a21/result.json"
+      }
+    ],
+    "queue_item_id": "l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1",
+    "session_id": "s20260824t070030z",
+    "status": "ok",
+    "summary": "6/6 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1/s20260824t070030z",
+    "pr_title": "eval: run shared sram k-round scheduler b17 w17 ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "1f709df75b2c",
+      "session_id": "s20260824t070030z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_attention_shared_sram_k_round_scheduler_b17_w17_ppa_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 76,
+  "created_utc": "2026-08-22T09:58:04.449496Z",
+  "requested_by": "@control_plane",
+  "developer_loop": {
+    "comparison": {
+      "role": "bounded_round_window_candidate",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "physical_calibration",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "",
+      "expected_direction": ""
+    },
+    "abstraction": {
+      "layer": "decoder_attention_shared_sram_k_prefetch_scheduler"
+    },
+    "proposal_id": "prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "8886192007592abc57a8e1928d8c3122462b6922",
+    "requires_daemon_restart": true
+  },
+  "generation_source_identity": {
+    "clean": true,
+    "proof": "generator_worktree_head_exact",
+    "version": 1,
+    "relation": "exact",
+    "repo_head_sha": "8886192007592abc57a8e1928d8c3122462b6922",
+    "declared_source_commit": "8886192007592abc57a8e1928d8c3122462b6922"
+  },
+  "task_type": "l1_sweep"
+}
