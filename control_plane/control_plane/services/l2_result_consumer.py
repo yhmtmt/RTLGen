@@ -449,6 +449,10 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("attention_kv_model_native_quality_7b_out", "attention_kv_model_native_quality_7b_report"),
     ("attention_kv_onchip_service_schedule_out", "attention_kv_onchip_service_schedule_report"),
     (
+        "attention_shared_sram_adapter_frontier_out",
+        "attention_shared_sram_adapter_frontier_report",
+    ),
+    (
         "attention_kv_endpoint_full_onchip_service_schedule_out",
         "attention_kv_endpoint_full_onchip_service_schedule_report",
     ),

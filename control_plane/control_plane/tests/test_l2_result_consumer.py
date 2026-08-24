@@ -206,6 +206,32 @@ def test_decoder_evidence_paths_recognizes_score32_noc_phase2_schedule(tmp_path:
     }
 
 
+def test_decoder_evidence_paths_recognizes_shared_sram_adapter_frontier(tmp_path: Path) -> None:
+    evidence_rel = "runs/datasets/demo/shared_sram_adapter_frontier.json"
+    report_rel = "runs/datasets/demo/shared_sram_adapter_frontier.md"
+    _write(tmp_path / evidence_rel, '{"passed": true}\n')
+    _write(tmp_path / report_rel, "# Shared-SRAM adapter frontier\n")
+    work_item = SimpleNamespace(
+        input_manifest={
+            "decoder_contract": {
+                "attention_shared_sram_adapter_frontier_out": evidence_rel,
+                "attention_shared_sram_adapter_frontier_report": report_rel,
+            }
+        }
+    )
+
+    evidence_ref, source_refs = _decoder_evidence_paths(
+        repo_root=tmp_path,
+        work_item=work_item,
+    )
+
+    assert evidence_ref == evidence_rel
+    assert source_refs == {
+        "decoder_attention_shared_sram_adapter_frontier_out": evidence_rel,
+        "decoder_attention_shared_sram_adapter_frontier_report": report_rel,
+    }
+
+
 def test_consume_l2_result_recognizes_score32_exact_transport_revision(
     tmp_path: Path,
 ) -> None:
