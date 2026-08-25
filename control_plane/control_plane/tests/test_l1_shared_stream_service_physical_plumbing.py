@@ -31,7 +31,12 @@ SWEEP = REPO_ROOT / (
     "runs/campaigns/npu/attention_shared_stream_context_service_ppa_l1/"
     "sweeps/nangate45_canary.json"
 )
+SYNTH_DIAG_SWEEP = REPO_ROOT / (
+    "runs/campaigns/npu/attention_shared_stream_context_service_ppa_l1/"
+    "sweeps/nangate45_synth_mode_diag_r3.json"
+)
 PROPOSAL = "docs/proposals/prop_l1_attention_shared_stream_context_service_ppa_v1"
+SYNTH_DIAG_ITEM = "l1_attention_shared_stream_context_service_synth_mode_diag_v1_r3"
 
 
 def test_generator_and_guard_prove_complete_vc0_service(tmp_path: Path) -> None:
@@ -74,6 +79,18 @@ def test_canary_uses_two_explicit_clock_points() -> None:
     assert flow["SYNTH_HIER_SEPARATOR"] == ["/"]
     assert "SYNTH_KEEP_MODULES" not in flow
     assert "CHECK_SYNTH_KEEP_MODULES" not in flow
+
+
+def test_synth_diagnostic_compares_unique_flat_and_hierarchical_variants() -> None:
+    sweep = json.loads(SYNTH_DIAG_SWEEP.read_text(encoding="utf-8"))
+    modes = sweep["mode_compare"]["modes"]
+    assert [mode["name"] for mode in modes] == ["flat_synth", "hierarchical_synth"]
+    assert [mode["use_macro"] for mode in modes] == [False, False]
+    assert [mode["param_overrides"]["FLOW_VARIANT"] for mode in modes] == [
+        "synth_diag_r3_flat",
+        "synth_diag_r3_hierarchical",
+    ]
+    assert [mode["param_overrides"]["SYNTH_HIERARCHICAL"] for mode in modes] == [0, 1]
 
 
 def test_segmented_mesh_router_has_no_yosys_driver_conflicts(tmp_path: Path) -> None:
@@ -172,20 +189,16 @@ def test_synth_only_l1_task_omits_physical_postchecks() -> None:
                     "clean": True,
                 },
             ),
-            patch(
-                "control_plane.services.l1_task_generator._load_requested_item_entry",
-                return_value={"make_target": "1_2_yosys"},
-            ),
         ):
             result = generate_l1_sweep_task(
                 session,
                 Layer1SweepGenerateRequest(
                     repo_root=str(REPO_ROOT),
-                    sweep_path=str(SWEEP),
+                    sweep_path=str(SYNTH_DIAG_SWEEP),
                     config_paths=[str(CONFIG)],
                     platform="nangate45",
                     out_root="runs/designs/npu_blocks",
-                    item_id="l1_attention_shared_stream_context_service_synth_diag_test",
+                    item_id=SYNTH_DIAG_ITEM,
                     source_commit="HEAD",
                     proposal_id="prop_l1_attention_shared_stream_context_service_ppa_v1",
                     proposal_path=PROPOSAL,

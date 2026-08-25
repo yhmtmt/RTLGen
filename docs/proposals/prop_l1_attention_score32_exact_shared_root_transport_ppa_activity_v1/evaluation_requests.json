@@ -20,7 +20,8 @@
         "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport_ppa_activity_l1/timing_debug_report.md",
         "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport_ppa_activity_l1/hierarchy_reports/index.json"
       ],
-      "status": "pending_after_paramod_keep_fix",
+      "status": "superseded_synth_resource_boundary",
+      "superseded_by_item_id": "l1_attention_score32_exact_shared_root_transport_synth_mode_diag_v1_r3",
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "expected_result": {
@@ -35,6 +36,43 @@
         ],
         "prior_result": "invalid_synth_keep_modules_configuration",
         "replacement_contract": "SYNTH_HIERARCHICAL retains the elaborated hierarchy without selecting vanished pre-elaboration module names"
+      }
+    },
+    {
+      "item_id": "l1_attention_score32_exact_shared_root_transport_synth_mode_diag_v1_r3",
+      "task_type": "l1_sweep",
+      "objective": "Compare flat and hierarchy-preserving Yosys synthesis of the exact shared-root transport while retaining fakeram blackboxes and excluding macro Liberty from synthesis.",
+      "evaluation_mode": "synth_prefilter",
+      "make_target": "1_2_yosys",
+      "abstraction_layer": "decoder_attention_exact_shared_root_transport",
+      "comparison_role": "exact_transport_composed_synth_resource_boundary",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport_ppa_activity_l1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_shared_root_transport_ppa_activity_l1/sweeps/nangate45_synth_mode_diag_r3.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport_ppa_activity_l1/metrics.csv"
+      ],
+      "status": "pending_source_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "identify_flat_vs_hierarchical_synthesis_feasibility",
+        "reason": "Choose a bounded physical-flow decomposition from measured synthesis success, elapsed time, failure signature, and resource behavior rather than repeating the 17 GiB r2 path."
+      },
+      "acceptance_notes": "This is a synth-only legality/resource diagnostic, not PPA evidence. Preserve both successful and failed mode rows. Keep all 120 fakeram45_64x32 instances as blackboxes, pass ADDITIONAL_LIBS= during synthesis, and do not run hierarchy-area or timing postchecks. The v1 paramod-selection failure and r2 resource-boundary failure remain explicit history.",
+      "revision": {
+        "reason": "r2 passed parameter elaboration but both physical points reached roughly 17 GiB RSS and flow_failed during hierarchy synthesis",
+        "supersedes_item_ids": [
+          "l1_attention_score32_exact_shared_root_transport_ppa_activity_v1",
+          "l1_attention_score32_exact_shared_root_transport_ppa_activity_v1_r2"
+        ],
+        "prior_results": [
+          "invalid_synth_keep_modules_configuration",
+          "synth_resource_boundary"
+        ],
+        "replacement_contract": "Unique flat/hierarchical synth-only flow variants with fakeram blackboxes and no macro Liberty"
       }
     }
   ]
