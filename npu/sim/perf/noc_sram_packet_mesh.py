@@ -409,6 +409,7 @@ def simulate_packet_mesh(
     *,
     descriptor_scheduler: str = "endpoint_parallel",
     rx_context_limits: Mapping[int, int] | None = None,
+    tx_outstanding_limits: Mapping[int, int] | None = None,
     destination_sram_ready_schedule: ReadySchedule = None,
     source_sram_request_ready_schedule: ReadySchedule = None,
     completion_ready_schedule: ReadySchedule = None,
@@ -465,9 +466,16 @@ def simulate_packet_mesh(
             raise ValueError("rx_context_limits keys must be endpoints in [0, 15]")
         if int(limit) < 1:
             raise ValueError("rx_context_limits values must be positive")
+    outstanding_limits = dict(tx_outstanding_limits or {})
+    for endpoint, limit in outstanding_limits.items():
+        if not 0 <= int(endpoint) < ENDPOINTS:
+            raise ValueError("tx_outstanding_limits keys must be endpoints in [0, 15]")
+        if int(limit) < 1:
+            raise ValueError("tx_outstanding_limits values must be positive")
     states = [
         _EndpointState(
             endpoint,
+            tx_outstanding_limit=int(outstanding_limits.get(endpoint, TX_OUTSTANDING)),
             rx_context_limit=int(context_limits.get(endpoint, RX_CONTEXTS)),
         )
         for endpoint in range(ENDPOINTS)

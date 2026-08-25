@@ -10,6 +10,16 @@ module attention_shared_stream_context_service_full_tb;
 
   always #5 clk = ~clk;
 
+  always @(posedge clk) begin
+    if (rst_n && dut.context_valid_w && dut.context_ready_w)
+      $display("TRACE_CONTEXT cycle=%0d wave=%0d destination=%0d source=%0d",
+        dut.cycle_q, dut.context_wave_w, dut.context_destination_w,
+        dut.context_source_w);
+    if (rst_n && dut.completion_valid_w && dut.service.completion_ready)
+      $display("TRACE_COMPLETION cycle=%0d wave=%0d destination=%0d",
+        dut.cycle_q, dut.completion_wave_w, dut.completion_destination_w);
+  end
+
   attention_shared_stream_context_service_ppa_activity_harness dut (
     .clk(clk), .rst_n(rst_n), .enable(enable), .control(control),
     .observable(observable)

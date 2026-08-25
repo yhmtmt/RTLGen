@@ -101,6 +101,39 @@ def test_rx_context_override_rejects_invalid_endpoint_or_capacity() -> None:
         simulate_packet_mesh([descriptor], rx_context_limits={15: 0})
 
 
+def test_tx_outstanding_override_rejects_invalid_endpoint_or_capacity() -> None:
+    descriptor = PacketDescriptor(
+        source=0,
+        destination=1,
+        vc=0,
+        tag=0,
+        flit_count=1,
+    )
+    with pytest.raises(ValueError, match="keys"):
+        simulate_packet_mesh([descriptor], tx_outstanding_limits={16: 1})
+    with pytest.raises(ValueError, match="positive"):
+        simulate_packet_mesh([descriptor], tx_outstanding_limits={15: 0})
+
+
+def test_single_outstanding_source_read_inserts_response_turnaround_cycle() -> None:
+    descriptor = PacketDescriptor(
+        source=0,
+        destination=1,
+        vc=0,
+        tag=0,
+        flit_count=3,
+    )
+    pipelined = simulate_packet_mesh([descriptor])
+    single_outstanding = simulate_packet_mesh(
+        [descriptor],
+        tx_outstanding_limits={0: 1},
+    )
+
+    assert [request.cycle for request in pipelined.source_memory_requests] == [3, 4, 5]
+    assert [request.cycle for request in single_outstanding.source_memory_requests] == [3, 5, 7]
+    assert single_outstanding.cycles > pipelined.cycles
+
+
 def test_concrete_tags_are_preserved_across_wrap() -> None:
     descriptors = [
         PacketDescriptor(
