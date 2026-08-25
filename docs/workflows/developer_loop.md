@@ -132,3 +132,18 @@ timing-path, or other post-P&R checks that cannot exist at that stage. A
 successful synth-only item proves legality or identifies a synthesis/resource
 boundary. It is not timing, area, or power evidence and must not be promoted as
 a physical calibration result.
+
+## Replacement sweep artifact isolation
+
+Every Layer 1 requested item whose `revision.supersedes_item_ids` names a prior
+item must assign a non-empty `FLOW_VARIANT` or `TAG` to every sweep point or
+mode. A new control-plane item id is not sufficient isolation: `run_sweep` and
+`run_block_sweep` hash flow parameters into their work-directory names, and
+both normally use `--skip_existing`. Reusing predecessor parameters can
+therefore reuse an old successful, failed, or infrastructure-invalid
+`result.json` without invoking the physical flow.
+
+Use a revision-specific value such as `FLOW_VARIANT=endpoint_component_r2`.
+Keep `--skip_existing` enabled so repeated execution of the same immutable
+revision remains idempotent. The Layer 1 task generator rejects superseding
+requests that do not provide this artifact isolation.

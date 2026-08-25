@@ -281,6 +281,68 @@ def _load_requested_item_entry(repo_root: Path, proposal_path: str | None, item_
     return retry_matches[0] if len(retry_matches) == 1 else None
 
 
+def _nonempty_sweep_identity_value(value: Any) -> bool:
+    values = value if isinstance(value, list) else [value]
+    return bool(values) and all(str(item).strip() for item in values)
+
+
+def _validate_replacement_sweep_isolation(
+    *,
+    repo_root: Path,
+    sweep_path: str,
+    requested_entry: dict[str, Any] | None,
+) -> None:
+    if not isinstance(requested_entry, dict):
+        return
+    revision = requested_entry.get("revision")
+    if not isinstance(revision, dict):
+        return
+    supersedes = revision.get("supersedes_item_ids")
+    if not isinstance(supersedes, list) or not any(str(item).strip() for item in supersedes):
+        return
+
+    sweep = _load_json((repo_root / sweep_path).resolve())
+    flow_params = sweep.get("flow_params")
+    if isinstance(flow_params, dict) and any(
+        key in flow_params and _nonempty_sweep_identity_value(flow_params[key])
+        for key in ("FLOW_VARIANT", "TAG")
+    ):
+        return
+
+    flow_param_sets = sweep.get("flow_param_sets")
+    if isinstance(flow_param_sets, list) and flow_param_sets and all(
+        isinstance(point, dict)
+        and any(
+            key in point and _nonempty_sweep_identity_value(point[key])
+            for key in ("FLOW_VARIANT", "TAG")
+        )
+        for point in flow_param_sets
+    ):
+        return
+
+    mode_compare = sweep.get("mode_compare")
+    modes = mode_compare.get("modes") if isinstance(mode_compare, dict) else None
+    if isinstance(modes, list) and modes and all(
+        isinstance(mode, dict)
+        and isinstance(mode.get("param_overrides"), dict)
+        and any(
+            key in mode["param_overrides"]
+            and _nonempty_sweep_identity_value(mode["param_overrides"][key])
+            for key in ("FLOW_VARIANT", "TAG")
+        )
+        for mode in modes
+    ):
+        return
+
+    raise Layer1TaskGenerationError(
+        "replacement Layer1 items must isolate evaluator work artifacts: "
+        f"{requested_entry.get('item_id', '<unknown>')} supersedes prior items but "
+        f"{sweep_path} does not assign a non-empty FLOW_VARIANT or TAG to every "
+        "sweep point/mode. Item ids do not affect run_sweep work-directory hashes, "
+        "so --skip_existing could reuse predecessor results."
+    )
+
+
 def _resolve_requested_entry_text(
     entry: dict[str, Any] | None,
     *,
@@ -2882,6 +2944,11 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             proposal_path_obj.parent.name if proposal_path_obj.name == "proposal.json" else proposal_path_obj.name
         )
     requested_entry = _load_requested_item_entry(repo_root, proposal_path, item_id)
+    _validate_replacement_sweep_isolation(
+        repo_root=repo_root,
+        sweep_path=sweep_path,
+        requested_entry=requested_entry,
+    )
     effective_evaluation_mode = _resolve_requested_entry_text(
         requested_entry,
         key="evaluation_mode",
