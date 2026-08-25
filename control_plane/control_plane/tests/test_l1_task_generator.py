@@ -21,12 +21,38 @@ from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.dependency_gate import refresh_all_blocked_items
 from control_plane.services.l1_task_generator import (
+    Layer1ConfigTarget,
     Layer1SweepGenerateRequest,
     Layer1TaskGenerationError,
     _multivalue_cluster_binary_fsm_profile,
     _read_config_target,
+    _synth_only_targets,
     generate_l1_sweep_task,
 )
+
+
+def test_synth_only_target_keeps_prerequisite_make_target_commands() -> None:
+    target = Layer1ConfigTarget(
+        design_kind="block",
+        design_name="demo",
+        expected_metrics_path="runs/designs/demo/metrics.csv",
+        expected_report_paths=["runs/designs/demo/timing.md"],
+        additional_expected_outputs=["runs/designs/demo/macro/metrics.csv"],
+        commands=[
+            {"name": "harden_macro", "run": "tool --make_target generate_abstract"},
+            {"name": "run_block_sweep", "run": "sweep --make_target 1_2_yosys"},
+            {"name": "extract_timing", "run": "extract timing"},
+        ],
+    )
+
+    result = _synth_only_targets([target], make_target="1_2_yosys")
+
+    assert [command["name"] for command in result[0].commands] == [
+        "harden_macro",
+        "run_block_sweep",
+    ]
+    assert result[0].expected_report_paths == []
+    assert result[0].additional_expected_outputs == ["runs/designs/demo/macro/metrics.csv"]
 
 
 def test_read_config_target_builds_shared_sram_adapter_remote_commands(tmp_path: Path) -> None:

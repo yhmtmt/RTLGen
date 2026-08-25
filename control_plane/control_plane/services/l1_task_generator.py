@@ -2572,7 +2572,9 @@ def _synth_only_targets(
         found_sweep = False
         for command in target.commands:
             commands.append(command)
-            if "--make_target" in command.get("run", ""):
+            if command.get("name") == "run_block_sweep" and "--make_target" in command.get(
+                "run", ""
+            ):
                 found_sweep = True
                 break
         if not found_sweep:
