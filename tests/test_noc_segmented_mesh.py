@@ -801,6 +801,19 @@ def test_segmented_router_wrapper_generates_and_compiles() -> None:
     )
 
 
+def test_router_round_robin_scan_does_not_reselect_wide_flits() -> None:
+    rtl = (REPO_ROOT / "npu/sim/rtl/noc_segmented_mesh_router.sv").read_text(
+        encoding="utf-8"
+    )
+    scan_start = rtl.index("for (comb_scan_i = 0;")
+    grant_start = rtl.index("for (comb_grant_i = 0;", scan_start)
+    scan = rtl[scan_start:grant_start]
+
+    assert "route_request_r" in scan
+    assert "fifo_out_bus" not in scan
+    assert "candidate_count_r" not in rtl
+
+
 @pytest.mark.skipif(_iverilog() is None or _vvp() is None, reason="iverilog/vvp unavailable")
 def test_router_cycle_model_matches_rtl(tmp_path: Path) -> None:
     schedule, ready = _router_scenario()
