@@ -74,10 +74,11 @@ module noc_segmented_mesh_router #(
   reg [4:0] out_valid_q;
   reg [FLIT_W-1:0] out_flit_q [0:PORTS-1];
   reg [INPUT_INDEX_W-1:0] rr_cursor_q [0:PORTS-1];
+  reg [PORTS*INPUTS-1:0] route_request_r;
   reg [4:0] grant_valid_r;
   reg [INPUT_INDEX_W-1:0] grant_index_r [0:PORTS-1];
   reg [FLIT_W-1:0] grant_flit_r [0:PORTS-1];
-  reg [31:0] candidate_count_r [0:PORTS-1];
+  reg [4:0] candidate_seen_r;
   reg [COUNTER_W-1:0] occupancy_sum_r;
   reg any_input_stall_r;
   reg any_output_stall_r;
@@ -87,6 +88,7 @@ module noc_segmented_mesh_router #(
   integer comb_input_i;
   integer comb_output_i;
   integer comb_scan_i;
+  integer comb_grant_i;
   integer scan_index_i;
   integer accepted_i;
   integer forwarded_i;
@@ -181,7 +183,9 @@ module noc_segmented_mesh_router #(
 
   always @(*) begin
     fifo_out_ready_r = {INPUTS{1'b0}};
+    route_request_r = {(PORTS * INPUTS){1'b0}};
     grant_valid_r = 5'b0;
+    candidate_seen_r = 5'b0;
     occupancy_sum_r = {COUNTER_W{1'b0}};
     any_input_stall_r = 1'b0;
     any_output_stall_r = 1'b0;
@@ -189,11 +193,16 @@ module noc_segmented_mesh_router #(
     for (comb_output_i = 0; comb_output_i < PORTS; comb_output_i = comb_output_i + 1) begin
       grant_index_r[comb_output_i] = {INPUT_INDEX_W{1'b0}};
       grant_flit_r[comb_output_i] = {FLIT_W{1'b0}};
-      candidate_count_r[comb_output_i] = 0;
     end
     for (comb_input_i = 0; comb_input_i < INPUTS; comb_input_i = comb_input_i + 1) begin
       occupancy_sum_r = occupancy_sum_r
           + fifo_occupancy_bus[(comb_input_i * FIFO_COUNT_W) +: FIFO_COUNT_W];
+      for (comb_output_i = 0; comb_output_i < PORTS; comb_output_i = comb_output_i + 1) begin
+        route_request_r[(comb_output_i * INPUTS) + comb_input_i] =
+            fifo_out_valid[comb_input_i]
+            && (route_port(fifo_out_bus[(comb_input_i * FLIT_W) + DEST_LSB +: DEST_W])
+                == comb_output_i);
+      end
     end
     for (comb_port_i = 0; comb_port_i < PORTS; comb_port_i = comb_port_i + 1) begin
       if (in_valid[comb_port_i] && !in_ready[comb_port_i])
@@ -206,18 +215,22 @@ module noc_segmented_mesh_router #(
         scan_index_i = rr_cursor_q[comb_output_i] + comb_scan_i;
         if (scan_index_i >= INPUTS)
           scan_index_i = scan_index_i - INPUTS;
-        if (fifo_out_valid[scan_index_i]
-            && (route_port(fifo_out_bus[(scan_index_i * FLIT_W) + DEST_LSB +: DEST_W]) == comb_output_i)) begin
-          candidate_count_r[comb_output_i] = candidate_count_r[comb_output_i] + 1;
+        if (route_request_r[(comb_output_i * INPUTS) + scan_index_i]) begin
+          if (candidate_seen_r[comb_output_i])
+            any_contention_r = 1'b1;
+          candidate_seen_r[comb_output_i] = 1'b1;
           if (!grant_valid_r[comb_output_i]) begin
             grant_valid_r[comb_output_i] = 1'b1;
             grant_index_r[comb_output_i] = scan_index_i[INPUT_INDEX_W-1:0];
-            grant_flit_r[comb_output_i] = fifo_out_bus[(scan_index_i * FLIT_W) +: FLIT_W];
           end
         end
       end
-      if (candidate_count_r[comb_output_i] > 1)
-        any_contention_r = 1'b1;
+      for (comb_grant_i = 0; comb_grant_i < INPUTS; comb_grant_i = comb_grant_i + 1) begin
+        if (grant_valid_r[comb_output_i]
+            && (grant_index_r[comb_output_i] == comb_grant_i[INPUT_INDEX_W-1:0]))
+          grant_flit_r[comb_output_i] =
+              fifo_out_bus[(comb_grant_i * FLIT_W) +: FLIT_W];
+      end
       if ((!out_valid_q[comb_output_i] || out_ready[comb_output_i]) && grant_valid_r[comb_output_i])
         fifo_out_ready_r[grant_index_r[comb_output_i]] = 1'b1;
     end
