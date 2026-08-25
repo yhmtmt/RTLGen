@@ -29,7 +29,12 @@ SWEEP = REPO_ROOT / (
     "runs/campaigns/npu/attention_score32_exact_shared_root_transport_ppa_activity_l1/"
     "sweeps/nangate45_canary.json"
 )
+SYNTH_DIAG_SWEEP = REPO_ROOT / (
+    "runs/campaigns/npu/attention_score32_exact_shared_root_transport_ppa_activity_l1/"
+    "sweeps/nangate45_synth_mode_diag_r3.json"
+)
 PROPOSAL = "docs/proposals/prop_l1_attention_score32_exact_shared_root_transport_ppa_activity_v1"
+SYNTH_DIAG_ITEM = "l1_attention_score32_exact_shared_root_transport_synth_mode_diag_v1_r3"
 
 
 def test_generator_and_guard_prove_compact_exact_transport_contract(tmp_path: Path) -> None:
@@ -72,6 +77,19 @@ def test_canary_uses_two_clocks_in_a_conservative_fixed_envelope() -> None:
     assert flow["SYNTH_HIER_SEPARATOR"] == ["/"]
     assert "SYNTH_KEEP_MODULES" not in flow
     assert "CHECK_SYNTH_KEEP_MODULES" not in flow
+
+
+def test_synth_diagnostic_keeps_blackboxes_but_excludes_macro_liberty() -> None:
+    sweep = json.loads(SYNTH_DIAG_SWEEP.read_text(encoding="utf-8"))
+    assert sweep["flow_params"]["ADDITIONAL_LIBS"] == [""]
+    modes = sweep["mode_compare"]["modes"]
+    assert [mode["name"] for mode in modes] == ["flat_synth", "hierarchical_synth"]
+    assert [mode["use_macro"] for mode in modes] == [True, True]
+    assert [mode["param_overrides"]["FLOW_VARIANT"] for mode in modes] == [
+        "synth_diag_r3_flat",
+        "synth_diag_r3_hierarchical",
+    ]
+    assert [mode["param_overrides"]["SYNTH_HIERARCHICAL"] for mode in modes] == [0, 1]
 
 
 def test_generic_l1_task_manifest_contains_physical_plumbing() -> None:
@@ -120,6 +138,60 @@ def test_generic_l1_task_manifest_contains_physical_plumbing() -> None:
         assert "hierarchy_reports/index.json" in " ".join(work_item.expected_outputs)
         assert work_item.task_request.request_payload["developer_loop"]["proposal_id"] == (
             "prop_l1_attention_score32_exact_shared_root_transport_ppa_activity_v1"
+        )
+
+
+def test_synth_only_l1_task_uses_checked_in_request_and_omits_physical_postchecks() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    with Session(engine) as session:
+        with (
+            patch(
+                "control_plane.services.l1_task_generator._resolve_source_commit",
+                return_value="1234567890abcdef",
+            ),
+            patch(
+                "control_plane.services.l1_task_generator.build_generation_source_identity",
+                return_value={
+                    "version": 1,
+                    "declared_source_commit": "1234567890abcdef",
+                    "repo_head_sha": "1234567890abcdef",
+                    "relation": "exact",
+                    "proof": "test",
+                    "clean": True,
+                },
+            ),
+        ):
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(REPO_ROOT),
+                    sweep_path=str(SYNTH_DIAG_SWEEP),
+                    config_paths=[str(CONFIG)],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    item_id=SYNTH_DIAG_ITEM,
+                    source_commit="HEAD",
+                    proposal_id="prop_l1_attention_score32_exact_shared_root_transport_ppa_activity_v1",
+                    proposal_path=PROPOSAL,
+                    update_proposal_files=False,
+                ),
+            )
+        item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+        assert [command["name"] for command in item.command_manifest] == [
+            "generate_attention_score32_exact_shared_root_transport_ppa_activity_harness_rtl",
+            "check_attention_score32_exact_shared_root_transport_ppa_activity_harness_guard",
+            "run_block_sweep",
+            "build_runs_index",
+            "validate",
+        ]
+        assert "--make_target 1_2_yosys" in item.command_manifest[2]["run"]
+        assert "--macro_manifest" in item.command_manifest[2]["run"]
+        assert item.expected_outputs == [
+            "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport_ppa_activity_l1/metrics.csv"
+        ]
+        assert item.task_request.request_payload["developer_loop"]["evaluation"]["mode"] == (
+            "synth_prefilter"
         )
 
 
