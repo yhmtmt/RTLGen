@@ -21,12 +21,38 @@ from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.dependency_gate import refresh_all_blocked_items
 from control_plane.services.l1_task_generator import (
+    Layer1ConfigTarget,
     Layer1SweepGenerateRequest,
     Layer1TaskGenerationError,
     _multivalue_cluster_binary_fsm_profile,
     _read_config_target,
+    _synth_only_targets,
     generate_l1_sweep_task,
 )
+
+
+def test_synth_only_target_keeps_prerequisite_make_target_commands() -> None:
+    target = Layer1ConfigTarget(
+        design_kind="block",
+        design_name="demo",
+        expected_metrics_path="runs/designs/demo/metrics.csv",
+        expected_report_paths=["runs/designs/demo/timing.md"],
+        additional_expected_outputs=["runs/designs/demo/macro/metrics.csv"],
+        commands=[
+            {"name": "harden_macro", "run": "tool --make_target generate_abstract"},
+            {"name": "run_block_sweep", "run": "sweep --make_target 1_2_yosys"},
+            {"name": "extract_timing", "run": "extract timing"},
+        ],
+    )
+
+    result = _synth_only_targets([target], make_target="1_2_yosys")
+
+    assert [command["name"] for command in result[0].commands] == [
+        "harden_macro",
+        "run_block_sweep",
+    ]
+    assert result[0].expected_report_paths == []
+    assert result[0].additional_expected_outputs == ["runs/designs/demo/macro/metrics.csv"]
 
 
 def test_read_config_target_builds_shared_sram_adapter_remote_commands(tmp_path: Path) -> None:
@@ -3240,6 +3266,7 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
                         proposal_id="prop_l1_demo_v1",
                         proposal_path="docs/proposals/prop_l1_demo_v1",
                         abstraction_layer="circuit_block",
+                        make_target="1_2_yosys",
                         acceptance_notes="Accept flow_failed rows as explicit boundary evidence.",
                         update_proposal_files=True,
                     ),
@@ -3251,6 +3278,10 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
 
             assert session.query(WorkItem).count() == 0
             assert session.query(TaskRequest).count() == 0
+            staged_request = json.loads(
+                (proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8")
+            )["requested_items"][0]
+            assert staged_request["make_target"] == "1_2_yosys"
 
             clean_commit = _commit_repo_changes(repo_root, "commit l1 proposal metadata fixture")
             result = generate_l1_sweep_task(
@@ -3271,6 +3302,10 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
                     update_proposal_files=False,
                 ),
             )
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert work_item.task_request.request_payload["developer_loop"]["evaluation"][
+                "mode"
+            ] == "synth_prefilter"
 
         assert result.status == "applied"
         evaluation_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
@@ -3283,7 +3318,8 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
                     "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using "
                     "nangate45_softmax_rowwise_v1.json and record lightweight design metrics for comparison."
                 ),
-                "evaluation_mode": "measurement_only",
+                "evaluation_mode": "synth_prefilter",
+                "make_target": "1_2_yosys",
                 "abstraction_layer": "circuit_block",
                 "comparison_role": "",
                 "paired_baseline_item_id": "",

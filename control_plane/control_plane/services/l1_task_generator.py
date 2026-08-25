@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import timezone
 from hashlib import sha256
 import json
@@ -373,6 +373,7 @@ def _upsert_evaluation_request_entry(
     task_type: str,
     objective: str,
     evaluation_mode: str,
+    make_target: str | None,
     abstraction_layer: str | None,
     expected_direction: str | None,
     expected_reason: str | None,
@@ -436,6 +437,10 @@ def _upsert_evaluation_request_entry(
     entry["task_type"] = task_type
     entry["objective"] = objective
     entry["evaluation_mode"] = evaluation_mode
+    if str(make_target or "").strip():
+        entry["make_target"] = str(make_target).strip()
+    else:
+        entry.pop("make_target", None)
     entry["abstraction_layer"] = str(abstraction_layer or "").strip()
     entry["comparison_role"] = str(comparison_role or "").strip()
     entry["paired_baseline_item_id"] = str(paired_baseline_item_id or "").strip()
@@ -2540,6 +2545,51 @@ def _command_manifest_for_targets(targets: list[Layer1ConfigTarget]) -> list[dic
     return commands
 
 
+def _is_synth_only_make_target(make_target: str | None) -> bool:
+    normalized = str(make_target or "").strip()
+    return normalized in {
+        "1_1_yosys_canonicalize",
+        "1_2_yosys",
+        "1_2_yosys.v",
+        "1_3_synth",
+        "1_synth",
+        "1_synth.v",
+        "synth",
+    }
+
+
+def _synth_only_targets(
+    targets: list[Layer1ConfigTarget],
+    *,
+    make_target: str | None,
+) -> list[Layer1ConfigTarget]:
+    if not _is_synth_only_make_target(make_target):
+        return targets
+
+    result: list[Layer1ConfigTarget] = []
+    for target in targets:
+        commands: list[dict[str, str]] = []
+        found_sweep = False
+        for command in target.commands:
+            commands.append(command)
+            if command.get("name") == "run_block_sweep" and "--make_target" in command.get(
+                "run", ""
+            ):
+                found_sweep = True
+                break
+        if not found_sweep:
+            result.append(target)
+            continue
+        result.append(
+            replace(
+                target,
+                commands=commands,
+                expected_report_paths=[],
+            )
+        )
+    return result
+
+
 def _is_multivalue_cluster_8ns_bridge_sweep(*, item_id: str, sweep_path: str) -> bool:
     return (
         item_id == "l1_decoder_attention_decode_score_multivalue_cluster_pnr_8ns_v2"
@@ -2888,7 +2938,11 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         abstraction_layer=effective_abstraction_layer,
     )
 
-    effective_make_target = request.make_target
+    effective_make_target = _resolve_requested_entry_text(
+        requested_entry,
+        key="make_target",
+        explicit=request.make_target,
+    )
     if not effective_make_target and _is_gqa_lanes2_macro_hier_placement_sweep(
         item_id=item_id,
         sweep_path=sweep_path,
@@ -2907,6 +2961,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     ]
     if not targets:
         raise Layer1TaskGenerationError("config_paths must not be empty")
+    targets = _synth_only_targets(targets, make_target=effective_make_target)
     design_kinds = {target.design_kind for target in targets}
     if len(design_kinds) != 1:
         raise Layer1TaskGenerationError(
@@ -3029,7 +3084,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         proposal_path=proposal_path,
         evaluation_mode=_effective_evaluation_mode(
             evaluation_mode=effective_evaluation_mode,
-            make_target=request.make_target,
+            make_target=effective_make_target,
         ),
         abstraction_layer=effective_abstraction_layer,
         expected_direction=effective_expected_direction,
@@ -3055,6 +3110,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             task_type="l1_sweep",
             objective=objective,
             evaluation_mode=((payload.get("developer_loop") or {}).get("evaluation") or {}).get("mode") or "",
+            make_target=effective_make_target,
             abstraction_layer=effective_abstraction_layer,
             expected_direction=effective_expected_direction,
             expected_reason=effective_expected_reason,

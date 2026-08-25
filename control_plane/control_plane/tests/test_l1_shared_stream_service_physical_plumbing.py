@@ -152,6 +152,63 @@ def test_generic_l1_task_manifest_contains_complete_service_commands() -> None:
         assert any(path.endswith("/hierarchy_reports/index.json") for path in item.expected_outputs)
 
 
+def test_synth_only_l1_task_omits_physical_postchecks() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    with Session(engine) as session:
+        with (
+            patch(
+                "control_plane.services.l1_task_generator._resolve_source_commit",
+                return_value="1234567890abcdef",
+            ),
+            patch(
+                "control_plane.services.l1_task_generator.build_generation_source_identity",
+                return_value={
+                    "version": 1,
+                    "declared_source_commit": "1234567890abcdef",
+                    "repo_head_sha": "1234567890abcdef",
+                    "relation": "exact",
+                    "proof": "test",
+                    "clean": True,
+                },
+            ),
+            patch(
+                "control_plane.services.l1_task_generator._load_requested_item_entry",
+                return_value={"make_target": "1_2_yosys"},
+            ),
+        ):
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(REPO_ROOT),
+                    sweep_path=str(SWEEP),
+                    config_paths=[str(CONFIG)],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    item_id="l1_attention_shared_stream_context_service_synth_diag_test",
+                    source_commit="HEAD",
+                    proposal_id="prop_l1_attention_shared_stream_context_service_ppa_v1",
+                    proposal_path=PROPOSAL,
+                    update_proposal_files=False,
+                ),
+            )
+        item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+        assert [command["name"] for command in item.command_manifest] == [
+            "generate_attention_shared_stream_context_service_ppa_activity_harness_rtl",
+            "check_attention_shared_stream_context_service_ppa_activity_harness_guard",
+            "run_block_sweep",
+            "build_runs_index",
+            "validate",
+        ]
+        assert "--make_target 1_2_yosys" in item.command_manifest[2]["run"]
+        assert item.expected_outputs == [
+            "runs/designs/npu_blocks/attention_shared_stream_context_service_ppa_l1/metrics.csv"
+        ]
+        assert item.task_request.request_payload["developer_loop"]["evaluation"]["mode"] == (
+            "synth_prefilter"
+        )
+
+
 def _write_metrics(path: Path, status: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as handle:
