@@ -101,7 +101,10 @@ module attention_shared_stream_context_service_ppa_activity_harness (
     event_source_base_w = 0;
     event_destination_base_w = 0;
     event_packet_count_w = 0;
-    if (enable && run_started_q && event_index_q < REMOTE_CONTEXTS) begin
+    // Admission samples layer_start on an edge. Hold residency events for one
+    // additional cycle so they are first presented after layer_active is set.
+    if (enable && run_started_q && !layer_start_q &&
+        event_index_q < REMOTE_CONTEXTS) begin
       event_valid_w[event_cluster_w] = 1'b1;
       event_wave_bus_w[(event_cluster_w*3) +: 3] = event_wave_w;
       event_source_bus_w[(event_cluster_w*4) +: 4] = event_source_w;
