@@ -110,17 +110,24 @@ def _schedule_contexts(
     admission_cycles = [-1] * len(contexts)
     completions: list[ContextHandshake] = []
     next_context = 0
+    completion_hold_context: int | None = None
 
     for cycle in range(max_cycles):
-        completion_slot = next(
-            (
-                slot
-                for slot, context_index in enumerate(slots)
-                if context_index is not None and final_packet_cycles[context_index] + 1 < cycle
-            ),
-            None,
-        )
-        completion_context = slots[completion_slot] if completion_slot is not None else None
+        completion_slot = None
+        completion_context = completion_hold_context
+        if completion_context is not None:
+            completion_slot = slots.index(completion_context)
+        else:
+            completion_slot = next(
+                (
+                    slot
+                    for slot, context_index in enumerate(slots)
+                    if context_index is not None
+                    and final_packet_cycles[context_index] + 1 < cycle
+                ),
+                None,
+            )
+            completion_context = slots[completion_slot] if completion_slot is not None else None
 
         admission_slot = next((slot for slot, owner in enumerate(slots) if owner is None), None)
         admission_context = None
@@ -147,6 +154,9 @@ def _schedule_contexts(
             slots[completion_slot] = None
             source_owner[context.source] = None
             destination_owner[context.destination] = None
+            completion_hold_context = None
+        elif completion_context is not None:
+            completion_hold_context = completion_context
 
         # Ready and the free-slot index are sampled before this edge, so a
         # context cannot consume resources released by the completion above.
@@ -210,6 +220,8 @@ def simulate_context_service(
     event_cycles = tuple(int(cycle) for cycle in event_candidate_cycles)
     if len(event_cycles) != len(context_rows):
         raise ValueError("event_candidate_cycles must have one entry per context")
+    if any(next_cycle < cycle for cycle, next_cycle in zip(event_cycles, event_cycles[1:])):
+        raise ValueError("event_candidate_cycles must preserve producer order")
     if source_outstanding < 1:
         raise ValueError("source_outstanding must be positive")
     if not context_rows:
