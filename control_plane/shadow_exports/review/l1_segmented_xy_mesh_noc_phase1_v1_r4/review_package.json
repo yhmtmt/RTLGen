@@ -1,0 +1,207 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-25T10:00:29.107542Z",
+  "control_plane_source_commit": "30ccbf81a87ea2ef153f2fcc0b5c91e4193ff6b0",
+  "review_metadata_source_commit": "30ccbf81a87ea2ef153f2fcc0b5c91e4193ff6b0",
+  "item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r4",
+  "run_key": "l1_segmented_xy_mesh_noc_phase1_v1_r4_run_3500c0f3bb1002cc",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "30ccbf81a87ea2ef153f2fcc0b5c91e4193ff6b0",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_segmented_xy_mesh_noc_phase1_v1_r4/evaluated.json",
+    "result": {
+      "branch": "eval/l1_segmented_xy_mesh_noc_phase1_v1_r4/s20260825t100027z",
+      "completed_utc": "2026-08-25T10:00:25.575267Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "1f709df75b2c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260825t100027z][host:1f709df75b2c][item:l1_segmented_xy_mesh_noc_phase1_v1_r4]",
+      "metrics_rows": [
+        {
+          "tag": "l1_segmented_xy_mesh_router_nangate45_macro_frontier_r4_fb392427",
+          "status": "failed",
+          "platform": "nangate45",
+          "param_hash": "03af4478",
+          "metrics_csv": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv",
+          "result_path": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/work/03af4478/result.json"
+        },
+        {
+          "tag": "l1_segmented_xy_mesh_router_nangate45_macro_frontier_r4_74b8fada",
+          "status": "failed",
+          "platform": "nangate45",
+          "param_hash": "c87b67ac",
+          "metrics_csv": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv",
+          "result_path": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/work/c87b67ac/result.json"
+        },
+        {
+          "tag": "l1_segmented_xy_mesh_router_nangate45_macro_frontier_r4_40aaf94c",
+          "status": "failed",
+          "platform": "nangate45",
+          "param_hash": "26fa0615",
+          "metrics_csv": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv",
+          "result_path": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/work/26fa0615/result.json"
+        }
+      ],
+      "queue_item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r4",
+      "session_id": "s20260825t100027z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r4.json",
+    "storage_mode": "repo",
+    "sha256": "1dd0c9850f0fea2c51f3c24de8b90354cf9748a082cef07db15721365b56d3c7",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-08-25T10:00:27.119914Z",
+      "item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r4",
+      "run_key": "l1_segmented_xy_mesh_noc_phase1_v1_r4_run_3500c0f3bb1002cc",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "30ccbf81a87ea2ef153f2fcc0b5c91e4193ff6b0",
+      "objective": "Measure Nangate45 PPA for the concrete 256-bit, 4-VC, depth-4 five-port router after repairing the generated ORFS source hierarchy.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/campaigns/noc/l1_segmented_xy_mesh_router/sweeps/nangate45_macro_frontier_r4.json"
+        ],
+        "configs": [
+          "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/config_l1_noc_segmented_xy_router_p5_w256_vc4_d4.json"
+        ],
+        "out_root": "runs/designs/noc",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 0,
+      "evaluation_record": {
+        "evaluation_mode": "ppa",
+        "abstraction_layer": "architecture_block",
+        "result_kind": "boundary_evidence",
+        "physical_metrics_present": false,
+        "timing_feasible": null,
+        "summary": "No status=ok Layer 1 rows were produced; non-ok metrics rows are recorded as explicit boundary evidence.",
+        "boundary_status_counts": {
+          "failed": 3
+        }
+      },
+      "proposal_assessment": {
+        "outcome": "boundary_no_feasible_points",
+        "summary": "All current Layer 1 metrics rows are non-ok; this is accepted as frontier boundary evidence, not a promotable design point.",
+        "failure_row_count": 3
+      },
+      "proposals": [],
+      "trial_summary": {
+        "item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r4",
+        "completed_trials": 1,
+        "success_count": 0,
+        "failure_count": 1,
+        "success_rate": 0.0,
+        "partial_metrics_count": 0,
+        "metrics": {},
+        "aggregation_scope": "current_run_checkout_commit",
+        "aggregation_source_commit": "30ccbf81a87ea2ef153f2fcc0b5c91e4193ff6b0",
+        "aggregation_included_attempts": 1,
+        "aggregation_excluded_attempts": 0,
+        "aggregation_excluded_source_commits": {},
+        "aggregation_excluded_attempt_run_keys": [],
+        "aggregation_excluded_attempt_run_keys_truncated": false
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_segmented_xy_mesh_noc_phase1_v1_r4/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_segmented_xy_mesh_noc_phase1_v1_r4/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_segmented_xy_mesh_noc_phase1_v1_r4/trial_table.csv"
+      },
+      "boundary_evidence": {
+        "row_count": 3,
+        "rows": [
+          {
+            "metrics_csv": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv",
+            "status": "failed",
+            "design": "l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper",
+            "platform": "nangate45",
+            "config_hash": "70517624c143",
+            "param_hash": "03af4478",
+            "tag": "l1_segmented_xy_mesh_router_nangate45_macro_frontier_r4_fb392427",
+            "result_path": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/work/03af4478/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 1.0, \"CORE_UTILIZATION\": 40, \"FLOW_VARIANT\": \"router_component_r4\", \"PLACE_DENSITY\": 0.52, \"TAG\": \"l1_segmented_xy_mesh_router_nangate45_macro_frontier_r4_fb392427\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv",
+            "status": "failed",
+            "design": "l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper",
+            "platform": "nangate45",
+            "config_hash": "70517624c143",
+            "param_hash": "c87b67ac",
+            "tag": "l1_segmented_xy_mesh_router_nangate45_macro_frontier_r4_74b8fada",
+            "result_path": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/work/c87b67ac/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 1.0, \"CORE_UTILIZATION\": 50, \"FLOW_VARIANT\": \"router_component_r4\", \"PLACE_DENSITY\": 0.52, \"TAG\": \"l1_segmented_xy_mesh_router_nangate45_macro_frontier_r4_74b8fada\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv",
+            "status": "failed",
+            "design": "l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper",
+            "platform": "nangate45",
+            "config_hash": "70517624c143",
+            "param_hash": "26fa0615",
+            "tag": "l1_segmented_xy_mesh_router_nangate45_macro_frontier_r4_40aaf94c",
+            "result_path": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/work/26fa0615/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 1.0, \"CORE_UTILIZATION\": 60, \"FLOW_VARIANT\": \"router_component_r4\", \"PLACE_DENSITY\": 0.52, \"TAG\": \"l1_segmented_xy_mesh_router_nangate45_macro_frontier_r4_40aaf94c\"}"
+          }
+        ]
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "segmented_xy_router_primitive_anchor",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "ppa",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "Obtain a reusable per-router physical anchor before composing the 16-router context service from bounded hardened blocks.",
+      "expected_direction": "measure_segmented_xy_router_primitive"
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_segmented_xy_mesh_noc_phase1_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l1_segmented_xy_mesh_noc_phase1_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l1_segmented_xy_mesh_noc_phase1_v1_r4/s20260825t100027z",
+    "title": "eval: run measure isolated segmented xy router ppa r4",
+    "body_fields": {
+      "host": "1f709df75b2c",
+      "session_id": "s20260825t100027z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r4"
+    },
+    "body_md": "## Summary\n- item_id: `l1_segmented_xy_mesh_noc_phase1_v1_r4`\n- run_key: `l1_segmented_xy_mesh_noc_phase1_v1_r4_run_3500c0f3bb1002cc`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_segmented_xy_mesh_noc_phase1_v1_r4/evaluated.json`\n- metrics_rows_count: `3`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r4.json`\n\n## Developer Context\n- proposal_id: `prop_l1_segmented_xy_mesh_noc_phase1_v1`\n- proposal_path: `docs/proposals/prop_l1_segmented_xy_mesh_noc_phase1_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l1_segmented_xy_mesh_noc_phase1_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `30ccbf81a87ea2ef153f2fcc0b5c91e4193ff6b0`\n- review_metadata_source_commit: `30ccbf81a87ea2ef153f2fcc0b5c91e4193ff6b0`\n\n## Evaluation Mode\n- evaluation_mode: `ppa`\n- abstraction_layer: `architecture_block`\n- evaluation_summary: `No status=ok Layer 1 rows were produced; non-ok metrics rows are recorded as explicit boundary evidence.`\n\n## Focused Comparison\n- proposal_outcome: `boundary_no_feasible_points`\n- comparison_summary: `All current Layer 1 metrics rows are non-ok; this is accepted as frontier boundary evidence, not a promotable design point.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}

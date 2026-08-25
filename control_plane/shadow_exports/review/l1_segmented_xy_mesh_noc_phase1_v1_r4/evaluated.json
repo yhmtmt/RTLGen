@@ -1,0 +1,155 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/noc/l1_segmented_xy_mesh_router/sweeps/nangate45_macro_frontier_r4.json"
+      ],
+      "configs": [
+        "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/config_l1_noc_segmented_xy_router_p5_w256_vc4_d4.json"
+      ],
+      "out_root": "runs/designs/noc",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/config_l1_noc_segmented_xy_router_p5_w256_vc4_d4.json --platform nangate45 --sweep runs/campaigns/noc/l1_segmented_xy_mesh_router/sweeps/nangate45_macro_frontier_r4.json --out_root runs/designs/noc --force_gen --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "metadata": {
+      "acceptance_notes": "FLOW_VARIANT=router_component_r4 isolates this execution from all invalid predecessors. Generated ORFS VERILOG_FILES must include the FIFO and segmented-router dependencies and pass hierarchy checking before physical execution. Require live full-width router state and physically completed rows; retain explicit bounded physical failures. Treat PPA as router-plus-boundary-harness evidence, not aggregate mesh or workload energy."
+    },
+    "objective": "Measure Nangate45 PPA for the concrete 256-bit, 4-VC, depth-4 five-port router after repairing the generated ORFS source hierarchy.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains recorded rows with a status column; allow non-ok metrics such as flow_failed when the row is boundary evidence",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Measure isolated segmented XY router PPA r4",
+  "result": {
+    "branch": "eval/l1_segmented_xy_mesh_noc_phase1_v1_r4/s20260825t100027z",
+    "completed_utc": "2026-08-25T10:00:25.575267Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "1f709df75b2c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260825t100027z][host:1f709df75b2c][item:l1_segmented_xy_mesh_noc_phase1_v1_r4]",
+    "metrics_rows": [
+      {
+        "tag": "l1_segmented_xy_mesh_router_nangate45_macro_frontier_r4_fb392427",
+        "status": "failed",
+        "platform": "nangate45",
+        "param_hash": "03af4478",
+        "metrics_csv": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv",
+        "result_path": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/work/03af4478/result.json"
+      },
+      {
+        "tag": "l1_segmented_xy_mesh_router_nangate45_macro_frontier_r4_74b8fada",
+        "status": "failed",
+        "platform": "nangate45",
+        "param_hash": "c87b67ac",
+        "metrics_csv": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv",
+        "result_path": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/work/c87b67ac/result.json"
+      },
+      {
+        "tag": "l1_segmented_xy_mesh_router_nangate45_macro_frontier_r4_40aaf94c",
+        "status": "failed",
+        "platform": "nangate45",
+        "param_hash": "26fa0615",
+        "metrics_csv": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv",
+        "result_path": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/work/26fa0615/result.json"
+      }
+    ],
+    "queue_item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r4",
+    "session_id": "s20260825t100027z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_segmented_xy_mesh_noc_phase1_v1_r4/s20260825t100027z",
+    "pr_title": "eval: run measure isolated segmented xy router ppa r4",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "1f709df75b2c",
+      "session_id": "s20260825t100027z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r4"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r4",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-08-25T09:54:56.802496Z",
+  "requested_by": "developer",
+  "developer_loop": {
+    "comparison": {
+      "role": "segmented_xy_router_primitive_anchor",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "ppa",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "Obtain a reusable per-router physical anchor before composing the 16-router context service from bounded hardened blocks.",
+      "expected_direction": "measure_segmented_xy_router_primitive"
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_segmented_xy_mesh_noc_phase1_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l1_segmented_xy_mesh_noc_phase1_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "30ccbf81a87ea2ef153f2fcc0b5c91e4193ff6b0",
+    "requires_daemon_restart": true
+  },
+  "generation_source_identity": {
+    "clean": true,
+    "proof": "generator_worktree_head_exact",
+    "version": 1,
+    "relation": "exact",
+    "repo_head_sha": "30ccbf81a87ea2ef153f2fcc0b5c91e4193ff6b0",
+    "declared_source_commit": "30ccbf81a87ea2ef153f2fcc0b5c91e4193ff6b0"
+  },
+  "task_type": "l1_sweep"
+}
