@@ -27,7 +27,7 @@
 - `python3 scripts/generate_design.py runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/config_l1_noc_segmented_xy_router_p5_w256_vc4_d4.json nangate45 --force_gen True`
 - `iverilog -g2012 -s l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper -t null /orfs/flow/designs/src/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/noc_ready_valid_fifo.v /orfs/flow/designs/src/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/noc_segmented_mesh_router.v /orfs/flow/designs/src/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/l1_noc_segmented_xy_router_p5_w256_vc4_d4.v /orfs/flow/designs/src/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper.v`
 - `pytest -q tests/test_noc_segmented_mesh.py`
-- Cycle/model regression after bounded-arbiter rewrite: `9 passed` (the direct generator test remains environment-dependent on writable `/orfs/flow/designs/src`).
+- Cycle/model regression after bounded-arbiter rewrite: `10 passed` (the direct generator test remains environment-dependent on writable `/orfs/flow/designs/src`).
 - Bounded local Yosys `synth -noabc` probe: rewritten arbiter completed in 30.5 seconds at 880,536 KiB maximum RSS. The r4/master implementation exceeded 10,211,420 KiB after 98 seconds and was terminated while still growing; the remote r4 run peaked near 24.1 GiB and produced no physical rows.
 
 ## Remaining Abstractions
