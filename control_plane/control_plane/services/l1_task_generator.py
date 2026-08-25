@@ -2583,7 +2583,6 @@ def _synth_only_targets(
                 target,
                 commands=commands,
                 expected_report_paths=[],
-                additional_expected_outputs=[],
             )
         )
     return result
