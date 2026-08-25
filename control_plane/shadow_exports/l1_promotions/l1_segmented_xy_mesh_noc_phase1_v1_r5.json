@@ -1,0 +1,72 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-25T12:32:51.465509Z",
+  "item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r5",
+  "run_key": "l1_segmented_xy_mesh_noc_phase1_v1_r5_run_041034635a30465b",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "3c2a53eab657f64de6a082dc0d37fe94f4132589",
+  "objective": "Measure Nangate45 PPA for the concrete 256-bit, 4-VC, depth-4 five-port router after bounding round-robin arbitration synthesis.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/noc/l1_segmented_xy_mesh_router/sweeps/nangate45_macro_frontier_r5.json"
+    ],
+    "configs": [
+      "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/config_l1_noc_segmented_xy_router_p5_w256_vc4_d4.json"
+    ],
+    "out_root": "runs/designs/noc",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "ppa",
+    "abstraction_layer": "architecture_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": false,
+    "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "27e89cee",
+        "tag": "l1_segmented_xy_mesh_router_nangate45_macro_frontier_r5_4cef114e",
+        "result_path": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/work/27e89cee/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows"
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r5",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "partial_metrics_count": 0,
+    "metrics": {},
+    "aggregation_scope": "current_run_checkout_commit",
+    "aggregation_source_commit": "3c2a53eab657f64de6a082dc0d37fe94f4132589",
+    "aggregation_included_attempts": 1,
+    "aggregation_excluded_attempts": 0,
+    "aggregation_excluded_source_commits": {},
+    "aggregation_excluded_attempt_run_keys": [],
+    "aggregation_excluded_attempt_run_keys_truncated": false
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_segmented_xy_mesh_noc_phase1_v1_r5/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_segmented_xy_mesh_noc_phase1_v1_r5/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_segmented_xy_mesh_noc_phase1_v1_r5/trial_table.csv"
+  }
+}

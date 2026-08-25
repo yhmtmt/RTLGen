@@ -1,0 +1,16 @@
+{
+  "item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r5",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "partial_metrics_count": 0,
+  "metrics": {},
+  "aggregation_scope": "current_run_checkout_commit",
+  "aggregation_source_commit": "3c2a53eab657f64de6a082dc0d37fe94f4132589",
+  "aggregation_included_attempts": 1,
+  "aggregation_excluded_attempts": 0,
+  "aggregation_excluded_source_commits": {},
+  "aggregation_excluded_attempt_run_keys": [],
+  "aggregation_excluded_attempt_run_keys_truncated": false
+}
