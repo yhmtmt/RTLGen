@@ -11,6 +11,39 @@ current_file_path = os.path.dirname(os.path.abspath(__file__))
 repo_root = Path(current_file_path).resolve().parent
 
 
+_L1_MEMORY_NOC_RTL_DEPENDENCIES = {
+    "segmented_router": (
+        "noc_ready_valid_fifo.sv",
+        "noc_segmented_mesh_router.sv",
+    ),
+    "segmented_mesh4x4": (
+        "noc_ready_valid_fifo.sv",
+        "noc_segmented_mesh_router.sv",
+        "noc_segmented_mesh4x4.sv",
+    ),
+    "sram_packet_mesh4x4": (
+        "noc_ready_valid_fifo.sv",
+        "noc_segmented_mesh_router.sv",
+        "noc_segmented_mesh4x4.sv",
+        "noc_sram_packet_endpoint.sv",
+        "noc_sram_packet_mesh4x4.sv",
+        "noc_sram_packet_mesh4x4_ppa_harness.sv",
+    ),
+    "descriptor_pair_scheduler": (
+        "noc_descriptor_command_prefetch.sv",
+        "noc_llama7b_phase2_command_generator.sv",
+        "noc_descriptor_pair_scheduler.sv",
+        "noc_descriptor_pair_scheduler_ppa_harness.sv",
+    ),
+}
+
+
+def _l1_memory_noc_rtl_dependencies(design):
+    if design.get("kind") != "l1_memory_noc_primitive":
+        return ()
+    return _L1_MEMORY_NOC_RTL_DEPENDENCIES.get(design["primitive"], ())
+
+
 def _default_operand(config):
     operands = config.get("operands", [])
     if operands:
@@ -981,7 +1014,7 @@ def generate_l1_memory_noc_design(src_dir, design):
         text = _emit_l1_router(module_name, design)
     elif design["primitive"] == "segmented_router":
         text = _emit_l1_segmented_router(module_name, design)
-        for filename in ("noc_ready_valid_fifo.sv", "noc_segmented_mesh_router.sv"):
+        for filename in _l1_memory_noc_rtl_dependencies(design):
             rtl_path = repo_root / "npu" / "sim" / "rtl" / filename
             Path(src_dir, Path(filename).with_suffix(".v")).write_text(
                 rtl_path.read_text(encoding="utf-8"),
@@ -989,11 +1022,7 @@ def generate_l1_memory_noc_design(src_dir, design):
             )
     elif design["primitive"] == "segmented_mesh4x4":
         text = _emit_l1_segmented_mesh4x4(module_name, design)
-        for filename in (
-            "noc_ready_valid_fifo.sv",
-            "noc_segmented_mesh_router.sv",
-            "noc_segmented_mesh4x4.sv",
-        ):
+        for filename in _l1_memory_noc_rtl_dependencies(design):
             rtl_path = repo_root / "npu" / "sim" / "rtl" / filename
             Path(src_dir, Path(filename).with_suffix(".v")).write_text(
                 rtl_path.read_text(encoding="utf-8"),
@@ -1003,14 +1032,7 @@ def generate_l1_memory_noc_design(src_dir, design):
         text = _emit_l1_sram_packet_endpoint(module_name, design)
     elif design["primitive"] == "sram_packet_mesh4x4":
         text = _emit_l1_sram_packet_mesh4x4(module_name, design)
-        for filename in (
-            "noc_ready_valid_fifo.sv",
-            "noc_segmented_mesh_router.sv",
-            "noc_segmented_mesh4x4.sv",
-            "noc_sram_packet_endpoint.sv",
-            "noc_sram_packet_mesh4x4.sv",
-            "noc_sram_packet_mesh4x4_ppa_harness.sv",
-        ):
+        for filename in _l1_memory_noc_rtl_dependencies(design):
             rtl_path = repo_root / "npu" / "sim" / "rtl" / filename
             Path(src_dir, Path(filename).with_suffix(".v")).write_text(
                 rtl_path.read_text(encoding="utf-8"),
@@ -1018,12 +1040,7 @@ def generate_l1_memory_noc_design(src_dir, design):
             )
     elif design["primitive"] == "descriptor_pair_scheduler":
         text = _emit_l1_descriptor_pair_scheduler(module_name, design)
-        for filename in (
-            "noc_descriptor_command_prefetch.sv",
-            "noc_llama7b_phase2_command_generator.sv",
-            "noc_descriptor_pair_scheduler.sv",
-            "noc_descriptor_pair_scheduler_ppa_harness.sv",
-        ):
+        for filename in _l1_memory_noc_rtl_dependencies(design):
             rtl_path = repo_root / "npu" / "sim" / "rtl" / filename
             Path(src_dir, Path(filename).with_suffix(".v")).write_text(
                 rtl_path.read_text(encoding="utf-8"),
@@ -2851,18 +2868,10 @@ def generate_config_mk(platform_dir, platform, design):
     ]
     if design["include_mg_cpa"]:
         verilog_files.append(f"$(DESIGN_HOME)/src/{wrapper_name}/MG_CPA.v")
-    if (
-        design["kind"] == "l1_memory_noc_primitive"
-        and design["primitive"] == "descriptor_pair_scheduler"
-    ):
-        verilog_files.extend(
-            [
-                f"$(DESIGN_HOME)/src/{wrapper_name}/noc_descriptor_command_prefetch.v",
-                f"$(DESIGN_HOME)/src/{wrapper_name}/noc_llama7b_phase2_command_generator.v",
-                f"$(DESIGN_HOME)/src/{wrapper_name}/noc_descriptor_pair_scheduler.v",
-                f"$(DESIGN_HOME)/src/{wrapper_name}/noc_descriptor_pair_scheduler_ppa_harness.v",
-            ]
-        )
+    verilog_files.extend(
+        f"$(DESIGN_HOME)/src/{wrapper_name}/{Path(filename).with_suffix('.v').name}"
+        for filename in _l1_memory_noc_rtl_dependencies(design)
+    )
     if (
         design["kind"] == "l1_memory_noc_primitive"
         and design["primitive"] == "exact_aligned_codec"
