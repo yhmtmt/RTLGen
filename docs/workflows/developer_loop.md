@@ -116,3 +116,19 @@ Before dispatching such an item:
 
 This keeps the evaluator deterministic: it should run prepared source, not infer
 or implement missing architecture blocks.
+
+## Synth-only diagnostic contract
+
+Use a bounded synth-only item before repeating an expensive physical run when
+the prior failure occurred inside Yosys or its resource use is uncertain.
+Record the terminal stage in the requested item as `make_target`, for example
+`1_1_yosys_canonicalize` or `1_2_yosys`; do not rely on an operator to add the
+target while queueing.
+
+The Layer 1 generator inherits `make_target` from `evaluation_requests.json`.
+For a synth-only target, the generated command contract ends after
+`run_block_sweep` and expects `metrics.csv`; it must not append hierarchy-area,
+timing-path, or other post-P&R checks that cannot exist at that stage. A
+successful synth-only item proves legality or identifies a synthesis/resource
+boundary. It is not timing, area, or power evidence and must not be promoted as
+a physical calibration result.

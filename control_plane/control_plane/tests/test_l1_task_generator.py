@@ -3240,6 +3240,7 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
                         proposal_id="prop_l1_demo_v1",
                         proposal_path="docs/proposals/prop_l1_demo_v1",
                         abstraction_layer="circuit_block",
+                        make_target="1_2_yosys",
                         acceptance_notes="Accept flow_failed rows as explicit boundary evidence.",
                         update_proposal_files=True,
                     ),
@@ -3251,6 +3252,10 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
 
             assert session.query(WorkItem).count() == 0
             assert session.query(TaskRequest).count() == 0
+            staged_request = json.loads(
+                (proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8")
+            )["requested_items"][0]
+            assert staged_request["make_target"] == "1_2_yosys"
 
             clean_commit = _commit_repo_changes(repo_root, "commit l1 proposal metadata fixture")
             result = generate_l1_sweep_task(
@@ -3271,6 +3276,10 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
                     update_proposal_files=False,
                 ),
             )
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert work_item.task_request.request_payload["developer_loop"]["evaluation"][
+                "mode"
+            ] == "synth_prefilter"
 
         assert result.status == "applied"
         evaluation_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
@@ -3283,7 +3292,8 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
                     "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using "
                     "nangate45_softmax_rowwise_v1.json and record lightweight design metrics for comparison."
                 ),
-                "evaluation_mode": "measurement_only",
+                "evaluation_mode": "synth_prefilter",
+                "make_target": "1_2_yosys",
                 "abstraction_layer": "circuit_block",
                 "comparison_role": "",
                 "paired_baseline_item_id": "",
