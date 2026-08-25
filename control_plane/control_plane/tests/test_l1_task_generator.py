@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 from unittest.mock import patch
 
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -27,8 +28,72 @@ from control_plane.services.l1_task_generator import (
     _multivalue_cluster_binary_fsm_profile,
     _read_config_target,
     _synth_only_targets,
+    _validate_replacement_sweep_isolation,
     generate_l1_sweep_task,
 )
+
+
+def test_replacement_sweep_requires_revision_specific_artifact_identity(tmp_path: Path) -> None:
+    sweep_path = "retry.json"
+    (tmp_path / sweep_path).write_text(
+        json.dumps({"flow_params": {"CLOCK_PERIOD": [1.0]}}),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(Layer1TaskGenerationError, match="must isolate evaluator work artifacts"):
+        _validate_replacement_sweep_isolation(
+            repo_root=tmp_path,
+            sweep_path=sweep_path,
+            requested_entry={
+                "item_id": "demo_r2",
+                "revision": {"supersedes_item_ids": ["demo"]},
+            },
+        )
+
+
+def test_replacement_sweep_accepts_base_or_per_mode_artifact_identity(tmp_path: Path) -> None:
+    entry = {
+        "item_id": "demo_r2",
+        "revision": {"supersedes_item_ids": ["demo"]},
+    }
+    base_path = "base.json"
+    (tmp_path / base_path).write_text(
+        json.dumps(
+            {
+                "flow_params": {
+                    "CLOCK_PERIOD": [1.0],
+                    "FLOW_VARIANT": ["demo_r2"],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    _validate_replacement_sweep_isolation(
+        repo_root=tmp_path,
+        sweep_path=base_path,
+        requested_entry=entry,
+    )
+
+    modes_path = "modes.json"
+    (tmp_path / modes_path).write_text(
+        json.dumps(
+            {
+                "flow_params": {"CLOCK_PERIOD": [1.0]},
+                "mode_compare": {
+                    "modes": [
+                        {"param_overrides": {"FLOW_VARIANT": "demo_r2_flat"}},
+                        {"param_overrides": {"FLOW_VARIANT": "demo_r2_hier"}},
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    _validate_replacement_sweep_isolation(
+        repo_root=tmp_path,
+        sweep_path=modes_path,
+        requested_entry=entry,
+    )
 
 
 def test_synth_only_target_keeps_prerequisite_make_target_commands() -> None:

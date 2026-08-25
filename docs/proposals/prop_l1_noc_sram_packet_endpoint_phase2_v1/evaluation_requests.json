@@ -11,7 +11,7 @@
       "config_paths": [
         "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/config_l1_noc_sram_packet_endpoint_w256_td4_to8_rx8.json"
       ],
-      "sweep_path": "runs/campaigns/noc/l1_sram_packet_endpoint/sweeps/nangate45_macro_frontier.json",
+      "sweep_path": "runs/campaigns/noc/l1_sram_packet_endpoint/sweeps/nangate45_macro_frontier_r2.json",
       "expected_outputs": [
         "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/metrics.csv"
       ],
@@ -51,13 +51,13 @@
         "direction": "measure_phase2_sram_packet_endpoint",
         "reason": "Obtain a reusable per-endpoint physical anchor before composing sixteen endpoint macros with the context controller and mesh."
       },
-      "acceptance_notes": "This replaces an infrastructure-invalid run that failed before OpenROAD on root-owned ORFS paths. Require exact finite endpoint behavior and retained queue/context structures; retain explicit bounded failures. Exclude SRAM bitcells, router PPA, and workload activity.",
+      "acceptance_notes": "FLOW_VARIANT=endpoint_component_r2 isolates this execution from the cached infrastructure-failed predecessor. Require exact finite endpoint behavior and retained queue/context structures; retain explicit bounded failures. Exclude SRAM bitcells, router PPA, and workload activity.",
       "revision": {
         "supersedes_item_ids": [
           "l1_noc_sram_packet_endpoint_phase2_v1"
         ],
         "prior_result": "invalid_evaluator_orfs_path_ownership",
-        "replacement_contract": "Exact same RTL and sweep on the rebuilt non-root evaluator with writable ORFS runtime roots"
+        "replacement_contract": "Exact same RTL and sweep points under a revision-specific FLOW_VARIANT on the rebuilt non-root evaluator"
       }
     }
   ]
