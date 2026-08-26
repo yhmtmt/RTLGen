@@ -1,0 +1,23 @@
+{
+  "tag_prefix": "l1_sram_packet_endpoint_nangate45_macro_frontier_r3",
+  "flow_param_sets": [
+    {
+      "CLOCK_PERIOD": 2.6,
+      "CORE_UTILIZATION": 50,
+      "PLACE_DENSITY": 0.52,
+      "FLOW_VARIANT": "endpoint_component_r3"
+    },
+    {
+      "CLOCK_PERIOD": 2.6,
+      "CORE_UTILIZATION": 60,
+      "PLACE_DENSITY": 0.52,
+      "FLOW_VARIANT": "endpoint_component_r3"
+    },
+    {
+      "CLOCK_PERIOD": 3.0,
+      "CORE_UTILIZATION": 60,
+      "PLACE_DENSITY": 0.52,
+      "FLOW_VARIANT": "endpoint_component_r3"
+    }
+  ]
+}

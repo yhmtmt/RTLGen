@@ -1,0 +1,23 @@
+{
+  "tag_prefix": "l1_segmented_xy_mesh_router_nangate45_macro_frontier_r7",
+  "flow_param_sets": [
+    {
+      "CLOCK_PERIOD": 1.8,
+      "CORE_UTILIZATION": 50,
+      "PLACE_DENSITY": 0.52,
+      "FLOW_VARIANT": "router_component_r7"
+    },
+    {
+      "CLOCK_PERIOD": 1.8,
+      "CORE_UTILIZATION": 60,
+      "PLACE_DENSITY": 0.52,
+      "FLOW_VARIANT": "router_component_r7"
+    },
+    {
+      "CLOCK_PERIOD": 2.0,
+      "CORE_UTILIZATION": 60,
+      "PLACE_DENSITY": 0.52,
+      "FLOW_VARIANT": "router_component_r7"
+    }
+  ]
+}

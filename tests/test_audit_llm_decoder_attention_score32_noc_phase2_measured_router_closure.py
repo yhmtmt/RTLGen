@@ -71,7 +71,7 @@ def _phase2_payload(*, noc_clock_ns: float = 1.0, coverage: str = "workload_comp
 
 def _phase1_payload(*, critical_path_ns: float = 1.4, area_um2: float = 12345.0, power_mw: float = 0.42) -> dict:
     return {
-        "item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r6",
+        "item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r7",
         "task_type": "l1_sweep",
         "evaluation_record": {
             "evaluation_mode": "measurement_only",
@@ -113,7 +113,7 @@ def test_measured_router_closure_uses_conservative_slower_router_clock_and_label
     tmp_path: Path,
 ) -> None:
     phase2_rel = PHASE2_REL
-    phase1_rel = "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r6.json"
+    phase1_rel = "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r7.json"
     _write_json(tmp_path / phase2_rel, _phase2_payload(noc_clock_ns=1.0))
     _write_json(tmp_path / phase1_rel, _phase1_payload(critical_path_ns=1.4, area_um2=12345.0, power_mw=0.42))
 

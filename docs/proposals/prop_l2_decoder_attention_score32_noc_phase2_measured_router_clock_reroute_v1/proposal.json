@@ -27,7 +27,7 @@
       "evaluation_mode": "frontier_detail",
       "depends_on_item_ids": [
         "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
-        "l1_segmented_xy_mesh_noc_phase1_v1_r6"
+        "l1_segmented_xy_mesh_noc_phase1_v1_r7"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true
@@ -35,6 +35,6 @@
   ],
   "baseline_refs": [
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
-    "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r6.json"
+    "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r7.json"
   ]
 }
