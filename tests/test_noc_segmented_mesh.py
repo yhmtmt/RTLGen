@@ -26,6 +26,8 @@ from npu.sim.perf.noc_segmented_mesh import (
     PORTS,
     RouterCycleInput,
     TrafficFlow,
+    coordinates,
+    extract_router_replay_schedules,
     packetize_traffic_flow,
     segmented_transfer,
     simulate_mesh,
@@ -1022,6 +1024,49 @@ def test_multiflow_mesh_preserves_conservation_order_and_fairness() -> None:
     first_sixteen_tags = {delivery.flit.tag for delivery in result.deliveries[:16]}
     assert len(first_sixteen_tags) >= 2
     assert any(summary.arbitration_contention_cycles > 0 for summary in result.router_summaries)
+
+
+def test_mesh_router_traces_replay_each_router_cycle_exactly() -> None:
+    flows = _multiflow_mesh_flows()
+    ready = _multiflow_mesh_ready()
+    scheduled = [scheduled for flow in flows for scheduled in packetize_traffic_flow(flow)]
+    result = simulate_scheduled_flits(scheduled, endpoint_out_ready_schedule=ready, max_cycles=256)
+
+    for node in (0, 5, 15):
+        input_schedule, out_ready_schedule = extract_router_replay_schedules(result, node=node)
+        x_coord, y_coord = coordinates(node)
+        replay = simulate_router(
+            x_coord=x_coord,
+            y_coord=y_coord,
+            input_schedule=input_schedule,
+            out_ready_schedule=out_ready_schedule,
+        )
+        expected_traces = tuple(mesh_trace.router_traces[node] for mesh_trace in result.traces)
+
+        assert replay.traces == expected_traces
+        assert replay.accepted_flit_count == result.router_summaries[node].accepted_flit_count
+        assert replay.forwarded_flit_count == result.router_summaries[node].forwarded_flit_count
+
+
+def test_router_replay_restores_fast_forwarded_idle_cycles() -> None:
+    flows = [
+        TrafficFlow(name="early", source=0, destination=1, payload_bytes=32, vc=0, release_cycle=0),
+        TrafficFlow(name="late", source=0, destination=1, payload_bytes=32, vc=0, release_cycle=1000),
+    ]
+    scheduled = [item for flow in flows for item in packetize_traffic_flow(flow)]
+    result = simulate_scheduled_flits(scheduled, max_cycles=1100, fast_forward_idle=True)
+    input_schedule, out_ready_schedule = extract_router_replay_schedules(result, node=0)
+    replay = simulate_router(
+        x_coord=0,
+        y_coord=0,
+        input_schedule=input_schedule,
+        out_ready_schedule=out_ready_schedule,
+    )
+
+    assert len(result.traces) < result.cycles
+    assert len(replay.traces) == result.cycles
+    for mesh_trace in result.traces:
+        assert replay.traces[mesh_trace.cycle] == mesh_trace.router_traces[0]
 
 
 def test_mesh_idle_fast_forward_preserves_absolute_delivery_cycles() -> None:
