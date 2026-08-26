@@ -19,7 +19,8 @@
 - Observe TX metadata, payloads, RX addresses/data, completion metadata,
   issued/completed counts, and protocol status through a compact boundary.
 - Retain the local-destination comparator through a four-bit destination probe
-  instead of tying it to a synthesis-removable constant.
+  instead of tying it to a synthesis-removable constant. Register that probe at
+  the physical wrapper so every measured data path has a macro timing boundary.
 
 ## Exclusions
 

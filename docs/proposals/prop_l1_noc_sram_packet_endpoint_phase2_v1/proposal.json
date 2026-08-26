@@ -103,7 +103,8 @@
       "expected_outputs": [
         "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/metrics.csv"
       ],
-      "status": "pending_source_merge",
+      "status": "diagnostic_hold_unregistered_macro_boundary",
+      "superseded_by_item_id": "l1_noc_sram_packet_endpoint_phase2_v1_r4",
       "comparison_role": "phase2_sram_packet_endpoint_physical_anchor",
       "paired_baseline_item_id": "l1_noc_sram_packet_endpoint_phase2_v1_r2",
       "depends_on_item_ids": [],
@@ -120,6 +121,38 @@
         ],
         "prior_result": "r2_completed_physical_rows_but_no_1p5ns_timing_feasible_point",
         "replacement_contract": "Targeted 2.6 ns and 3.0 ns closure points at the r2 best-delay and best-area utilizations must produce a timing-feasible endpoint anchor before composition."
+      }
+    },
+    {
+      "item_id": "l1_noc_sram_packet_endpoint_phase2_v1_r4",
+      "task_type": "l1_sweep",
+      "objective": "Close a timing-feasible Nangate45 operating point for the concrete Phase 2 endpoint using a fully registered macro boundary.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "config_paths": [
+        "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/config_l1_noc_sram_packet_endpoint_w256_td4_to8_rx8.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_sram_packet_endpoint/sweeps/nangate45_macro_frontier_r4.json",
+      "expected_outputs": [
+        "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/metrics.csv"
+      ],
+      "status": "pending_source_merge",
+      "comparison_role": "phase2_sram_packet_endpoint_physical_anchor",
+      "paired_baseline_item_id": "l1_noc_sram_packet_endpoint_phase2_v1_r2",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "close_registered_boundary_phase2_sram_packet_endpoint",
+        "reason": "Measure comparable register-to-register endpoint timing without an unconstrained combinational destination-probe path changing the selected timing path group."
+      },
+      "acceptance_notes": "Require the destination probe boundary register, finite delay/area/power, unique per-point ORFS provenance, retained configured queue/context state, setup-path identity evidence, and at least one critical_path_ns no greater than CLOCK_PERIOD. Reject non-monotonic rows unless report and netlist evidence explains them. Exclude SRAM bitcells, router PPA, and workload activity.",
+      "revision": {
+        "supersedes_item_ids": [
+          "l1_noc_sram_packet_endpoint_phase2_v1_r3"
+        ],
+        "prior_result": "r3_selected_an_unexplained_0p4457ns_nonmonotonic_row_with_an_unregistered_live_probe_boundary",
+        "replacement_contract": "Register the only external data probe at the physical wrapper, repeat the same isolated 2.6/3.0 ns points, retain per-point reports, and accept only structurally intact comparable timing paths."
       }
     }
   ]

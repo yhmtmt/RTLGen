@@ -6,5 +6,7 @@
 - Accept physically completed rows or explicit bounded flow failures.
 - Audit post-synthesis retention of all four descriptor entries, eight
   outstanding metadata entries, and eight RX contexts.
+- Require registered external data inputs and report startpoint/endpoint path
+  identity for any non-monotonic timing result before promotion.
 - Report endpoint-control-plus-harness area/power/timing. Do not classify the
   result as SRAM macro, router, aggregate mesh, or workload-activity evidence.
