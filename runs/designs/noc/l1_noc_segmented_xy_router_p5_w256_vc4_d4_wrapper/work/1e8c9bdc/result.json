@@ -1,0 +1,29 @@
+{
+  "design": "l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper",
+  "module": "l1_noc_segmented_xy_router_p5_w256_vc4_d4",
+  "platform": "nangate45",
+  "config_path": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/config_l1_noc_segmented_xy_router_p5_w256_vc4_d4.json",
+  "config_hash": "70517624c143",
+  "param_hash": "1e8c9bdc",
+  "tag": "l1_segmented_xy_mesh_router_nangate45_macro_frontier_r6_7ee398f9",
+  "flow_params": {
+    "CLOCK_PERIOD": 1.0,
+    "CORE_UTILIZATION": 40,
+    "FLOW_VARIANT": "router_component_r6",
+    "PLACE_DENSITY": 0.52,
+    "TAG": "l1_segmented_xy_mesh_router_nangate45_macro_frontier_r6_7ee398f9"
+  },
+  "effective_flow_variant": "router_component_r6__1e8c9bdc",
+  "timestamp": "2026-08-26T12:31:56.147318Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/nangate45/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/router_component_r6__1e8c9bdc/6_finish.rpt",
+    "def": "/orfs/flow/results/nangate45/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/router_component_r6__1e8c9bdc/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 1.7508,
+    "total_power_mw": 0.291,
+    "die_area": 778991.586025
+  },
+  "status": "ok",
+  "result_path": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/work/1e8c9bdc/result.json"
+}
