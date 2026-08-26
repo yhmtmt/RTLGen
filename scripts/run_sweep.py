@@ -325,21 +325,19 @@ def resolve_flow_output_paths(
     *,
     platform: str,
     wrapper: str,
-    tag: str,
-    flow_params: Dict[str, object],
+    flow_variant: str,
 ) -> Tuple[Path, Path]:
     """Return the ORFS finish-report and DEF paths for this invocation."""
-    flow_variant = str(flow_params.get("FLOW_VARIANT", "")).strip()
-    if flow_variant:
-        output_variant = flow_variant
-    else:
-        tagged_report = REPORT_BASE / platform / wrapper / str(tag) / "6_finish.rpt"
-        tagged_def = RESULT_BASE / platform / wrapper / str(tag) / "6_final.def"
-        output_variant = str(tag) if tagged_report.exists() or tagged_def.exists() else "base"
     return (
-        REPORT_BASE / platform / wrapper / output_variant / "6_finish.rpt",
-        RESULT_BASE / platform / wrapper / output_variant / "6_final.def",
+        REPORT_BASE / platform / wrapper / flow_variant / "6_finish.rpt",
+        RESULT_BASE / platform / wrapper / flow_variant / "6_final.def",
     )
+
+
+def isolated_flow_variant(flow_params: Dict[str, object], run_id: str) -> str:
+    base_variant = str(flow_params.get("FLOW_VARIANT", "")).strip() or "sweep"
+    suffix = f"__{run_id}"
+    return base_variant if base_variant.endswith(suffix) else f"{base_variant}{suffix}"
 
 
 def run_single(
@@ -355,6 +353,7 @@ def run_single(
     config_hash = sha1_file(config_path)[:12]
     run_id = make_run_id(flow_params)
     tag = flow_params.get("TAG", f"run_{run_id}")
+    flow_variant = isolated_flow_variant(flow_params, run_id)
 
     circuit_root = out_root / wrapper
     work_root = circuit_root / "work"
@@ -386,6 +385,7 @@ def run_single(
         "param_hash": run_id,
         "tag": tag,
         "flow_params": flow_params,
+        "effective_flow_variant": flow_variant,
         "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
         "reports": {},
         "metrics": {},
@@ -412,7 +412,10 @@ def run_single(
     ]
     # Pass flow parameters as env overrides (upper-cased keys).
     for k, v in flow_params.items():
+        if k.upper() == "FLOW_VARIANT":
+            continue
         make_cmd.append(f"{k.upper()}={v}")
+    make_cmd.append(f"FLOW_VARIANT={flow_variant}")
 
     print(f"[INFO] Running OpenROAD flow: {' '.join(make_cmd)}")
     try:
@@ -422,14 +425,13 @@ def run_single(
         run_record["status"] = "failed"
         run_record["error"] = str(e)
 
-    # FLOW_VARIANT, not TAG, selects the ORFS report/result directory. Falling
-    # back to base when an explicit variant was requested can silently ingest a
-    # stale result from another sweep.
+    # FLOW_VARIANT, not TAG, selects the ORFS report/result directory. Each
+    # parameter point receives a run-id suffix so its physical artifacts cannot
+    # overwrite or reuse another point in the sweep.
     finish_rpt, def_path = resolve_flow_output_paths(
         platform=platform,
         wrapper=wrapper,
-        tag=str(tag),
-        flow_params=flow_params,
+        flow_variant=flow_variant,
     )
     run_record["reports"] = {
         "finish": str(finish_rpt),
