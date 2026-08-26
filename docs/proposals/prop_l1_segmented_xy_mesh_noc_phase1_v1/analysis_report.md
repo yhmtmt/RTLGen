@@ -2,26 +2,29 @@
 
 ## Candidate
 - `proposal_id`: `prop_l1_segmented_xy_mesh_noc_phase1_v1`
-- `candidate_id`: `l1_segmented_xy_mesh_noc_phase1_v1`
+- `candidate_id`: `l1_segmented_xy_mesh_noc_phase1_v1_r6`
 
 ## Evaluations Consumed
-- Pending remote Nangate45 evaluation from the exact finalized source commit.
+- `l1_segmented_xy_mesh_noc_phase1_v1_r6`
+- `l1_segmented_xy_mesh_noc_phase1_v1_r6_run_fbe5773fc9610529`
+- source commit: `ed1ddb403a3249e33a4f74ab466b28a2d3544a44`
+- review: PR #1789
 
 ## Baseline Comparison
-- Legacy comparison: separately measured synthetic 4-port router and FIFO
-  primitives.
-- Candidate: the exact five-port router with four per-input VCs and depth-4
-  buffering used by the merged 4x4 mesh RTL/model.
+- outcome: `boundary_no_feasible_points`
+- summary: All completed physical rows miss their declared clock period; retain them as timing-boundary evidence and do not promote a feasible design point.
 
 ## Result
-- Pending. No measured area, timing, or power claim is made before the result
-  artifacts merge.
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: No timing-feasible Layer 1 rows were produced; completed flows that miss their declared clock period are retained as explicit timing-boundary evidence.
 
 ## Failures and Caveats
-- This item is a single-router macro anchor, not aggregate 4x4 placement.
-- Vectorless power will not close workload-specific NoC activity energy.
-- SRAM endpoints and external memory are not part of this block.
+- no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- Measure the primitive remotely, consume it in the Phase 2 schedule recost,
-  then evaluate whether aggregate 4x4 placement is required to bound wire cost.
+- `iterate`
+- reason: Accepted Layer 1 evidence merged, but no concrete promotion proposal entries were present.
+- next_action: inspect the next dependent item

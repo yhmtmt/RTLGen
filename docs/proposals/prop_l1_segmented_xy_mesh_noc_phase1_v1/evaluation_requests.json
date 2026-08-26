@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_segmented_xy_mesh_noc_phase1_v1",
-  "source_commit": "TBD",
+  "source_commit": "ed1ddb403a3249e33a4f74ab466b28a2d3544a44",
   "requested_items": [
     {
       "item_id": "l1_segmented_xy_mesh_noc_phase1_v1",
@@ -191,7 +191,7 @@
       "expected_outputs": [
         "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv"
       ],
-      "status": "pending_source_merge",
+      "status": "merged",
       "comparison_role": "segmented_xy_router_primitive_anchor",
       "paired_baseline_item_id": "",
       "depends_on_item_ids": [],
@@ -218,7 +218,11 @@
           "wrong_flow_variant_report_lookup_and_cross_point_artifact_collision"
         ],
         "replacement_contract": "Per-parameter effective FLOW_VARIANT preserves independent ORFS artifacts; complete-PPA acceptance and linked result staging prevent blank command-success rows from promotion"
-      }
+      },
+      "merged_pr_number": 1789,
+      "merge_commit": "0323ee0bde83829af15090e8a552ad0f24b75720",
+      "merged_utc": "2026-08-26T14:40:36.917121Z",
+      "notes": "Merged via PR #1789 and merge 0323ee0bde83829af15090e8a552ad0f24b75720 at 2026-08-26T14:40:36.917121Z."
     }
   ]
 }
