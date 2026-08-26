@@ -182,6 +182,15 @@ clock closed. When `critical_path_ns` and the declared `CLOCK_PERIOD` are both
 available, a row is promotable only if `critical_path_ns <= CLOCK_PERIOD`.
 Completed rows that miss the period must retain `flow_status=ok` but be reported
 as `timing_infeasible` boundary evidence with the clock period and signed slack.
+For `ppa` and `ppa_sweep` evaluations, a promotable row must also contain finite
+`critical_path_ns`, `die_area`, and `total_power_mw` values. Command-complete
+rows with any of those fields missing are incomplete physical evidence, not PPA
+results.
+
+When a sweep sets `FLOW_VARIANT`, retrieve ORFS reports and results from that
+variant directory. `TAG` labels the measurement row but does not override the
+ORFS output variant. Do not fall back to `base` for an explicit variant because
+it can import stale artifacts from another sweep.
 
 Do not use relaxed boundary acceptance for ordinary winner-selection sweeps.
 Those should continue to require at least one completed, timing-feasible row for

@@ -79,6 +79,37 @@ def test_collect_linked_results_artifacts_includes_decoder_sweep_sidecars(tmp_pa
     assert all(artifact.metadata["transport_policy"] == "inline_text_supporting" for artifact in artifacts)
 
 
+def test_collect_linked_results_artifacts_includes_metrics_result_json(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    metrics_rel = "runs/designs/noc/router/metrics.csv"
+    result_rel = "runs/designs/noc/router/work/deadbeef/result.json"
+    _write_json(
+        repo_root / result_rel,
+        {
+            "status": "metrics_missing",
+            "reports": {
+                "finish": "/orfs/flow/reports/nangate45/router/router_component_r5/6_finish.rpt",
+                "def": "/orfs/flow/results/nangate45/router/router_component_r5/6_final.def",
+            },
+        },
+    )
+    metrics_path = repo_root / metrics_rel
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
+    metrics_path.write_text(
+        "design,status,param_hash,result_path\n"
+        f"router,metrics_missing,deadbeef,{result_rel}\n",
+        encoding="utf-8",
+    )
+
+    artifacts = collect_linked_results_artifacts(repo_root=str(repo_root), expected_outputs=[metrics_rel])
+
+    assert [artifact.path for artifact in artifacts] == [result_rel]
+    assert artifacts[0].kind == "supporting_output"
+    assert artifacts[0].metadata["transport_policy"] == "inline_text_supporting"
+    assert '"status": "metrics_missing"' in artifacts[0].metadata["inline_utf8"]
+
+
 def test_collect_expected_output_artifacts_includes_attention_kv_dataset(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()

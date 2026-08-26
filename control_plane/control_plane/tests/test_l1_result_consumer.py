@@ -21,6 +21,8 @@ from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.l1_result_consumer import (
     Layer1ConsumeRequest,
+    _best_metrics_row,
+    _boundary_metrics_rows,
     _terminal_run_has_metrics,
     consume_l1_result,
 )
@@ -54,6 +56,39 @@ def test_terminal_run_metrics_require_captured_inline_artifact() -> None:
     )
 
     assert _terminal_run_has_metrics(run) is False
+
+
+def test_ppa_selection_rejects_blank_ok_rows_as_incomplete_boundary_evidence(tmp_path: Path) -> None:
+    metrics_rel = "runs/designs/noc/router/metrics.csv"
+    _write_metrics(
+        tmp_path / metrics_rel,
+        [
+            {
+                "platform": "nangate45",
+                "status": "ok",
+                "param_hash": "blankppa",
+                "tag": "router_component_r5_point",
+                "params_json": '{"CLOCK_PERIOD": 1.0}',
+                "result_path": "runs/designs/noc/router/work/blankppa/result.json",
+            }
+        ],
+    )
+
+    assert _best_metrics_row(
+        repo_root=tmp_path,
+        metrics_csv=metrics_rel,
+        tag_prefixes=("router_component_r5",),
+        require_complete_ppa=True,
+    ) is None
+    boundary = _boundary_metrics_rows(
+        repo_root=tmp_path,
+        metrics_csvs=[metrics_rel],
+        tag_prefixes=("router_component_r5",),
+        require_complete_ppa=True,
+    )
+    assert len(boundary) == 1
+    assert boundary[0]["status"] == "incomplete_physical_metrics"
+    assert boundary[0]["param_hash"] == "blankppa"
 
 
 def _seed_succeeded_l1_sweep(session: Session, repo_root: Path) -> tuple[str, str]:
