@@ -187,10 +187,11 @@ For `ppa` and `ppa_sweep` evaluations, a promotable row must also contain finite
 rows with any of those fields missing are incomplete physical evidence, not PPA
 results.
 
-When a sweep sets `FLOW_VARIANT`, retrieve ORFS reports and results from that
-variant directory. `TAG` labels the measurement row but does not override the
-ORFS output variant. Do not fall back to `base` for an explicit variant because
-it can import stale artifacts from another sweep.
+`FLOW_VARIANT`, not `TAG`, selects ORFS report and result directories. The sweep
+driver must derive a distinct effective variant for every parameter hash, using
+the declared variant as a revision prefix. `TAG` only labels the measurement
+row. Do not share one physical variant across points or fall back to `base`,
+because either can overwrite or import artifacts from another point.
 
 Do not use relaxed boundary acceptance for ordinary winner-selection sweeps.
 Those should continue to require at least one completed, timing-feasible row for
