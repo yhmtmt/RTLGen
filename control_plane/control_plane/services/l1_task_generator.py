@@ -281,6 +281,29 @@ def _load_requested_item_entry(repo_root: Path, proposal_path: str | None, item_
     return retry_matches[0] if len(retry_matches) == 1 else None
 
 
+def _validate_requested_expected_outputs(
+    *,
+    requested_entry: dict[str, Any] | None,
+    generated_outputs: list[str],
+) -> None:
+    if not isinstance(requested_entry, dict) or "expected_outputs" not in requested_entry:
+        return
+    requested_outputs = requested_entry.get("expected_outputs")
+    if not isinstance(requested_outputs, list):
+        raise Layer1TaskGenerationError("proposal expected_outputs must be a JSON array")
+    generated = {str(path).strip() for path in generated_outputs if str(path).strip()}
+    missing = [
+        str(path).strip()
+        for path in requested_outputs
+        if str(path).strip() and str(path).strip() not in generated
+    ]
+    if missing:
+        raise Layer1TaskGenerationError(
+            "generated expected_outputs do not satisfy the proposal contract; "
+            "check --out-root and generated wrapper paths: " + ", ".join(missing)
+        )
+
+
 def _nonempty_sweep_identity_value(value: Any) -> bool:
     values = value if isinstance(value, list) else [value]
     return bool(values) and all(str(item).strip() for item in values)
@@ -3119,6 +3142,12 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             expected_outputs.append(
                 f"{Path(target.expected_metrics_path).parent}/mode_compare_lanes2_placement_diag.json"
             )
+
+    if not request.update_proposal_files:
+        _validate_requested_expected_outputs(
+            requested_entry=requested_entry,
+            generated_outputs=expected_outputs,
+        )
 
     title = request.title or _default_title(sweep_path=sweep_path, platform=request.platform)
     objective = request.objective or _default_objective(
