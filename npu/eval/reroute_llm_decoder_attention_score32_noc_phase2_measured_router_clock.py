@@ -28,7 +28,7 @@ DEFAULT_BASELINE_SCHEDULE = Path(
     "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json"
 )
 DEFAULT_ROUTER_PROMOTION = Path(
-    "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1.json"
+    "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r6.json"
 )
 
 

@@ -20,12 +20,12 @@ _DEFAULT_PHASE2_SCHEDULE_JSON = Path(
     "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json"
 )
 _DEFAULT_PHASE1_ROUTER_PROMOTION_JSON = Path(
-    "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1.json"
+    "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r6.json"
 )
 _EXPECTED_PHASE2_PROFILE = "decoder_attention_score32_noc_phase2_schedule"
 _EXPECTED_PHASE2_VERSION = 2
 _EXPECTED_PHASE2_ITEM_ID = "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1"
-_EXPECTED_PHASE1_ITEM_ID = "l1_segmented_xy_mesh_noc_phase1_v1"
+_EXPECTED_PHASE1_ITEM_ID = "l1_segmented_xy_mesh_noc_phase1_v1_r6"
 _EXPECTED_WAVES = 8
 _EXPECTED_TILES = 128
 _EXPECTED_ROUTERS = 16
