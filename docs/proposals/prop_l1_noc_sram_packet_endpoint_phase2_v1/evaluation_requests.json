@@ -11,7 +11,7 @@
       "config_paths": [
         "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/config_l1_noc_sram_packet_endpoint_w256_td4_to8_rx8.json"
       ],
-      "sweep_path": "runs/campaigns/noc/l1_sram_packet_endpoint/sweeps/nangate45_macro_frontier_r2.json",
+      "sweep_path": "runs/campaigns/noc/l1_sram_packet_endpoint/sweeps/nangate45_macro_frontier.json",
       "expected_outputs": [
         "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/metrics.csv"
       ],
@@ -37,7 +37,7 @@
       "config_paths": [
         "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/config_l1_noc_sram_packet_endpoint_w256_td4_to8_rx8.json"
       ],
-      "sweep_path": "runs/campaigns/noc/l1_sram_packet_endpoint/sweeps/nangate45_macro_frontier.json",
+      "sweep_path": "runs/campaigns/noc/l1_sram_packet_endpoint/sweeps/nangate45_macro_frontier_r2.json",
       "expected_outputs": [
         "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/metrics.csv"
       ],
