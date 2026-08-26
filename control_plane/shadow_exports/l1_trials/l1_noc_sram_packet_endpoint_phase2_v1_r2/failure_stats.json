@@ -1,0 +1,15 @@
+{
+  "item_id": "l1_noc_sram_packet_endpoint_phase2_v1_r2",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "by_category": {},
+  "by_stage": {},
+  "aggregation_scope": "current_run_checkout_commit",
+  "aggregation_source_commit": "0d64e323c9ca664dfab74002d23ae7f29d16b3a8",
+  "aggregation_included_attempts": 1,
+  "aggregation_excluded_attempts": 0,
+  "aggregation_excluded_source_commits": {},
+  "aggregation_excluded_attempt_run_keys": [],
+  "aggregation_excluded_attempt_run_keys_truncated": false
+}
