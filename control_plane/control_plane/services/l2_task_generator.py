@@ -5475,7 +5475,7 @@ def _validate_score32_noc_closure_request(
         raise Layer2TaskGenerationError("score32 NoC closure proposal_path mismatch")
     expected_dependencies = [
         "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
-        "l1_segmented_xy_mesh_noc_phase1_v1_r6",
+        "l1_segmented_xy_mesh_noc_phase1_v1_r7",
     ]
     if list(depends_on_item_ids or []) != expected_dependencies:
         raise Layer2TaskGenerationError(
@@ -5504,7 +5504,7 @@ def _decoder_attention_score32_noc_phase2_measured_router_closure_evidence(
         f"{base}/decoder_attention_score32_noc_phase2_schedule__"
         "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json"
     )
-    router = "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r6.json"
+    router = "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r7.json"
     out = f"{base}/decoder_attention_score32_noc_phase2_measured_router_closure__{item_id}.json"
     report = f"{base}/decoder_attention_score32_noc_phase2_measured_router_closure__{item_id}.md"
     command = _bounded_launcher_command(
@@ -5577,7 +5577,7 @@ def _decoder_attention_score32_noc_phase2_measured_router_clock_reroute_evidence
         f"{base}/decoder_attention_score32_noc_phase2_schedule__"
         "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json"
     )
-    router = "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r6.json"
+    router = "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r7.json"
     out = f"{base}/decoder_attention_score32_noc_phase2_measured_router_clock_reroute__{item_id}.json"
     report = f"{base}/decoder_attention_score32_noc_phase2_measured_router_clock_reroute__{item_id}.md"
     command = _bounded_launcher_command(

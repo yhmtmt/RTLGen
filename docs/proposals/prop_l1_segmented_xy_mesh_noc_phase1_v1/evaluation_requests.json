@@ -191,7 +191,7 @@
       "expected_outputs": [
         "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv"
       ],
-      "status": "merged",
+      "status": "merged_boundary_no_feasible_points",
       "comparison_role": "segmented_xy_router_primitive_anchor",
       "paired_baseline_item_id": "",
       "depends_on_item_ids": [],
@@ -222,7 +222,42 @@
       "merged_pr_number": 1789,
       "merge_commit": "0323ee0bde83829af15090e8a552ad0f24b75720",
       "merged_utc": "2026-08-26T14:40:36.917121Z",
-      "notes": "Merged via PR #1789 and merge 0323ee0bde83829af15090e8a552ad0f24b75720 at 2026-08-26T14:40:36.917121Z."
+      "notes": "Merged via PR #1789 as explicit timing-boundary evidence; no row met the declared 1.0 ns clock.",
+      "superseded_by_item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r7"
+    },
+    {
+      "item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r7",
+      "task_type": "l1_sweep",
+      "objective": "Close a timing-feasible Nangate45 operating point for the bounded 256-bit, 4-VC, depth-4 five-port router around the r6 measured 1.73 ns boundary.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "config_paths": [
+        "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/config_l1_noc_segmented_xy_router_p5_w256_vc4_d4.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_segmented_xy_mesh_router/sweeps/nangate45_macro_frontier_r7.json",
+      "expected_outputs": [
+        "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv"
+      ],
+      "status": "pending_source_merge",
+      "comparison_role": "segmented_xy_router_primitive_anchor",
+      "paired_baseline_item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r6",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "close_timing_feasible_segmented_xy_router_primitive",
+        "reason": "Use the isolated r6 physical boundary to replace the infeasible 1.0 ns assumption with the fastest measured feasible router clock."
+      },
+      "acceptance_notes": "Require finite delay, area, and power, unique per-point ORFS provenance, live full-width router state, and at least one row whose critical_path_ns is no greater than its declared CLOCK_PERIOD. Treat PPA as router-plus-boundary-harness evidence; do not claim bare-router workload energy.",
+      "revision": {
+        "supersedes_item_ids": [
+          "l1_segmented_xy_mesh_noc_phase1_v1_r6"
+        ],
+        "prior_results": [
+          "r6_completed_physical_rows_but_no_1ns_timing_feasible_point"
+        ],
+        "replacement_contract": "Targeted 1.8 ns and 2.0 ns closure points at the r6 best-delay and best-area utilizations must produce a timing-feasible physical anchor before downstream composition."
+      }
     }
   ]
 }

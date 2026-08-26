@@ -57,7 +57,7 @@ def _baseline() -> dict:
 
 def _router(critical_path_ns: float) -> dict:
     return {
-        "item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r6",
+        "item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r7",
         "task_type": "l1_sweep",
         "evaluation_record": {"physical_metrics_present": True, "timing_feasible": True},
         "proposals": [
