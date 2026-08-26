@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_noc_sram_packet_endpoint_phase2_v1",
-  "source_commit": "TBD",
+  "source_commit": "0d64e323c9ca664dfab74002d23ae7f29d16b3a8",
   "requested_items": [
     {
       "item_id": "l1_noc_sram_packet_endpoint_phase2_v1",
@@ -41,7 +41,7 @@
       "expected_outputs": [
         "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/metrics.csv"
       ],
-      "status": "pending_source_merge",
+      "status": "merged",
       "comparison_role": "phase2_sram_packet_endpoint_physical_anchor",
       "paired_baseline_item_id": "",
       "depends_on_item_ids": [],
@@ -58,7 +58,11 @@
         ],
         "prior_result": "invalid_evaluator_orfs_path_ownership",
         "replacement_contract": "Exact same RTL and sweep points under a revision-specific FLOW_VARIANT on the rebuilt non-root evaluator"
-      }
+      },
+      "merged_pr_number": 1791,
+      "merge_commit": "915bb2ded183287154f6f329e351e41d4d804761",
+      "merged_utc": "2026-08-26T14:47:40.433991Z",
+      "notes": "Merged via PR #1791 and merge 915bb2ded183287154f6f329e351e41d4d804761 at 2026-08-26T14:47:40.433991Z."
     }
   ]
 }
