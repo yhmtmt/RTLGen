@@ -14790,7 +14790,7 @@ def test_generate_l2_campaign_task_adds_score32_noc_measured_router_closure() ->
         create_all(engine)
         dependencies = [
             "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
-            "l1_segmented_xy_mesh_noc_phase1_v1",
+            "l1_segmented_xy_mesh_noc_phase1_v1_r6",
         ]
 
         with Session(engine) as session:
@@ -14823,7 +14823,8 @@ def test_generate_l2_campaign_task_adds_score32_noc_measured_router_closure() ->
             assert "audit_llm_decoder_attention_score32_noc_phase2_measured_router_closure.py" in run
             assert "--runtime-max-sec 120" in run
             assert "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json" in run
-            assert "l1_segmented_xy_mesh_noc_phase1_v1.json" in run
+            assert "l1_segmented_xy_mesh_noc_phase1_v1_r6.json" in run
+            assert "l1_segmented_xy_mesh_noc_phase1_v1.json" not in run
             assert work_item.expected_outputs[0].endswith(
                 "decoder_attention_score32_noc_phase2_measured_router_closure__"
                 "l2_decoder_attention_score32_noc_phase2_measured_router_closure_llama7b_v1.json"
@@ -14840,7 +14841,7 @@ def test_generate_l2_campaign_task_adds_score32_noc_measured_router_clock_rerout
         create_all(engine)
         dependencies = [
             "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
-            "l1_segmented_xy_mesh_noc_phase1_v1",
+            "l1_segmented_xy_mesh_noc_phase1_v1_r6",
         ]
 
         with Session(engine) as session:
@@ -14875,6 +14876,8 @@ def test_generate_l2_campaign_task_adds_score32_noc_measured_router_clock_rerout
             assert "--memory-max 4G" in run
             assert "--baseline-schedule-json" in run
             assert "--router-promotion-json" in run
+            assert "l1_segmented_xy_mesh_noc_phase1_v1_r6.json" in run
+            assert "l1_segmented_xy_mesh_noc_phase1_v1.json" not in run
             assert work_item.input_manifest["worker_resources"]["exclusive_worker"] is True
             assert work_item.input_manifest["worker_resources"]["outer_timeout_seconds"] == 600
 
