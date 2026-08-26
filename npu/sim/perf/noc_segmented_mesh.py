@@ -135,6 +135,8 @@ class RouterCycleInput:
 @dataclass(frozen=True)
 class RouterCycleTrace:
     cycle: int
+    inputs: tuple[RouterCycleInput, ...]
+    out_ready: tuple[bool, ...]
     accepted: tuple[int, ...]
     forwarded: tuple[tuple[int, ModelFlit], ...]
     input_stall: bool
@@ -346,6 +348,8 @@ class _RouterState:
 
         return RouterCycleTrace(
             cycle=cycle,
+            inputs=tuple(inputs),
+            out_ready=tuple(out_ready),
             accepted=tuple(accepted_ports),
             forwarded=tuple(forwarded),
             input_stall=plan.input_stall,
@@ -400,6 +404,38 @@ def simulate_router(
         traces.append(trace)
         delivered.extend(trace.forwarded)
     return state.snapshot(traces, delivered)
+
+
+def extract_router_replay_schedules(
+    mesh_result: MeshSimulationResult,
+    *,
+    node: int,
+) -> tuple[list[list[RouterCycleInput]], list[list[bool]]]:
+    if not 0 <= node < ENDPOINTS:
+        raise ValueError(f"node must be in [0, {ENDPOINTS - 1}]")
+    traces_by_cycle: dict[int, RouterCycleTrace] = {}
+    for mesh_trace in mesh_result.traces:
+        if not 0 <= mesh_trace.cycle < mesh_result.cycles:
+            raise ValueError("mesh trace cycle is outside the recorded simulation interval")
+        if mesh_trace.cycle in traces_by_cycle:
+            raise ValueError("mesh result contains duplicate cycle traces")
+        traces_by_cycle[mesh_trace.cycle] = mesh_trace.router_traces[node]
+
+    idle_inputs = [RouterCycleInput(False, None) for _ in range(PORTS)]
+    ready_outputs = [True for _ in range(PORTS)]
+    input_schedule: list[list[RouterCycleInput]] = []
+    out_ready_schedule: list[list[bool]] = []
+    for cycle in range(mesh_result.cycles):
+        trace = traces_by_cycle.get(cycle)
+        if trace is None:
+            input_schedule.append(list(idle_inputs))
+            out_ready_schedule.append(list(ready_outputs))
+            continue
+        if trace.cycle != cycle or len(trace.inputs) != PORTS or len(trace.out_ready) != PORTS:
+            raise ValueError("router cycle trace is malformed")
+        input_schedule.append(list(trace.inputs))
+        out_ready_schedule.append(list(trace.out_ready))
+    return input_schedule, out_ready_schedule
 
 
 def _opposite_port(port: int) -> int:
