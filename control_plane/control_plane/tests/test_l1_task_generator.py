@@ -28,9 +28,38 @@ from control_plane.services.l1_task_generator import (
     _multivalue_cluster_binary_fsm_profile,
     _read_config_target,
     _synth_only_targets,
+    _validate_requested_expected_outputs,
     _validate_replacement_sweep_isolation,
     generate_l1_sweep_task,
 )
+
+
+def test_requested_expected_outputs_reject_noncanonical_sweep_root() -> None:
+    with pytest.raises(Layer1TaskGenerationError, match="check --out-root"):
+        _validate_requested_expected_outputs(
+            requested_entry={
+                "expected_outputs": [
+                    "runs/designs/noc/router_wrapper/metrics.csv",
+                ]
+            },
+            generated_outputs=[
+                "runs/designs/noc/router_wrapper/router_wrapper/metrics.csv",
+            ],
+        )
+
+
+def test_requested_expected_outputs_allow_additional_diagnostics() -> None:
+    _validate_requested_expected_outputs(
+        requested_entry={
+            "expected_outputs": [
+                "runs/designs/noc/router_wrapper/metrics.csv",
+            ]
+        },
+        generated_outputs=[
+            "runs/designs/noc/router_wrapper/metrics.csv",
+            "runs/designs/noc/router_wrapper/timing_debug_report.md",
+        ],
+    )
 
 
 def test_replacement_sweep_requires_revision_specific_artifact_identity(tmp_path: Path) -> None:
