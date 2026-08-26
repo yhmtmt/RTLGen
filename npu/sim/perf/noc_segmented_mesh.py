@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from typing import Iterable
+from typing import Iterable, Iterator
 
 MESH_X = 4
 MESH_Y = 4
@@ -150,6 +150,19 @@ class RouterCycleTrace:
 class RouterSimulationResult:
     traces: tuple[RouterCycleTrace, ...]
     delivered: tuple[tuple[int, ModelFlit], ...]
+    accepted_flit_count: int
+    forwarded_flit_count: int
+    input_stall_cycles: int
+    output_stall_cycles: int
+    arbitration_contention_cycles: int
+    current_input_occupancy: int
+    max_input_occupancy: int
+    route_flit_count: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class RouterReplayVerification:
+    cycle_count: int
     accepted_flit_count: int
     forwarded_flit_count: int
     input_stall_cycles: int
@@ -440,6 +453,94 @@ def extract_router_replay_schedules(
         input_schedule.append(list(trace.inputs))
         out_ready_schedule.append(list(trace.out_ready))
     return input_schedule, out_ready_schedule
+
+
+def iter_router_replay_cycles(
+    mesh_result: MeshSimulationResult,
+    *,
+    node: int,
+) -> Iterator[tuple[int, tuple[RouterCycleInput, ...], tuple[bool, ...], RouterCycleTrace | None]]:
+    """Yield a complete replay stream without expanding fast-forwarded idle cycles in memory."""
+    if not 0 <= node < ENDPOINTS:
+        raise ValueError(f"node must be in [0, {ENDPOINTS - 1}]")
+    recorded = iter(mesh_result.traces)
+    mesh_trace = next(recorded, None)
+    prior_cycle = -1
+    idle_inputs = tuple(RouterCycleInput(False, None) for _ in range(PORTS))
+    ready_outputs = tuple(True for _ in range(PORTS))
+    for cycle in range(mesh_result.cycles):
+        if mesh_trace is not None and mesh_trace.cycle < cycle:
+            raise ValueError("mesh result contains duplicate or unordered cycle traces")
+        if mesh_trace is None or mesh_trace.cycle != cycle:
+            yield cycle, idle_inputs, ready_outputs, None
+            continue
+        if mesh_trace.cycle <= prior_cycle or not 0 <= mesh_trace.cycle < mesh_result.cycles:
+            raise ValueError("mesh result contains duplicate, unordered, or out-of-range cycle traces")
+        trace = mesh_trace.router_traces[node]
+        if not trace.inputs or not trace.out_ready:
+            raise ValueError(f"router replay signals were not captured for node {node}")
+        if trace.cycle != cycle or len(trace.inputs) != PORTS or len(trace.out_ready) != PORTS:
+            raise ValueError("router cycle trace is malformed")
+        yield cycle, trace.inputs, trace.out_ready, trace
+        prior_cycle = cycle
+        mesh_trace = next(recorded, None)
+    if mesh_trace is not None:
+        raise ValueError("mesh trace cycle is outside the recorded simulation interval")
+
+
+def verify_router_replay(mesh_result: MeshSimulationResult, *, node: int) -> RouterReplayVerification:
+    """Replay one captured router cycle-by-cycle while retaining counters only."""
+    x_coord, y_coord = coordinates(node)
+    state = _RouterState(
+        x_coord=x_coord,
+        y_coord=y_coord,
+        fifo_depth=DEFAULT_FIFO_DEPTH,
+        vc_count=VIRTUAL_CHANNELS,
+    )
+    cycle_count = 0
+    for cycle, inputs, out_ready, expected_trace in iter_router_replay_cycles(
+        mesh_result,
+        node=node,
+    ):
+        actual_trace = state.cycle(cycle, list(inputs), list(out_ready))
+        if expected_trace is not None and actual_trace != expected_trace:
+            raise ValueError(f"router replay diverged at node {node} cycle {cycle}")
+        cycle_count += 1
+    expected = mesh_result.router_summaries[node]
+    observed = RouterReplayVerification(
+        cycle_count=cycle_count,
+        accepted_flit_count=state.accepted_flit_count,
+        forwarded_flit_count=state.forwarded_flit_count,
+        input_stall_cycles=state.input_stall_cycles,
+        output_stall_cycles=state.output_stall_cycles,
+        arbitration_contention_cycles=state.arbitration_contention_cycles,
+        current_input_occupancy=state._occupancy(),
+        max_input_occupancy=state.max_input_occupancy,
+        route_flit_count=tuple(state.route_flit_count),
+    )
+    expected_values = (
+        expected.accepted_flit_count,
+        expected.forwarded_flit_count,
+        expected.input_stall_cycles,
+        expected.output_stall_cycles,
+        expected.arbitration_contention_cycles,
+        expected.current_input_occupancy,
+        expected.max_input_occupancy,
+        expected.route_flit_count,
+    )
+    observed_values = (
+        observed.accepted_flit_count,
+        observed.forwarded_flit_count,
+        observed.input_stall_cycles,
+        observed.output_stall_cycles,
+        observed.arbitration_contention_cycles,
+        observed.current_input_occupancy,
+        observed.max_input_occupancy,
+        observed.route_flit_count,
+    )
+    if observed_values != expected_values:
+        raise ValueError(f"router replay summary diverged for node {node}")
+    return observed
 
 
 def _opposite_port(port: int) -> int:
