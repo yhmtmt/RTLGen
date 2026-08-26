@@ -10,7 +10,7 @@
     "primary_question": "What changes when the corrected score32 Phase 2 schedule is recosted with the measured segmented-router primitive, and which physical gaps still remain explicit?",
     "include": [
       "Use only l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1 as the schedule source.",
-      "Use only l1_segmented_xy_mesh_noc_phase1_v1 as the router primitive source.",
+      "Use only l1_segmented_xy_mesh_noc_phase1_v1_r6 as the router primitive source.",
       "Use the measured router critical path to form a conservative no-reroute NoC drain-time upper bound.",
       "Report router area only as a lower bound and router power only as an activity-dependent component estimate."
     ],
@@ -50,7 +50,7 @@
   ],
   "baseline_refs": [
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
-    "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1.json"
+    "control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r6.json"
   ],
   "knowledge_refs": [
     "npu/eval/audit_llm_decoder_attention_score32_noc_phase2_measured_router_closure.py",
