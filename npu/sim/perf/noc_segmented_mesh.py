@@ -135,8 +135,6 @@ class RouterCycleInput:
 @dataclass(frozen=True)
 class RouterCycleTrace:
     cycle: int
-    inputs: tuple[RouterCycleInput, ...]
-    out_ready: tuple[bool, ...]
     accepted: tuple[int, ...]
     forwarded: tuple[tuple[int, ModelFlit], ...]
     input_stall: bool
@@ -144,6 +142,8 @@ class RouterCycleTrace:
     contention: bool
     occupancy: int
     ready: tuple[bool, ...]
+    inputs: tuple[RouterCycleInput, ...] = ()
+    out_ready: tuple[bool, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -304,6 +304,8 @@ class _RouterState:
         inputs: list[RouterCycleInput],
         out_ready: list[bool],
         plan: RouterPlan,
+        *,
+        capture_replay_signals: bool = True,
     ) -> RouterCycleTrace:
         accepted_ports: list[int] = []
         for port in range(PORTS):
@@ -348,8 +350,6 @@ class _RouterState:
 
         return RouterCycleTrace(
             cycle=cycle,
-            inputs=tuple(inputs),
-            out_ready=tuple(out_ready),
             accepted=tuple(accepted_ports),
             forwarded=tuple(forwarded),
             input_stall=plan.input_stall,
@@ -357,6 +357,8 @@ class _RouterState:
             contention=plan.contention,
             occupancy=occupancy,
             ready=plan.ready,
+            inputs=tuple(inputs) if capture_replay_signals else (),
+            out_ready=tuple(out_ready) if capture_replay_signals else (),
         )
 
     def cycle(
@@ -431,6 +433,8 @@ def extract_router_replay_schedules(
             input_schedule.append(list(idle_inputs))
             out_ready_schedule.append(list(ready_outputs))
             continue
+        if not trace.inputs or not trace.out_ready:
+            raise ValueError(f"router replay signals were not captured for node {node}")
         if trace.cycle != cycle or len(trace.inputs) != PORTS or len(trace.out_ready) != PORTS:
             raise ValueError("router cycle trace is malformed")
         input_schedule.append(list(trace.inputs))
@@ -541,7 +545,11 @@ def simulate_scheduled_flits(
     vc_count: int = VIRTUAL_CHANNELS,
     max_cycles: int = 100000,
     fast_forward_idle: bool = False,
+    capture_router_replay_nodes: Iterable[int] | None = None,
 ) -> MeshSimulationResult:
+    replay_nodes = set(capture_router_replay_nodes or ())
+    if any(not 0 <= node < ENDPOINTS for node in replay_nodes):
+        raise ValueError(f"capture_router_replay_nodes entries must be in [0, {ENDPOINTS - 1}]")
     ordered = sorted(
         scheduled_flits,
         key=lambda item: (
@@ -635,7 +643,13 @@ def simulate_scheduled_flits(
         cycle_endpoint_stall: list[int] = []
 
         for node in range(ENDPOINTS):
-            trace = states[node].apply_plan(cycle, router_inputs[node], out_ready[node], plans[node])
+            trace = states[node].apply_plan(
+                cycle,
+                router_inputs[node],
+                out_ready[node],
+                plans[node],
+                capture_replay_signals=node in replay_nodes,
+            )
             cycle_router_traces.append(trace)
             router_traces[node].append(trace)
             router_forwarded[node].extend(trace.forwarded)

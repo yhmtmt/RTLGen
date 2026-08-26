@@ -1030,7 +1030,12 @@ def test_mesh_router_traces_replay_each_router_cycle_exactly() -> None:
     flows = _multiflow_mesh_flows()
     ready = _multiflow_mesh_ready()
     scheduled = [scheduled for flow in flows for scheduled in packetize_traffic_flow(flow)]
-    result = simulate_scheduled_flits(scheduled, endpoint_out_ready_schedule=ready, max_cycles=256)
+    result = simulate_scheduled_flits(
+        scheduled,
+        endpoint_out_ready_schedule=ready,
+        max_cycles=256,
+        capture_router_replay_nodes=(0, 5, 15),
+    )
 
     for node in (0, 5, 15):
         input_schedule, out_ready_schedule = extract_router_replay_schedules(result, node=node)
@@ -1048,13 +1053,27 @@ def test_mesh_router_traces_replay_each_router_cycle_exactly() -> None:
         assert replay.forwarded_flit_count == result.router_summaries[node].forwarded_flit_count
 
 
+def test_router_replay_requires_explicit_mesh_capture() -> None:
+    flow = TrafficFlow(name="single", source=0, destination=1, payload_bytes=32, vc=0)
+    result = simulate_scheduled_flits(packetize_traffic_flow(flow), max_cycles=32)
+
+    assert result.traces[0].router_traces[0].inputs == ()
+    with pytest.raises(ValueError, match="replay signals were not captured"):
+        extract_router_replay_schedules(result, node=0)
+
+
 def test_router_replay_restores_fast_forwarded_idle_cycles() -> None:
     flows = [
         TrafficFlow(name="early", source=0, destination=1, payload_bytes=32, vc=0, release_cycle=0),
         TrafficFlow(name="late", source=0, destination=1, payload_bytes=32, vc=0, release_cycle=1000),
     ]
     scheduled = [item for flow in flows for item in packetize_traffic_flow(flow)]
-    result = simulate_scheduled_flits(scheduled, max_cycles=1100, fast_forward_idle=True)
+    result = simulate_scheduled_flits(
+        scheduled,
+        max_cycles=1100,
+        fast_forward_idle=True,
+        capture_router_replay_nodes=(0,),
+    )
     input_schedule, out_ready_schedule = extract_router_replay_schedules(result, node=0)
     replay = simulate_router(
         x_coord=0,
