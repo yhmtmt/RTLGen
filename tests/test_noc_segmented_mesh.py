@@ -28,11 +28,13 @@ from npu.sim.perf.noc_segmented_mesh import (
     TrafficFlow,
     coordinates,
     extract_router_replay_schedules,
+    iter_router_replay_cycles,
     packetize_traffic_flow,
     segmented_transfer,
     simulate_mesh,
     simulate_router,
     simulate_scheduled_flits,
+    verify_router_replay,
 )
 from scripts.generate_design import (
     _emit_l1_segmented_mesh4x4,
@@ -1086,6 +1088,16 @@ def test_router_replay_restores_fast_forwarded_idle_cycles() -> None:
     assert len(replay.traces) == result.cycles
     for mesh_trace in result.traces:
         assert replay.traces[mesh_trace.cycle] == mesh_trace.router_traces[0]
+
+    streamed = list(iter_router_replay_cycles(result, node=0))
+    assert len(streamed) == result.cycles
+    assert streamed[500][1] == tuple(RouterCycleInput(False, None) for _ in range(PORTS))
+    assert streamed[500][2] == (True,) * PORTS
+    assert streamed[500][3] is None
+    verification = verify_router_replay(result, node=0)
+    assert verification.cycle_count == result.cycles
+    assert verification.accepted_flit_count == result.router_summaries[0].accepted_flit_count
+    assert verification.forwarded_flit_count == result.router_summaries[0].forwarded_flit_count
 
 
 def test_mesh_idle_fast_forward_preserves_absolute_delivery_cycles() -> None:
