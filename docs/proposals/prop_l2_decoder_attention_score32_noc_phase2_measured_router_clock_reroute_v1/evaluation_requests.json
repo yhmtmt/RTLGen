@@ -11,7 +11,7 @@
       "status": "pending_after_dependencies_merge",
       "depends_on_item_ids": [
         "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
-        "l1_segmented_xy_mesh_noc_phase1_v1"
+        "l1_segmented_xy_mesh_noc_phase1_v1_r6"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
