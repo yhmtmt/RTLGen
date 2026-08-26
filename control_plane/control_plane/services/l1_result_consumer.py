@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import timezone
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import statistics
@@ -238,13 +239,20 @@ def _work_item_make_target(work_item: WorkItem) -> str:
 
 
 def _row_has_physical_metrics(row: dict[str, Any]) -> bool:
-    return any(_safe_float(row.get(key)) is not None for key in ("critical_path_ns", "die_area", "total_power_mw"))
+    values = [_safe_float(row.get(key)) for key in ("critical_path_ns", "die_area", "total_power_mw")]
+    return all(value is not None and math.isfinite(value) for value in values)
 
 
 def _developer_loop_payload(work_item: WorkItem) -> dict[str, Any]:
     payload = dict(work_item.task_request.request_payload or {})
     developer_loop = payload.get("developer_loop")
     return dict(developer_loop) if isinstance(developer_loop, dict) else {}
+
+
+def _work_item_requires_complete_ppa(work_item: WorkItem) -> bool:
+    developer_loop = _developer_loop_payload(work_item)
+    evaluation = developer_loop.get("evaluation") if isinstance(developer_loop.get("evaluation"), dict) else {}
+    return str(evaluation.get("mode", "")).strip().lower().startswith("ppa")
 
 
 def _load_proposal(repo_root: Path, work_item: WorkItem) -> dict[str, Any] | None:
@@ -382,6 +390,7 @@ def _best_metrics_row(
     metrics_csv: str,
     tag_prefixes: tuple[str, ...] = (),
     require_timing_feasible: bool = True,
+    require_complete_ppa: bool = False,
 ) -> dict[str, Any] | None:
     path = _resolve_path(repo_root=repo_root, path_text=metrics_csv)
     if not path.exists():
@@ -391,6 +400,8 @@ def _best_metrics_row(
         if str(row.get("status", "")).strip() != "ok":
             continue
         if not _row_in_current_sweep_scope(row, tag_prefixes=tag_prefixes):
+            continue
+        if require_complete_ppa and not _row_has_physical_metrics(row):
             continue
         if require_timing_feasible and _row_timing_assessment(row)["timing_feasible"] is False:
             continue
@@ -405,6 +416,7 @@ def _boundary_metrics_rows(
     repo_root: Path,
     metrics_csvs: list[str],
     tag_prefixes: tuple[str, ...],
+    require_complete_ppa: bool = False,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for metrics_csv in metrics_csvs:
@@ -415,11 +427,17 @@ def _boundary_metrics_rows(
             flow_status = str(raw_row.get("status", "")).strip()
             timing = _row_timing_assessment(raw_row)
             timing_infeasible = flow_status == "ok" and timing["timing_feasible"] is False
-            if flow_status == "ok" and not timing_infeasible:
+            incomplete_ppa = flow_status == "ok" and require_complete_ppa and not _row_has_physical_metrics(raw_row)
+            if flow_status == "ok" and not timing_infeasible and not incomplete_ppa:
                 continue
             if not _row_in_current_sweep_scope(raw_row, tag_prefixes=tag_prefixes):
                 continue
-            status = "timing_infeasible" if timing_infeasible else flow_status
+            if timing_infeasible:
+                status = "timing_infeasible"
+            elif incomplete_ppa:
+                status = "incomplete_physical_metrics"
+            else:
+                status = flow_status
             evidence: dict[str, Any] = {
                 "metrics_csv": metrics_csv,
                 "status": status,
@@ -457,6 +475,11 @@ def _boundary_evaluation_record(*, repo_root: Path, work_item: WorkItem, boundar
         summary = (
             "No timing-feasible Layer 1 rows were produced; completed flows that miss their "
             "declared clock period are retained as explicit timing-boundary evidence."
+        )
+    elif status_counts.get("incomplete_physical_metrics", 0):
+        summary = (
+            "No complete Layer 1 PPA row was produced; command-complete rows missing timing, "
+            "area, or power are retained as incomplete physical evidence."
         )
     else:
         summary = "No status=ok Layer 1 rows were produced; non-ok metrics rows are recorded as explicit boundary evidence."
@@ -634,12 +657,14 @@ def _filter_metrics_csvs_for_trial(run: Run, metrics_csvs: list[str]) -> list[st
 def _best_trial_row(repo_root: Path, run: Run) -> tuple[str, dict[str, Any]] | None:
     candidates: list[tuple[str, dict[str, Any]]] = []
     tag_prefixes = _current_sweep_tag_prefixes(repo_root, run.work_item)
+    require_complete_ppa = _work_item_requires_complete_ppa(run.work_item)
     for metrics_csv in _metrics_csvs_from_run(run, work_item=run.work_item):
         rows = [
             dict(row)
             for row in _metrics_rows_for_run(repo_root, run, metrics_csv)
             if str(row.get("status", "")).strip() == "ok"
             and _row_in_current_sweep_scope(row, tag_prefixes=tag_prefixes)
+            and (not require_complete_ppa or _row_has_physical_metrics(row))
         ]
         if not rows:
             continue
@@ -653,11 +678,14 @@ def _best_trial_row(repo_root: Path, run: Run) -> tuple[str, dict[str, Any]] | N
 def _ok_trial_rows(repo_root: Path, run: Run) -> list[tuple[str, dict[str, Any]]]:
     candidates: list[tuple[str, dict[str, Any]]] = []
     tag_prefixes = _current_sweep_tag_prefixes(repo_root, run.work_item)
+    require_complete_ppa = _work_item_requires_complete_ppa(run.work_item)
     for metrics_csv in _metrics_csvs_from_run(run, work_item=run.work_item):
         for row in _metrics_rows_for_run(repo_root, run, metrics_csv):
             if str(row.get("status", "")).strip() != "ok":
                 continue
             if not _row_in_current_sweep_scope(row, tag_prefixes=tag_prefixes):
+                continue
+            if require_complete_ppa and not _row_has_physical_metrics(row):
                 continue
             candidates.append((metrics_csv, dict(row)))
     return candidates
@@ -1022,8 +1050,14 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
         )
     else:
         tag_prefixes = _current_sweep_tag_prefixes(repo_root, work_item)
+        require_complete_ppa = _work_item_requires_complete_ppa(work_item)
         for metrics_csv in metrics_csvs:
-            best_row = _best_metrics_row(repo_root=repo_root, metrics_csv=metrics_csv, tag_prefixes=tag_prefixes)
+            best_row = _best_metrics_row(
+                repo_root=repo_root,
+                metrics_csv=metrics_csv,
+                tag_prefixes=tag_prefixes,
+                require_complete_ppa=require_complete_ppa,
+            )
             if best_row is None:
                 continue
             row_evaluation = _effective_evaluation_record(repo_root=repo_root, work_item=work_item, best_row=best_row)
@@ -1042,6 +1076,7 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
         repo_root=repo_root,
         metrics_csvs=metrics_csvs,
         tag_prefixes=tag_prefixes,
+        require_complete_ppa=_work_item_requires_complete_ppa(work_item),
     )
     if not proposals or evaluation_record is None:
         if not boundary_rows:

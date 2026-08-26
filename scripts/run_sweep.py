@@ -321,6 +321,27 @@ def safe_float(val):
         return None
 
 
+def resolve_flow_output_paths(
+    *,
+    platform: str,
+    wrapper: str,
+    tag: str,
+    flow_params: Dict[str, object],
+) -> Tuple[Path, Path]:
+    """Return the ORFS finish-report and DEF paths for this invocation."""
+    flow_variant = str(flow_params.get("FLOW_VARIANT", "")).strip()
+    if flow_variant:
+        output_variant = flow_variant
+    else:
+        tagged_report = REPORT_BASE / platform / wrapper / str(tag) / "6_finish.rpt"
+        tagged_def = RESULT_BASE / platform / wrapper / str(tag) / "6_final.def"
+        output_variant = str(tag) if tagged_report.exists() or tagged_def.exists() else "base"
+    return (
+        REPORT_BASE / platform / wrapper / output_variant / "6_finish.rpt",
+        RESULT_BASE / platform / wrapper / output_variant / "6_final.def",
+    )
+
+
 def run_single(
     config_path: Path,
     platform: str,
@@ -401,17 +422,15 @@ def run_single(
         run_record["status"] = "failed"
         run_record["error"] = str(e)
 
-    # Parse outputs. ORFS commonly writes successful outputs under FLOW_VARIANT=base
-    # even when TAG is passed, so successful runs may fall back to base reports.
-    # Failed runs must not use that fallback: base can contain stale reports from
-    # an earlier successful parameter point for the same design.
-    finish_rpt = REPORT_BASE / platform / wrapper / str(tag) / "6_finish.rpt"
-    def_path = RESULT_BASE / platform / wrapper / str(tag) / "6_final.def"
-    if run_record["status"] == "ok":
-        if not finish_rpt.exists():
-            finish_rpt = REPORT_BASE / platform / wrapper / "base" / "6_finish.rpt"
-        if not def_path.exists():
-            def_path = RESULT_BASE / platform / wrapper / "base" / "6_final.def"
+    # FLOW_VARIANT, not TAG, selects the ORFS report/result directory. Falling
+    # back to base when an explicit variant was requested can silently ingest a
+    # stale result from another sweep.
+    finish_rpt, def_path = resolve_flow_output_paths(
+        platform=platform,
+        wrapper=wrapper,
+        tag=str(tag),
+        flow_params=flow_params,
+    )
     run_record["reports"] = {
         "finish": str(finish_rpt),
         "def": str(def_path),
@@ -429,6 +448,15 @@ def run_single(
         if die_area:
             metrics["die_area"] = die_area
         run_record["metrics"] = metrics
+        required_metrics = ("critical_path_ns", "die_area", "total_power_mw")
+        missing_metrics = [name for name in required_metrics if safe_float(metrics.get(name)) is None]
+        if missing_metrics:
+            run_record["status"] = "metrics_missing"
+            run_record["error"] = (
+                "OpenROAD command completed but required physical metrics were not extracted: "
+                + ", ".join(missing_metrics)
+            )
+            run_record["missing_metrics"] = missing_metrics
 
     run_record["result_path"] = normalize_repo_path(str(result_path))
     result_path.write_text(json.dumps(run_record, indent=2))

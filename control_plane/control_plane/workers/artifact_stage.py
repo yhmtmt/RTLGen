@@ -115,6 +115,26 @@ def _results_linked_supporting_paths(*, repo_root: Path, expected_outputs: list[
     return paths
 
 
+def _metrics_linked_supporting_paths(*, repo_root: Path, expected_outputs: list[str]) -> list[str]:
+    paths: list[str] = []
+    seen: set[str] = set()
+    for output in expected_outputs:
+        metrics_path = (repo_root / output).resolve()
+        if metrics_path.name != "metrics.csv" or not metrics_path.exists() or not metrics_path.is_file():
+            continue
+        with metrics_path.open("r", encoding="utf-8", newline="") as handle:
+            for row in csv.DictReader(handle):
+                for field in ("result_path", "work_result_json"):
+                    rel_path = _repo_local_file(repo_root, str(row.get(field, "")), seen)
+                    if rel_path is None:
+                        continue
+                    candidate = (repo_root / rel_path).resolve()
+                    if "inline_utf8" not in _inline_text_metadata(candidate):
+                        continue
+                    paths.append(rel_path)
+    return paths
+
+
 def _repo_local_file(repo_root: Path, rel_path: str, seen: set[str]) -> str | None:
     rel_path = str(rel_path or "").strip()
     if not rel_path or rel_path in seen:
@@ -176,6 +196,7 @@ def collect_linked_results_artifacts(*, repo_root: str, expected_outputs: list[s
     artifacts: list[StagedArtifact] = []
     linked_paths = [
         *_results_linked_supporting_paths(repo_root=repo_path, expected_outputs=expected_outputs),
+        *_metrics_linked_supporting_paths(repo_root=repo_path, expected_outputs=expected_outputs),
         *_decoder_sweep_linked_supporting_paths(repo_root=repo_path, expected_outputs=expected_outputs),
     ]
     for rel_path in linked_paths:

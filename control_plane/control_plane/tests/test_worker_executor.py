@@ -394,6 +394,68 @@ def test_l1_worker_fails_when_expected_metrics_have_no_ok_rows() -> None:
             ]
 
 
+def test_l1_ppa_worker_rejects_ok_rows_without_complete_physical_metrics() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        item_id = "item_l1_blank_ppa_metrics"
+        metrics_rel = f"runs/campaigns/{item_id}/metrics.csv"
+        with Session(engine) as session:
+            seed_ready_work_item(session, item_id=item_id, repo_root=repo_root, failing=False)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.task_type = "l1_sweep"
+            work_item.layer = "layer1"
+            work_item.assigned_machine_key = "worker-1"
+            work_item.task_request.request_payload = {
+                "developer_loop": {"evaluation": {"mode": "ppa"}}
+            }
+            work_item.command_manifest = [
+                {
+                    "name": "write_blank_ppa_metrics",
+                    "run": (
+                        "python3 -c \"from pathlib import Path; "
+                        f"p=Path('{metrics_rel}'); "
+                        "p.parent.mkdir(parents=True, exist_ok=True); "
+                        "p.write_text('design,status,param_hash,critical_path_ns,die_area,total_power_mw\\n"
+                        "unit,ok,blankppa,,,\\n', encoding='utf-8')\""
+                    ),
+                }
+            ]
+            work_item.expected_outputs = [metrics_rel]
+            session.commit()
+
+        session_factory = build_session_factory(engine)
+        results = run_worker(
+            session_factory,
+            config=WorkerConfig(
+                repo_root=str(repo_root),
+                machine_key="worker-1",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                capability_filter={"platform": "nangate45", "flow": "openroad"},
+                enforce_source_commit=False,
+                lease_seconds=60,
+                heartbeat_seconds=1,
+                max_retry_attempts=1,
+            ),
+            max_items=1,
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "failed"
+        with Session(engine) as session:
+            run = session.query(Run).filter_by(run_key=results[0].run_key).one()
+            assert run.status == RunStatus.FAILED
+            assert run.failure_stage == "acceptance"
+            assert run.result_payload["acceptance_errors"] == [
+                f"{metrics_rel}: no status=ok row with complete PPA metrics "
+                "(critical_path_ns,die_area,total_power_mw; incomplete_param_hashes=blankppa)"
+            ]
+
+
 def test_l1_measurement_only_accepts_mixed_ok_and_failed_metrics_as_boundary_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

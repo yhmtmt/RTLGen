@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 from dataclasses import dataclass
 import json
+import math
 from pathlib import Path
 import shutil
 import time
@@ -227,6 +228,21 @@ def _work_item_evaluation_mode(work_item: WorkItem) -> str:
     return str(evaluation.get("mode", "")).strip()
 
 
+def _l1_requires_complete_ppa(evaluation_mode: str) -> bool:
+    return str(evaluation_mode).strip().lower().startswith("ppa")
+
+
+def _has_complete_ppa(row: dict[str, str]) -> bool:
+    for key in ("critical_path_ns", "die_area", "total_power_mw"):
+        try:
+            value = float(str(row.get(key, "")).strip())
+        except (TypeError, ValueError):
+            return False
+        if not math.isfinite(value):
+            return False
+    return True
+
+
 @dataclass(frozen=True)
 class L1MetricsAcceptance:
     errors: list[str]
@@ -255,6 +271,7 @@ def _l1_metrics_acceptance(
     expected_outputs: list[str],
     require_ok_status: bool = True,
     allow_measurement_partial_success: bool = False,
+    require_complete_ppa: bool = False,
 ) -> L1MetricsAcceptance:
     repo_path = Path(repo_root).resolve()
     errors: list[str] = []
@@ -277,6 +294,7 @@ def _l1_metrics_acceptance(
             errors.append(f"{output}: metrics.csv lacks status column")
             continue
         ok_rows = [row for row in rows if str(row.get("status", "")).strip().lower() == "ok"]
+        complete_ppa_rows = [row for row in ok_rows if _has_complete_ppa(row)]
         if ok_rows:
             ok_file_count += 1
         else:
@@ -284,6 +302,17 @@ def _l1_metrics_acceptance(
         if require_ok_status and not ok_rows:
             statuses = sorted({str(row.get("status", "")).strip() or "<blank>" for row in rows})
             errors.append(f"{output}: no status=ok rows (statuses={','.join(statuses)})")
+        if require_complete_ppa and not complete_ppa_rows:
+            incomplete_hashes = [
+                str(row.get("param_hash", "")).strip() or "<unknown>"
+                for row in ok_rows
+                if not _has_complete_ppa(row)
+            ]
+            errors.append(
+                f"{output}: no status=ok row with complete PPA metrics "
+                "(critical_path_ns,die_area,total_power_mw; "
+                f"incomplete_param_hashes={','.join(incomplete_hashes) or '<none>'})"
+            )
     if (
         allow_measurement_partial_success
         and ok_file_count > 0
@@ -1003,6 +1032,7 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             expected_outputs=active_expected_outputs,
             require_ok_status=not _l1_acceptance_allows_non_ok_metrics(work_item),
             allow_measurement_partial_success=_l1_allows_measurement_partial_success(evaluation_mode),
+            require_complete_ppa=_l1_requires_complete_ppa(evaluation_mode),
         )
         acceptance_errors = acceptance.errors
         acceptance_warnings = acceptance.warnings
