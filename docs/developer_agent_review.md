@@ -206,6 +206,19 @@ does not satisfy a dependency on `item`. Update both `proposal.json` and
 `evaluation_requests.json`, then regenerate or reconcile any existing database
 work item so its stored dependency list matches the reviewed source contract.
 
+## Sweep Output Root Rule
+
+`scripts/run_sweep.py` writes each summary to
+`<out_root>/<generated_wrapper>/metrics.csv`. Pass the parent directory of the
+wrapper as `--out_root`; passing the wrapper directory itself creates a
+noncanonical duplicated path such as `<wrapper>/<wrapper>/metrics.csv`.
+
+Before dispatching an L1 sweep, compare the generated work item's
+`expected_outputs` and sweep command with the proposal's exact expected output.
+They must resolve to the same repository-relative `metrics.csv` path. Apply the
+same check when revising or regenerating an existing database item; a correct
+sweep file or dependency revision does not repair a stale output-root contract.
+
 ## Physical Composition And Clock-Domain Rule
 
 When a recost composes evidence from different clock domains, convert cycles
