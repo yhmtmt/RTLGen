@@ -1,0 +1,41 @@
+{
+  "item_id": "l1_noc_sram_packet_endpoint_phase2_v1_r2",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "partial_metrics_count": 0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 2.5306,
+      "mean": 2.5306,
+      "median": 2.5306,
+      "max": 2.5306,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 20081.7241,
+      "mean": 20081.7241,
+      "median": 20081.7241,
+      "max": 20081.7241,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.0151,
+      "mean": 0.0151,
+      "median": 0.0151,
+      "max": 0.0151,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  },
+  "aggregation_scope": "current_run_checkout_commit",
+  "aggregation_source_commit": "0d64e323c9ca664dfab74002d23ae7f29d16b3a8",
+  "aggregation_included_attempts": 1,
+  "aggregation_excluded_attempts": 0,
+  "aggregation_excluded_source_commits": {},
+  "aggregation_excluded_attempt_run_keys": [],
+  "aggregation_excluded_attempt_run_keys_truncated": false
+}
