@@ -204,7 +204,12 @@ def _reproduction_args(repo_root: Path, schedule: JsonDict) -> SimpleNamespace:
     )
 
 
-def build_manifest(*, repo_root: Path, schedule_json: Path, node: int) -> JsonDict:
+def reproduce_schedule_mesh(
+    *,
+    repo_root: Path,
+    schedule_json: Path,
+    node: int,
+) -> tuple[JsonDict, JsonDict, MeshSimulationResult]:
     absolute_schedule = schedule_json if schedule_json.is_absolute() else repo_root / schedule_json
     schedule = json.loads(absolute_schedule.read_text(encoding="utf-8"))
     if schedule.get("profile") != "decoder_attention_score32_noc_phase2_schedule":
@@ -227,6 +232,16 @@ def build_manifest(*, repo_root: Path, schedule_json: Path, node: int) -> JsonDi
         max_cycles=max(1_000_000, int(schedule["simulation"]["cycles_to_drain"]) + 1),
         fast_forward_idle=True,
         capture_router_replay_nodes=(node,),
+    )
+    return schedule, reproduced_semantics, mesh_result
+
+
+def build_manifest(*, repo_root: Path, schedule_json: Path, node: int) -> JsonDict:
+    absolute_schedule = schedule_json if schedule_json.is_absolute() else repo_root / schedule_json
+    schedule, reproduced_semantics, mesh_result = reproduce_schedule_mesh(
+        repo_root=repo_root,
+        schedule_json=schedule_json,
+        node=node,
     )
     return build_router_activity_manifest(
         mesh_result,
