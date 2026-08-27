@@ -1,6 +1,7 @@
 # Evaluation Gate
 
-- Run only after router r7 and the aggregate 4x4 physical baseline are merged.
+- Run only after router r7 and the fresh aggregate 4x4 r2 physical baseline are
+  merged; the stale-cache-invalid v1 result is not a dependency.
 - Use the exact canonical FIFO, router, mesh, and logic-free functional wrapper
   sources.
 - Require all sixteen generated router instances at elaboration and reject
