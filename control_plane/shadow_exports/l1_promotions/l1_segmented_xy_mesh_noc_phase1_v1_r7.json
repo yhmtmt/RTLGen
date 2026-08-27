@@ -1,0 +1,105 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-27T12:22:11.291213Z",
+  "item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r7",
+  "run_key": "l1_segmented_xy_mesh_noc_phase1_v1_r7_run_07e4261370b86503",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "b955da0ba0c7110f15b3fbed87f30dd857da2e8f",
+  "objective": "Close a timing-feasible Nangate45 operating point for the bounded five-port router around the r6 measured 1.73 ns boundary.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/noc/l1_segmented_xy_mesh_router/sweeps/nangate45_macro_frontier_r7.json"
+    ],
+    "configs": [
+      "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/config_l1_noc_segmented_xy_router_p5_w256_vc4_d4.json"
+    ],
+    "out_root": "runs/designs/noc",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "ppa",
+    "abstraction_layer": "architecture_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+    "timing_feasible": true,
+    "clock_period_ns": 1.8,
+    "timing_slack_ns": 0.14800000000000013
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "c5ab300c",
+        "tag": "l1_segmented_xy_mesh_router_nangate45_macro_frontier_r7_a7f3c30f",
+        "result_path": "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/work/c5ab300c/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 1.652,
+        "die_area": 519855.4201,
+        "total_power_mw": 0.162
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_segmented_xy_mesh_noc_phase1_v1_r7",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "partial_metrics_count": 0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 1.652,
+        "mean": 1.652,
+        "median": 1.652,
+        "max": 1.652,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 519855.4201,
+        "mean": 519855.4201,
+        "median": 519855.4201,
+        "max": 519855.4201,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.162,
+        "mean": 0.162,
+        "median": 0.162,
+        "max": 0.162,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    },
+    "aggregation_scope": "current_run_checkout_commit",
+    "aggregation_source_commit": "b955da0ba0c7110f15b3fbed87f30dd857da2e8f",
+    "aggregation_included_attempts": 1,
+    "aggregation_excluded_attempts": 0,
+    "aggregation_excluded_source_commits": {},
+    "aggregation_excluded_attempt_run_keys": [],
+    "aggregation_excluded_attempt_run_keys_truncated": false
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/noc/l1_noc_segmented_xy_router_p5_w256_vc4_d4_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_segmented_xy_mesh_noc_phase1_v1_r7/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_segmented_xy_mesh_noc_phase1_v1_r7/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_segmented_xy_mesh_noc_phase1_v1_r7/trial_table.csv"
+  }
+}
