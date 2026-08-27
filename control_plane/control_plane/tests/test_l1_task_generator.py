@@ -821,6 +821,57 @@ def _write_example_dense_gemm_tile_stream_repo(repo_root: Path) -> tuple[str, st
     return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
 
 
+def _write_example_noc_segmented_mesh_router_bare_repo(repo_root: Path) -> tuple[str, str]:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "noc_router_node5_bare"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": "noc_segmented_mesh_router_node5",
+                "segmented_mesh_router_bare": {
+                    "node": 5,
+                    "x_coord": 1,
+                    "y_coord": 1,
+                    "data_bits": 256,
+                    "virtual_channels": 4,
+                    "fifo_depth": 4,
+                    "ports": 5,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sweep_path = (
+        repo_root
+        / "runs"
+        / "campaigns"
+        / "noc"
+        / "router_bare_v1"
+        / "sweeps"
+        / "nangate45.json"
+    )
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "flow_params": {
+                    "CLOCK_PERIOD": [1.8],
+                    "CORE_UTILIZATION": [50],
+                    "FLOW_VARIANT": ["router_node5_bare_v1"],
+                },
+                "tag_prefix": "router_node5_bare_v1",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root)), str(sweep_path.relative_to(repo_root))
+
+
 def _write_example_dual_stream_composed_repo(repo_root: Path) -> tuple[str, str]:
     design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "attention_dual_stream_composed_smoke"
     design_dir.mkdir(parents=True, exist_ok=True)
@@ -4322,6 +4373,46 @@ def test_generate_l1_sweep_task_supports_dense_gemm_tile_stream_configs() -> Non
             assert work_item.expected_outputs == [
                 "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/metrics.csv",
                 "runs/designs/npu_blocks/dense_gemm_tile_stream_int8_16x8/timing_debug_report.md",
+            ]
+
+
+def test_generate_l1_sweep_task_supports_bare_noc_router_config() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_noc_segmented_mesh_router_bare_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                _make_l1_request(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="architecture_block",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "stage_noc_segmented_mesh_router_bare_rtl",
+                "check_noc_segmented_mesh_router_bare_guard",
+                "run_block_sweep",
+                "extract_noc_segmented_mesh_router_bare_timing_paths",
+                "build_runs_index",
+                "validate",
+            ]
+            assert "--top noc_segmented_mesh_router_node5" in work_item.command_manifest[2]["run"]
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/noc_router_node5_bare/metrics.csv",
+                "runs/designs/npu_blocks/noc_router_node5_bare/timing_debug_report.md",
             ]
 
 

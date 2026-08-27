@@ -1,0 +1,12 @@
+{
+  "top_name": "noc_segmented_mesh_router_node5",
+  "segmented_mesh_router_bare": {
+    "node": 5,
+    "x_coord": 1,
+    "y_coord": 1,
+    "data_bits": 256,
+    "virtual_channels": 4,
+    "fifo_depth": 4,
+    "ports": 5
+  }
+}

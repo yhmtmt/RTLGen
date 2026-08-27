@@ -413,7 +413,14 @@ level remains a planning frontier, not the final best architecture.
    - Status: measured/merged by `l2_decoder_attention_noc_profile_v1`.
    - Remaining work: verify the final integrated schedule consumes explicit
      payload/cycle and arbitration-latency bounds under the selected
-     producer/reducer traffic mix.
+   producer/reducer traffic mix.
+   - Current refinement: router-plus-harness r7 and registered-boundary packet
+     endpoint r4 are the active physical anchors. The exact node-5 RTL replay
+     now shares a logic-free specialization top with
+     `prop_l1_segmented_xy_router_node5_bare_ppa_v1`; this bare target is the
+     prerequisite for hierarchy-matched post-route router energy. Aggregate
+     mesh placement remains required for links, congestion, and clock-tree
+     power.
 
 6a. Command/scheduler/control overhead
    - Scope: account for command generation, tile assignment, per-wave launch,
@@ -544,6 +551,11 @@ run the already queued exp-LUT branch:
     throughput, energy, area, and precision only after each substituted term
     names its measured source and leaves no incompatible category mixed into
     the same rank.
+16. Harden `l1_segmented_xy_router_node5_bare_ppa_v1` after router r7, then run
+    post-route power with the verified Llama7B node-5 VCD. Require physical-top
+    source identity and sequential-register annotation coverage before using
+    the result. Keep the result as intrinsic router energy until the routed
+    4x4 composition measures links and the mesh clock tree.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.

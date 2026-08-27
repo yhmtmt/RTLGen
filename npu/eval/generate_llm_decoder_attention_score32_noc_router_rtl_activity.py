@@ -39,6 +39,7 @@ JsonDict = dict[str, Any]
 _RTL_SOURCES = (
     Path("npu/sim/rtl/noc_ready_valid_fifo.sv"),
     Path("npu/sim/rtl/noc_segmented_mesh_router.sv"),
+    Path("npu/sim/rtl/noc_segmented_mesh_router_node5.sv"),
 )
 _FORWARDED_RE = re.compile(
     r"^(?P<cycle>\d+) (?P<port>\d+) (?P<source>[0-9a-f]+) (?P<destination>[0-9a-f]+) "
@@ -193,7 +194,7 @@ module tb;
   reg [4:0] next_expected_ready;
   reg [4:0] expected_ready;
 
-  noc_segmented_mesh_router #(.X_COORD({x_coord}), .Y_COORD({y_coord})) dut (
+  noc_segmented_mesh_router_node5 #(.X_COORD({x_coord}), .Y_COORD({y_coord})) dut (
     .clk(clk), .rst_n(rst_n), .in_valid(in_valid), .in_ready(in_ready),
     .in_dest(in_dest), .in_source(in_source), .in_tag(in_tag),
     .in_fragment(in_fragment), .in_last(in_last), .in_vc(in_vc), .in_data(in_data),
@@ -489,8 +490,8 @@ def build_manifest(
         }
     ]
     payload["remaining_abstractions"] = [
-        "The VCD covers the bare source router RTL; a matching bare-router physical result is required "
-        "before post-route power can be accepted.",
+        "The VCD covers the logic-free node-5 specialization of the bare source router RTL; the "
+        "matching bare-router physical result is required before post-route power can be accepted.",
         "Inter-router wires and composed clock-tree power require the routed 4x4 mesh measurement.",
         "HBM/DRAM controller and PHY power remain outside the on-chip router scope.",
     ]
