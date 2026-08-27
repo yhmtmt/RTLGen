@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_segmented_xy_mesh_noc_phase1_v1",
-  "decision": "iterate",
-  "pr_number": 1789,
-  "merge_commit": "0323ee0bde83829af15090e8a552ad0f24b75720",
-  "merged_utc": "2026-08-26T14:40:36.917121Z"
+  "decision": "promote",
+  "pr_number": 1804,
+  "merge_commit": "d06d651115c1a2f2dbb2be21be9e8f73c20132a2",
+  "merged_utc": "2026-08-27T12:35:00.501581Z"
 }

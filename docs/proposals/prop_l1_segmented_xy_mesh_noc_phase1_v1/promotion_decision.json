@@ -1,14 +1,14 @@
 {
   "proposal_id": "prop_l1_segmented_xy_mesh_noc_phase1_v1",
-  "candidate_id": "l1_segmented_xy_mesh_noc_phase1_v1_r6",
-  "decision": "iterate",
-  "reason": "Accepted Layer 1 evidence merged, but no concrete promotion proposal entries were present.",
+  "candidate_id": "l1_segmented_xy_mesh_noc_phase1_v1_r7",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #1804 for the current candidate.",
   "evidence_refs": [
-    "item:l1_segmented_xy_mesh_noc_phase1_v1_r6",
-    "run:l1_segmented_xy_mesh_noc_phase1_v1_r6_run_fbe5773fc9610529",
-    "artifact:control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r6.json",
-    "pr:#1789",
-    "https://github.com/yhmtmt/RTLGen/pull/1789"
+    "item:l1_segmented_xy_mesh_noc_phase1_v1_r7",
+    "run:l1_segmented_xy_mesh_noc_phase1_v1_r7_run_07e4261370b86503",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_segmented_xy_mesh_noc_phase1_v1_r7.json",
+    "pr:#1804",
+    "https://github.com/yhmtmt/RTLGen/pull/1804"
   ],
   "next_action": "inspect the next dependent item",
   "requires_human_approval": false
