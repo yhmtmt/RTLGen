@@ -30,6 +30,8 @@ def test_physical_hierarchy_tcl_names_all_router_prefixes() -> None:
     script = _tcl(Path("/tmp/final.odb"), Path("/tmp/report.txt"))
     for prefix in NODE_PREFIXES:
         assert f"{{{prefix}}}" in script
+        assert prefix.startswith("u_mesh/gen_nodes[")
+        assert prefix.endswith("].u_router/")
     assert "accepted_flit_count" in script
 
 

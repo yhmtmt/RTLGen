@@ -13,7 +13,7 @@ import tempfile
 from typing import Any
 
 
-NODE_PREFIXES = tuple(f"u_mesh.gen_nodes[{node}].u_router" for node in range(16))
+NODE_PREFIXES = tuple(f"u_mesh/gen_nodes[{node}].u_router/" for node in range(16))
 COUNTER_MARKERS = (
     "accepted_flit_count",
     "forwarded_flit_count",
