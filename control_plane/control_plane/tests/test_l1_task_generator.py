@@ -4410,6 +4410,7 @@ def test_generate_l1_sweep_task_supports_bare_noc_router_config() -> None:
                 "validate",
             ]
             assert "--top noc_segmented_mesh_router_node5" in work_item.command_manifest[2]["run"]
+            assert "--isolate_flow_variant" in work_item.command_manifest[2]["run"]
             assert work_item.expected_outputs == [
                 "runs/designs/npu_blocks/noc_router_node5_bare/metrics.csv",
                 "runs/designs/npu_blocks/noc_router_node5_bare/timing_debug_report.md",
