@@ -1,0 +1,9 @@
+{
+  "tag_prefix": "l1_segmented_xy_router_node5_bare_nangate45_v1",
+  "flow_params": {
+    "CLOCK_PERIOD": [1.8],
+    "CORE_UTILIZATION": [40, 50, 60],
+    "PLACE_DENSITY": [0.52],
+    "FLOW_VARIANT": ["router_node5_bare_v1"]
+  }
+}
