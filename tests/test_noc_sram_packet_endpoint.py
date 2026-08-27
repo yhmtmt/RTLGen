@@ -126,6 +126,16 @@ def test_noc_sram_packet_endpoint_ppa_harness_is_compact_live_and_compiles(
     assert "tx_mem_req_addr" in generated
     assert "rx_mem_write_addr" in generated
 
+    wrapper_dir = tmp_path / "wrapper"
+    wrapper_dir.mkdir()
+    generate_wrapper(config, str(wrapper_dir), design)
+    registered_wrapper = (
+        wrapper_dir / f"{design['wrapper_name']}.v"
+    ).read_text(encoding="utf-8")
+    assert "reg [3:0] rx_destination_probe_r;" in registered_wrapper
+    assert "rx_destination_probe_r <= rx_destination_probe;" in registered_wrapper
+    assert ".rx_destination_probe(rx_destination_probe_r)" in registered_wrapper
+
     generated_path = tmp_path / f"{design['module_name']}.v"
     generated_path.write_text(generated, encoding="utf-8")
     generate_wrapper(config, str(tmp_path), design)

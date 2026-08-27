@@ -2711,10 +2711,19 @@ module {wrapper_name}(
   output protocol_error
 );
 
+  reg [{design['dest_bits']-1}:0] rx_destination_probe_r;
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n)
+      rx_destination_probe_r <= {design['dest_bits']}'d{design['local_endpoint_id']};
+    else
+      rx_destination_probe_r <= rx_destination_probe;
+  end
+
   {module_name} dut (
     .clk(clk),
     .rst_n(rst_n),
-    .rx_destination_probe(rx_destination_probe),
+    .rx_destination_probe(rx_destination_probe_r),
     .observed_flit(observed_flit),
     .issued_packet_count(issued_packet_count),
     .completed_packet_count(completed_packet_count),

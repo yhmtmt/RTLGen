@@ -197,6 +197,28 @@ Do not use relaxed boundary acceptance for ordinary winner-selection sweeps.
 Those should continue to require at least one completed, timing-feasible row for
 each expected metrics file.
 
+## Macro Timing Boundary Rule
+
+Physical wrappers used as reusable macro anchors must register every external
+data input and must expose registered outputs, unless the proposal explicitly
+measures a combinational interface path. Clock and reset are exempt. Keeping a
+probe live is not sufficient if it bypasses the boundary registers.
+
+Before comparing or promoting rows from a macro sweep:
+
+- confirm the same timing path class is measured at every point, normally
+  register-to-register
+- retain the worst setup path startpoint, endpoint, path group, arrival,
+  required time, and slack when a result is non-monotonic
+- treat a row as diagnostic-only when its delay changes sharply while the RTL,
+  retained state, and physical parameters do not provide a defensible cause
+- revise the wrapper and rerun under a new `FLOW_VARIANT` when an unregistered
+  data boundary allows input/output constraints to select incomparable paths
+
+Do not feed a diagnostic timing outlier into aggregate composition or an
+architecture ranking merely because the flow completed and the row meets its
+declared clock.
+
 ## Revision Dependency Rule
 
 When an evaluation item is superseded, downstream `depends_on_item_ids` must
