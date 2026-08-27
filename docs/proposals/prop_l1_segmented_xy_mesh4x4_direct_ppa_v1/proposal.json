@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l1_segmented_xy_mesh4x4_direct_ppa_v1",
+  "created_utc": "2026-08-27T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Harden the canonical direct-port 4x4 segmented mesh",
+  "hypothesis": "Hardening the exact functional mesh hierarchy will remove synthetic harness logic from aggregate NoC PPA and provide a routed hierarchy that can accept verified Llama7B endpoint activity.",
+  "direct_comparison": {
+    "primary_question": "What PPA does the complete functional sixteen-router mesh consume relative to the compact synthetic aggregate harness?",
+    "include": [
+      "sixteen canonical p5/w256/vc4/d4 routers",
+      "all deterministic-XY inter-router links",
+      "all functional endpoint ready/valid and flit ports",
+      "aggregate clock tree and routed-wire effects"
+    ],
+    "exclude": [
+      "synthetic traffic and observation harness",
+      "debug-counter output pins",
+      "packet endpoints and SRAM macros",
+      "producer/reducer arithmetic and HBM/DRAM",
+      "workload-matched switching activity"
+    ]
+  },
+  "expected_benefit": [
+    "separate functional mesh cost from synthetic harness overhead",
+    "measure aggregate links and clock distribution in the exact hierarchy",
+    "enable hierarchy-matched post-route Llama7B transport energy"
+  ],
+  "risks": [
+    "the 8962 functional pins can still constrain perimeter placement",
+    "the first point is a loose feasibility envelope rather than die optimization",
+    "the sixteen-router hierarchy may cross the Yosys/OpenROAD runtime frontier",
+    "vectorless power does not represent workload energy"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_segmented_xy_mesh4x4_direct_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the canonical direct-port sixteen-router segmented mesh without synthetic harness logic.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "direct_functional_segmented_mesh_physical_anchor",
+      "paired_baseline_item_id": "l1_segmented_xy_mesh4x4_aggregate_ppa_v1",
+      "depends_on_item_ids": [
+        "l1_segmented_xy_mesh_noc_phase1_v1_r7",
+        "l1_segmented_xy_mesh4x4_aggregate_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/npu_blocks/noc_segmented_mesh4x4_direct/config.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_segmented_xy_mesh4x4/sweeps/nangate45_direct_hierarchy_v1.json",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/noc_segmented_mesh4x4_direct/metrics.csv",
+        "runs/designs/npu_blocks/noc_segmented_mesh4x4_direct/physical_hierarchy_report.json",
+        "runs/designs/npu_blocks/noc_segmented_mesh4x4_direct/timing_debug_report.md"
+      ],
+      "status": "pending_after_mesh_baseline",
+      "expected_result": {
+        "direction": "measure_functional_mesh_physical_cost_without_harness",
+        "reason": "The compact aggregate target cannot accept endpoint workload activity and includes synthetic boundary logic."
+      },
+      "acceptance_notes": "Require canonical source identity, a logic-free functional wrapper, all sixteen routers, the explicit 8962-pin perimeter gate, complete PPA, timing feasibility, retained routed artifacts, and isolated flow identity. Debug-counter pins, endpoints/SRAM, and HBM/DRAM remain excluded."
+    }
+  ]
+}

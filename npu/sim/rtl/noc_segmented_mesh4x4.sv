@@ -9,7 +9,8 @@ module noc_segmented_mesh4x4 #(
   parameter integer VC_W = 2,
   parameter integer VC_COUNT = 4,
   parameter integer FIFO_DEPTH = 4,
-  parameter integer COUNTER_W = 32
+  parameter integer COUNTER_W = 32,
+  parameter integer ENABLE_DEBUG_COUNTERS = 1
 ) (
   input  wire                              clk,
   input  wire                              rst_n,
@@ -197,7 +198,8 @@ module noc_segmented_mesh4x4 #(
         .FIFO_DEPTH(FIFO_DEPTH),
         .X_COORD(X),
         .Y_COORD(Y),
-        .COUNTER_W(COUNTER_W)
+        .COUNTER_W(COUNTER_W),
+        .ENABLE_DEBUG_COUNTERS(ENABLE_DEBUG_COUNTERS)
       ) u_router (
         .clk(clk), .rst_n(rst_n),
         .in_valid(router_in_valid[(node_g * PORTS) +: PORTS]),

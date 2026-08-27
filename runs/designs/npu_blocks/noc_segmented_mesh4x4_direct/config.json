@@ -1,0 +1,14 @@
+{
+  "top_name": "noc_segmented_mesh4x4_functional",
+  "segmented_mesh4x4_direct": {
+    "nodes": 16,
+    "ports_per_router": 5,
+    "data_bits": 256,
+    "virtual_channels": 4,
+    "fifo_depth": 4,
+    "debug_counters": false,
+    "top_level_pin_count": 8962,
+    "pin_pitch_bound_um": 1.12,
+    "die_side_um": 3200
+  }
+}

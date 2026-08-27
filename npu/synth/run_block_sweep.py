@@ -349,12 +349,20 @@ def synth_keep_module_names(value: object) -> List[str]:
 def verilog_module_names(verilog_dir: Path) -> set[str]:
     names: set[str] = set()
     pattern = re.compile(r"^\s*module\s+([A-Za-z_][A-Za-z0-9_$]*)\b")
-    for path in sorted(verilog_dir.glob("*.v")):
+    for path in verilog_source_paths(verilog_dir):
         for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
             match = pattern.match(line)
             if match:
                 names.add(match.group(1))
     return names
+
+
+def verilog_source_paths(verilog_dir: Path) -> List[Path]:
+    return sorted(
+        path
+        for path in verilog_dir.iterdir()
+        if path.is_file() and path.suffix.lower() in {".v", ".sv"}
+    )
 
 
 def validate_synth_keep_modules(
@@ -1802,7 +1810,7 @@ def synth_result_artifact(platform: str, design_name: str, flow_variant: str, ma
 def deduplicate_verilog_sources(src_dir: Path) -> List[Path]:
     kept: List[Path] = []
     seen_hashes: Dict[str, Path] = {}
-    for src in sorted(src_dir.glob("*.v")):
+    for src in verilog_source_paths(src_dir):
         file_hash = sha1_file(src)
         if file_hash in seen_hashes:
             print(
@@ -1844,7 +1852,7 @@ def ensure_design_assets(
         deduped_verilog = deduplicate_verilog_sources(dest_src_dir)
         verilog_files = [str(p) for p in deduped_verilog]
         if not verilog_files:
-            raise ValueError(f"No .v files found in {verilog_dir}")
+            raise ValueError(f"No .v or .sv files found in {verilog_dir}")
         verilog_expr = " ".join(
             f"$(DESIGN_HOME)/src/{design_name}/{Path(v).name}" for v in verilog_files
         )

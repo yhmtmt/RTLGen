@@ -564,6 +564,15 @@ run the already queued exp-LUT branch:
     least 95 percent sequential-register sidecar coverage before using the
     result. Keep the result as intrinsic router energy until the routed 4x4
     composition measures links and the mesh clock tree.
+17. After the compact aggregate mesh baseline, harden
+    `l1_segmented_xy_mesh4x4_direct_ppa_v1`. This target must expose all
+    functional endpoint ready/valid and flit ports on the canonical sixteen-
+    router hierarchy, exclude debug-counter pins and synthetic traffic logic,
+    prove the 8,962-pin perimeter bound, and retain isolated routed artifacts.
+    Compare it with the compact aggregate harness to identify boundary cost,
+    then use this exact hierarchy for compact endpoint VCD plus per-router
+    sequential-activity annotation. Only that post-route activity result can
+    replace composed/vectorless NoC energy in the Llama7B frontier ranking.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.

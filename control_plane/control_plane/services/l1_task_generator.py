@@ -761,6 +761,70 @@ def _read_config_target(
                 },
             ],
         )
+    elif "top_name" in cfg and "segmented_mesh4x4_direct" in cfg:
+        top_name = str(cfg["top_name"]).strip()
+        if top_name != "noc_segmented_mesh4x4_functional":
+            raise Layer1TaskGenerationError(
+                f"direct mesh top must be noc_segmented_mesh4x4_functional in {config_path}"
+            )
+        try:
+            design_dir = str(config_path.parent.resolve().relative_to(repo_root.resolve()))
+        except ValueError as exc:
+            raise Layer1TaskGenerationError(
+                f"direct mesh physical config must live under repo_root/runs/designs/...: {config_path}"
+            ) from exc
+        design_name = config_path.parent.name
+        verilog_dir = f"{design_dir}/verilog"
+        return Layer1ConfigTarget(
+            design_kind="block",
+            design_name=design_name,
+            expected_metrics_path=block_metrics_path(design_name),
+            expected_report_paths=[
+                f"{design_dir}/physical_hierarchy_report.json",
+                f"{design_dir}/timing_debug_report.md",
+            ],
+            commands=[
+                {
+                    "name": "stage_noc_segmented_mesh4x4_direct_rtl",
+                    "run": _with_oss_cad_path(
+                        "python3 npu/rtlgen/stage_noc_segmented_mesh4x4_direct.py "
+                        f"--config {config_rel} --out {verilog_dir}"
+                    ),
+                },
+                {
+                    "name": "check_noc_segmented_mesh4x4_direct_guard",
+                    "run": _with_oss_cad_path(
+                        "python3 npu/eval/check_noc_segmented_mesh4x4_direct_guard.py "
+                        f"--config {config_rel} --verilog-dir {verilog_dir}"
+                    ),
+                },
+                {
+                    "name": "run_block_sweep",
+                    "run": _with_oss_cad_path(
+                        "python3 npu/synth/run_block_sweep.py "
+                        f"--design_dir {design_dir} --platform {{platform}} --top {top_name} "
+                        f"--sweep {{sweep_path}} --out_root {out_root} "
+                        + (f"--make_target {make_target} " if make_target else "")
+                        + "--skip_existing --isolate_flow_variant"
+                    ),
+                },
+                {
+                    "name": "check_noc_segmented_mesh4x4_direct_physical",
+                    "run": (
+                        "python3 npu/eval/check_noc_segmented_mesh4x4_direct_physical.py "
+                        f"--metrics-csv {out_root}/{design_name}/metrics.csv "
+                        f"--out {design_dir}/physical_hierarchy_report.json"
+                    ),
+                },
+                {
+                    "name": "extract_noc_segmented_mesh4x4_direct_timing_paths",
+                    "run": (
+                        "python3 npu/eval/extract_openroad_timing_summary.py "
+                        f"--design-dir {design_dir} --out {design_dir}/timing_debug_report.md --max-paths 8"
+                    ),
+                },
+            ],
+        )
     elif "top_name" in cfg and "segmented_mesh_router_bare" in cfg:
         top_name = str(cfg["top_name"]).strip()
         if top_name != "noc_segmented_mesh_router_node5":

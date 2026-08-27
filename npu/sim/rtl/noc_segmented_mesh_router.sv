@@ -14,7 +14,8 @@ module noc_segmented_mesh_router #(
   parameter integer FIFO_DEPTH = 4,
   parameter integer X_COORD = 0,
   parameter integer Y_COORD = 0,
-  parameter integer COUNTER_W = 32
+  parameter integer COUNTER_W = 32,
+  parameter integer ENABLE_DEBUG_COUNTERS = 1
 ) (
   input  wire                         clk,
   input  wire                         rst_n,
@@ -93,6 +94,7 @@ module noc_segmented_mesh_router #(
   integer accepted_i;
   integer forwarded_i;
   integer seq_port_i;
+  integer debug_port_i;
   integer seq_output_i;
 
   function automatic [FLIT_W-1:0] pack_flit;
@@ -179,7 +181,13 @@ module noc_segmented_mesh_router #(
     end
   endgenerate
 
-  assign current_input_occupancy = occupancy_sum_r;
+  generate
+    if (ENABLE_DEBUG_COUNTERS != 0) begin : gen_current_occupancy
+      assign current_input_occupancy = occupancy_sum_r;
+    end else begin : gen_no_current_occupancy
+      assign current_input_occupancy = {COUNTER_W{1'b0}};
+    end
+  endgenerate
 
   always @(*) begin
     fifo_out_ready_r = {INPUTS{1'b0}};
@@ -195,8 +203,9 @@ module noc_segmented_mesh_router #(
       grant_flit_r[comb_output_i] = {FLIT_W{1'b0}};
     end
     for (comb_input_i = 0; comb_input_i < INPUTS; comb_input_i = comb_input_i + 1) begin
-      occupancy_sum_r = occupancy_sum_r
-          + fifo_occupancy_bus[(comb_input_i * FIFO_COUNT_W) +: FIFO_COUNT_W];
+      if (ENABLE_DEBUG_COUNTERS != 0)
+        occupancy_sum_r = occupancy_sum_r
+            + fifo_occupancy_bus[(comb_input_i * FIFO_COUNT_W) +: FIFO_COUNT_W];
       for (comb_output_i = 0; comb_output_i < PORTS; comb_output_i = comb_output_i + 1) begin
         route_request_r[(comb_output_i * INPUTS) + comb_input_i] =
             fifo_out_valid[comb_input_i]
@@ -205,10 +214,12 @@ module noc_segmented_mesh_router #(
       end
     end
     for (comb_port_i = 0; comb_port_i < PORTS; comb_port_i = comb_port_i + 1) begin
-      if (in_valid[comb_port_i] && !in_ready[comb_port_i])
-        any_input_stall_r = 1'b1;
-      if (out_valid_q[comb_port_i] && !out_ready[comb_port_i])
-        any_output_stall_r = 1'b1;
+      if (ENABLE_DEBUG_COUNTERS != 0) begin
+        if (in_valid[comb_port_i] && !in_ready[comb_port_i])
+          any_input_stall_r = 1'b1;
+        if (out_valid_q[comb_port_i] && !out_ready[comb_port_i])
+          any_output_stall_r = 1'b1;
+      end
     end
     for (comb_output_i = 0; comb_output_i < PORTS; comb_output_i = comb_output_i + 1) begin
       for (comb_scan_i = 0; comb_scan_i < INPUTS; comb_scan_i = comb_scan_i + 1) begin
@@ -216,9 +227,11 @@ module noc_segmented_mesh_router #(
         if (scan_index_i >= INPUTS)
           scan_index_i = scan_index_i - INPUTS;
         if (route_request_r[(comb_output_i * INPUTS) + scan_index_i]) begin
-          if (candidate_seen_r[comb_output_i])
-            any_contention_r = 1'b1;
-          candidate_seen_r[comb_output_i] = 1'b1;
+          if (ENABLE_DEBUG_COUNTERS != 0) begin
+            if (candidate_seen_r[comb_output_i])
+              any_contention_r = 1'b1;
+            candidate_seen_r[comb_output_i] = 1'b1;
+          end
           if (!grant_valid_r[comb_output_i]) begin
             grant_valid_r[comb_output_i] = 1'b1;
             grant_index_r[comb_output_i] = scan_index_i[INPUT_INDEX_W-1:0];
@@ -239,28 +252,12 @@ module noc_segmented_mesh_router #(
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       out_valid_q <= 5'b0;
-      accepted_flit_count <= {COUNTER_W{1'b0}};
-      forwarded_flit_count <= {COUNTER_W{1'b0}};
-      input_stall_cycles <= {COUNTER_W{1'b0}};
-      output_stall_cycles <= {COUNTER_W{1'b0}};
-      arbitration_contention_cycles <= {COUNTER_W{1'b0}};
-      max_input_occupancy <= {COUNTER_W{1'b0}};
-      route_flit_count <= {(5 * COUNTER_W){1'b0}};
       for (seq_output_i = 0; seq_output_i < PORTS; seq_output_i = seq_output_i + 1) begin
         out_flit_q[seq_output_i] <= {FLIT_W{1'b0}};
         rr_cursor_q[seq_output_i] <= {INPUT_INDEX_W{1'b0}};
       end
     end else begin
-      accepted_i = 0;
-      forwarded_i = 0;
       for (seq_port_i = 0; seq_port_i < PORTS; seq_port_i = seq_port_i + 1) begin
-        if (in_valid[seq_port_i] && in_ready[seq_port_i])
-          accepted_i = accepted_i + 1;
-        if (out_valid_q[seq_port_i] && out_ready[seq_port_i]) begin
-          forwarded_i = forwarded_i + 1;
-          route_flit_count[(seq_port_i * COUNTER_W) +: COUNTER_W]
-              <= route_flit_count[(seq_port_i * COUNTER_W) +: COUNTER_W] + 1'b1;
-        end
         if (!out_valid_q[seq_port_i] || out_ready[seq_port_i]) begin
           if (grant_valid_r[seq_port_i]) begin
             out_valid_q[seq_port_i] <= 1'b1;
@@ -274,16 +271,54 @@ module noc_segmented_mesh_router #(
           end
         end
       end
-      accepted_flit_count <= accepted_flit_count + accepted_i;
-      forwarded_flit_count <= forwarded_flit_count + forwarded_i;
-      if (any_input_stall_r)
-        input_stall_cycles <= input_stall_cycles + 1'b1;
-      if (any_output_stall_r)
-        output_stall_cycles <= output_stall_cycles + 1'b1;
-      if (any_contention_r)
-        arbitration_contention_cycles <= arbitration_contention_cycles + 1'b1;
-      if (occupancy_sum_r > max_input_occupancy)
-        max_input_occupancy <= occupancy_sum_r;
     end
   end
+
+  generate
+    if (ENABLE_DEBUG_COUNTERS != 0) begin : gen_debug_counters
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+          accepted_flit_count <= {COUNTER_W{1'b0}};
+          forwarded_flit_count <= {COUNTER_W{1'b0}};
+          input_stall_cycles <= {COUNTER_W{1'b0}};
+          output_stall_cycles <= {COUNTER_W{1'b0}};
+          arbitration_contention_cycles <= {COUNTER_W{1'b0}};
+          max_input_occupancy <= {COUNTER_W{1'b0}};
+          route_flit_count <= {(5 * COUNTER_W){1'b0}};
+        end else begin
+          accepted_i = 0;
+          forwarded_i = 0;
+          for (debug_port_i = 0; debug_port_i < PORTS; debug_port_i = debug_port_i + 1) begin
+            if (in_valid[debug_port_i] && in_ready[debug_port_i])
+              accepted_i = accepted_i + 1;
+            if (out_valid_q[debug_port_i] && out_ready[debug_port_i]) begin
+              forwarded_i = forwarded_i + 1;
+              route_flit_count[(debug_port_i * COUNTER_W) +: COUNTER_W]
+                  <= route_flit_count[(debug_port_i * COUNTER_W) +: COUNTER_W] + 1'b1;
+            end
+          end
+          accepted_flit_count <= accepted_flit_count + accepted_i;
+          forwarded_flit_count <= forwarded_flit_count + forwarded_i;
+          if (any_input_stall_r)
+            input_stall_cycles <= input_stall_cycles + 1'b1;
+          if (any_output_stall_r)
+            output_stall_cycles <= output_stall_cycles + 1'b1;
+          if (any_contention_r)
+            arbitration_contention_cycles <= arbitration_contention_cycles + 1'b1;
+          if (occupancy_sum_r > max_input_occupancy)
+            max_input_occupancy <= occupancy_sum_r;
+        end
+      end
+    end else begin : gen_no_debug_counters
+      always_comb begin
+        accepted_flit_count = {COUNTER_W{1'b0}};
+        forwarded_flit_count = {COUNTER_W{1'b0}};
+        input_stall_cycles = {COUNTER_W{1'b0}};
+        output_stall_cycles = {COUNTER_W{1'b0}};
+        arbitration_contention_cycles = {COUNTER_W{1'b0}};
+        max_input_occupancy = {COUNTER_W{1'b0}};
+        route_flit_count = {(5 * COUNTER_W){1'b0}};
+      end
+    end
+  endgenerate
 endmodule

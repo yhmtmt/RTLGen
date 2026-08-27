@@ -117,6 +117,16 @@ Before dispatching such an item:
 This keeps the evaluator deterministic: it should run prepared source, not infer
 or implement missing architecture blocks.
 
+## Staged RTL source contract
+
+Layer 1 block jobs may stage canonical Verilog (`.v`) and SystemVerilog (`.sv`)
+sources under `<design_dir>/verilog`. `run_block_sweep.py` must discover both
+suffixes when validating `SYNTH_KEEP_MODULES`, deduplicating sources, and
+emitting ORFS `VERILOG_FILES`. Before queueing a new staged-source target, run a
+dry structural guard and a regression that proves every staged module reaches
+the generated source list; a successful standalone Yosys check does not prove
+that the sweep driver will pass the files to OpenROAD.
+
 ## Synth-only diagnostic contract
 
 Use a bounded synth-only item before repeating an expensive physical run when
