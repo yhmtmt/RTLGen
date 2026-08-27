@@ -7424,6 +7424,70 @@ def _decoder_attention_score32_schedule_wrapper_postroute_activity_power_evidenc
     }
 
 
+def _decoder_attention_score32_noc_router_postroute_activity_power_evidence(
+    *, item_id: str
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    config = "runs/designs/npu_blocks/noc_segmented_mesh_router_node5_bare/config.json"
+    metrics_csv = "runs/designs/npu_blocks/noc_segmented_mesh_router_node5_bare/metrics.csv"
+    schedule_json = (
+        f"{base}/decoder_attention_score32_noc_phase2_schedule__"
+        "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json"
+    )
+    orfs_design_config = (
+        "/orfs/flow/designs/nangate45/noc_segmented_mesh_router_node5_bare/config.mk"
+    )
+    activity_dir = "/tmp/rtlgen_score32_noc_router_node5_postroute_activity_power"
+    out = f"{base}/decoder_attention_score32_noc_router_postroute_activity_power__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_noc_router_postroute_activity_power__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_score32_noc_router_bare_config": config,
+            "attention_score32_noc_router_bare_metrics_csv": metrics_csv,
+            "attention_score32_noc_router_schedule_json": schedule_json,
+            "attention_score32_noc_router_orfs_design_config": orfs_design_config,
+            "attention_score32_noc_router_activity_dir": activity_dir,
+            "attention_score32_noc_router_postroute_activity_power_out": out,
+            "attention_score32_noc_router_postroute_activity_power_report": report,
+            "attention_score32_noc_router_postroute_activity_power_scope": (
+                "Regenerate and cycle-verify the complete node-5 Llama7B replay, annotate every "
+                "uniquely preserved timing-feasible bare-router route, retimestamp the unchanged "
+                "cycle sequence to the routed target clock, and report intrinsic router energy "
+                "separately from links, aggregate clock tree, endpoint/SRAM, and HBM/DRAM."
+            ),
+            "attention_score32_noc_router_postroute_activity_power_promotion_gate": (
+                "Require exact RTL/performance replay equivalence, isolated effective flow variants, "
+                "an explicit source-to-routed clock contract, direct VCD annotation, at least 95 "
+                "percent sequential-register sidecar coverage, finite routed power, and "
+                "timing-feasible selection."
+            ),
+            "attention_score32_noc_router_postroute_activity_power_local_only_artifacts": [
+                "VCD",
+                "ODB",
+                "SPEF",
+            ],
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_score32_noc_router_postroute_activity_power",
+                "run": (
+                    "python3 npu/eval/"
+                    "audit_llm_decoder_attention_score32_noc_router_postroute_activity_power.py "
+                    f"--config {config} "
+                    f"--metrics-csv {metrics_csv} "
+                    f"--schedule-json {schedule_json} "
+                    f"--orfs-design-config {orfs_design_config} "
+                    f"--activity-dir {activity_dir} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score32_exact_reduction_recost_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     base_item_id = "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1"
@@ -13309,6 +13373,7 @@ def _build_payload(
         "decoder_attention_score32_hbm_controller_replay",
         "decoder_attention_score32_integrated_frontier_ranking",
         "decoder_attention_score32_schedule_wrapper_postroute_activity_power",
+        "decoder_attention_score32_noc_router_postroute_activity_power",
         "decoder_attention_score32_exact_reduction_recost",
         "decoder_attention_score32_folded_global_exact_reduction_recost",
         "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank",
@@ -13742,6 +13807,10 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_score32_schedule_wrapper_postroute_activity_power":
             decoder_evidence = _decoder_attention_score32_schedule_wrapper_postroute_activity_power_evidence(
+                item_id=item_id
+            )
+        elif abstraction_layer_name == "decoder_attention_score32_noc_router_postroute_activity_power":
+            decoder_evidence = _decoder_attention_score32_noc_router_postroute_activity_power_evidence(
                 item_id=item_id
             )
         elif abstraction_layer_name == "decoder_attention_score32_exact_reduction_recost":

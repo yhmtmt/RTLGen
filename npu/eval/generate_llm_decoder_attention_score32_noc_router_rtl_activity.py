@@ -450,6 +450,7 @@ def build_manifest(
     node: int,
     out_dir: Path,
     timeout_seconds: int,
+    clock_period_ns: float | None = None,
 ) -> JsonDict:
     absolute_schedule = schedule_json if schedule_json.is_absolute() else repo_root / schedule_json
     schedule, reproduced_semantics, mesh_result = reproduce_schedule_mesh(
@@ -457,23 +458,34 @@ def build_manifest(
         schedule_json=schedule_json,
         node=node,
     )
-    clock_period_ns = float(schedule["source_contract"]["noc_clock_ns"])
+    source_schedule_clock_ns = float(schedule["source_contract"]["noc_clock_ns"])
+    activity_clock_ns = (
+        source_schedule_clock_ns if clock_period_ns is None else float(clock_period_ns)
+    )
+    if activity_clock_ns <= 0.0:
+        raise ValueError("router RTL activity clock period must be positive")
     payload = build_router_activity_manifest(
         mesh_result,
         node=node,
         source_schedule_path=str(schedule_json),
         source_schedule_sha256=_sha256_file(absolute_schedule),
         source_schedule_semantic_sha256=_canonical_sha256(reproduced_semantics),
-        clock_period_ns=clock_period_ns,
+        clock_period_ns=activity_clock_ns,
     )
     rtl = run_rtl_activity(
         mesh_result,
         node=node,
-        clock_period_ns=clock_period_ns,
+        clock_period_ns=activity_clock_ns,
         out_dir=out_dir,
         timeout_seconds=timeout_seconds,
     )
     payload["model"] = "llama7b_score32_noc_router_exact_rtl_activity"
+    payload["clock_contract"] = {
+        "source_schedule_clock_ns": source_schedule_clock_ns,
+        "activity_annotation_clock_ns": activity_clock_ns,
+        "cycle_sequence_retimed": activity_clock_ns != source_schedule_clock_ns,
+        "retiming_scope": "timestamps only; replay inputs, ready values, flits, and counters unchanged",
+    }
     payload["rtl_activity"] = rtl
     payload["phases"] = [
         {
@@ -506,6 +518,11 @@ def main() -> int:
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--timeout-seconds", type=int, default=1800)
+    parser.add_argument(
+        "--clock-period-ns",
+        type=float,
+        help="Retimestamp the identical replay cycle sequence for a routed physical clock",
+    )
     args = parser.parse_args()
     payload = build_manifest(
         repo_root=args.repo_root.resolve(),
@@ -513,6 +530,7 @@ def main() -> int:
         node=args.node,
         out_dir=args.out_dir.resolve(),
         timeout_seconds=args.timeout_seconds,
+        clock_period_ns=args.clock_period_ns,
     )
     args.manifest.parent.mkdir(parents=True, exist_ok=True)
     args.manifest.write_text(

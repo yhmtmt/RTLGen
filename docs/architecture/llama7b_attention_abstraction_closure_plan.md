@@ -418,9 +418,13 @@ level remains a planning frontier, not the final best architecture.
      endpoint r4 are the active physical anchors. The exact node-5 RTL replay
      now shares a logic-free specialization top with
      `prop_l1_segmented_xy_router_node5_bare_ppa_v1`; this bare target is the
-     prerequisite for hierarchy-matched post-route router energy. Aggregate
-     mesh placement remains required for links, congestion, and clock-tree
-     power.
+     prerequisite for hierarchy-matched post-route router energy. Its direct
+     block sweep must use a parameter-hash-isolated OpenROAD flow variant for
+     every physical point. The dependent
+     `prop_l2_decoder_attention_score32_noc_router_postroute_activity_power_llama7b_v1`
+     regenerates the full replay and measures every timing-feasible isolated
+     route. Aggregate mesh placement remains required for links, congestion,
+     and clock-tree power.
 
 6a. Command/scheduler/control overhead
    - Scope: account for command generation, tile assignment, per-wave launch,
@@ -552,10 +556,14 @@ run the already queued exp-LUT branch:
     names its measured source and leaves no incompatible category mixed into
     the same rank.
 16. Harden `l1_segmented_xy_router_node5_bare_ppa_v1` after router r7, then run
-    post-route power with the verified Llama7B node-5 VCD. Require physical-top
-    source identity and sequential-register annotation coverage before using
-    the result. Keep the result as intrinsic router energy until the routed
-    4x4 composition measures links and the mesh clock tree.
+    `l2_decoder_attention_score32_noc_router_postroute_activity_power_llama7b_v1`.
+    Regenerate and cycle-verify the Llama7B node-5 VCD on the evaluator;
+    require physical-top source identity, unique effective flow variants,
+    explicit retimestamping of the unchanged cycle sequence from the source
+    schedule clock to the routed target clock, direct VCD annotation, and at
+    least 95 percent sequential-register sidecar coverage before using the
+    result. Keep the result as intrinsic router energy until the routed 4x4
+    composition measures links and the mesh clock tree.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.

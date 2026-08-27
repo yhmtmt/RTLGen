@@ -802,7 +802,7 @@ def _read_config_target(
                         f"--design_dir {design_dir} --platform {{platform}} --top {top_name} "
                         f"--sweep {{sweep_path}} --out_root {out_root} "
                         + (f"--make_target {make_target} " if make_target else "")
-                        + "--skip_existing"
+                        + "--skip_existing --isolate_flow_variant"
                     ),
                 },
                 {

@@ -1904,6 +1904,7 @@ def append_metrics(metrics_path: Path, row: Dict[str, object]):
         "config_hash",
         "param_hash",
         "tag",
+        "effective_flow_variant",
         "status",
         "critical_path_ns",
         "die_area",
@@ -1999,6 +2000,13 @@ def command_to_text(command: List[object]) -> str:
     return " ".join(str(part) for part in command)
 
 
+def flow_variant_cache_matches(
+    payload: Dict[str, object], *, expected: str, isolation_required: bool
+) -> bool:
+    cached = str(payload.get("effective_flow_variant", "")).strip()
+    return (not isolation_required and (not cached or cached == expected)) or cached == expected
+
+
 def write_flow_failure_result(
     *,
     circuit_root: Path,
@@ -2047,6 +2055,7 @@ def write_flow_failure_result(
         "config_hash": config_hash,
         "param_hash": run_id,
         "tag": tag,
+        "effective_flow_variant": flow_variant,
         "status": "flow_failed",
         "critical_path_ns": None,
         "die_area": None,
@@ -2297,11 +2306,18 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
                run_id_extra: Optional[Dict[str, object]] = None,
                mode_name: Optional[str] = None,
                mode_use_macro: Optional[bool] = None,
-               compare_group: str = "") -> Optional[Dict[str, object]]:
+               compare_group: str = "",
+               isolate_flow_variant: bool = False) -> Optional[Dict[str, object]]:
     config_hash = sha1_verilog_dir(verilog_dir)
     run_id = make_run_id(sweep_params, run_id_extra)
     tag_prefix = sweep_params.get("TAG") or sweep_params.get("tag_prefix") or "run"
     tag = sweep_params.get("TAG", f"{tag_prefix}_{run_id}")
+    base_flow_variant = str(sweep_params.get("FLOW_VARIANT", "base"))
+    flow_variant = (
+        f"{base_flow_variant}__{run_id}"
+        if isolate_flow_variant and not base_flow_variant.endswith(f"__{run_id}")
+        else base_flow_variant
+    )
 
     circuit_root = out_root / design_name
     work_root = circuit_root / "work"
@@ -2318,6 +2334,7 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
             "platform": platform,
             "param_hash": run_id,
             "tag": tag,
+            "effective_flow_variant": flow_variant,
             "status": "dry_run",
             "critical_path_ns": None,
             "die_area": None,
@@ -2352,10 +2369,24 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
                 cached_payload["param_hash"] = run_id
             if not str(cached_payload.get("tag", "")).strip():
                 cached_payload["tag"] = tag
+            if (
+                not isolate_flow_variant
+                and not str(cached_payload.get("effective_flow_variant", "")).strip()
+            ):
+                cached_payload["effective_flow_variant"] = flow_variant
             if not str(cached_payload.get("work_result_json", "")).strip():
                 cached_payload["work_result_json"] = str(result_path)
 
-            if capture_cfg.get("required", False) and not fsm_capture_cache_matches(
+            if not flow_variant_cache_matches(
+                cached_payload,
+                expected=flow_variant,
+                isolation_required=isolate_flow_variant,
+            ):
+                print(
+                    "[INFO] Existing result has missing or mismatched isolated "
+                    "effective_flow_variant; rerunning"
+                )
+            elif capture_cfg.get("required", False) and not fsm_capture_cache_matches(
                 cached_payload,
                 capture_cfg,
                 run_dir,
@@ -2373,6 +2404,7 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
                 "platform": platform,
                 "param_hash": run_id,
                 "tag": tag,
+                "effective_flow_variant": flow_variant,
                 "status": "unknown",
                 "work_result_json": str(result_path),
             }
@@ -2400,10 +2432,9 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
         DEST_BASE / platform / design_name / "constraint.sdc",
         clock_port,
     )
-    flow_variant = str(sweep_params.get("FLOW_VARIANT", "base"))
-
     env = os.environ.copy()
     env.update({k: str(v) for k, v in sweep_params.items()})
+    env["FLOW_VARIANT"] = flow_variant
     env["TAG"] = tag
 
     env.setdefault("DISABLE_GUI_SAVE_IMAGES", "1")
@@ -2416,7 +2447,9 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
         f"SDC_FILE={sdc_path}",
     ]
     for k, v in sweep_params.items():
-        make_cmd.append(f"{k.upper()}={v}")
+        if k.upper() != "FLOW_VARIANT":
+            make_cmd.append(f"{k.upper()}={v}")
+    make_cmd.append(f"FLOW_VARIANT={flow_variant}")
     make_cmd.extend(fixed_floorplan_make_overrides(sweep_params))
 
     blackboxes = []
@@ -2705,6 +2738,7 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
         "config_hash": config_hash,
         "param_hash": run_id,
         "tag": tag,
+        "effective_flow_variant": flow_variant,
         "status": status,
         "critical_path_ns": metrics.get("critical_path_ns"),
         "die_area": metrics.get("die_area"),
@@ -2843,6 +2877,11 @@ def main():
     )
     ap.add_argument("--out_root", help="Root under runs/designs (default: parent of design_dir)")
     ap.add_argument("--skip_existing", action="store_true", help="Skip existing runs")
+    ap.add_argument(
+        "--isolate_flow_variant",
+        action="store_true",
+        help="Append each parameter hash to FLOW_VARIANT so routed artifacts cannot collide",
+    )
     ap.add_argument("--dry_run", action="store_true", help="Print sweep only")
     ap.add_argument("--force_copy", action="store_true", help="Force copy to /orfs/flow")
     ap.add_argument(
@@ -3031,6 +3070,7 @@ def main():
                     mode_name=mode_name,
                     mode_use_macro=mode_use_macro,
                     compare_group=compare_group if mode_compare_cfg is not None else "",
+                    isolate_flow_variant=args.isolate_flow_variant,
                 )
                 if row is not None:
                     row = dict(row)

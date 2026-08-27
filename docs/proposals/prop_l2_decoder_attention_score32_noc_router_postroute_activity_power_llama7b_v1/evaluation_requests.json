@@ -1,0 +1,33 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_router_postroute_activity_power_llama7b_v1",
+  "source_commit": "TBD",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_noc_router_postroute_activity_power_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure hierarchy-matched routed node-5 router activity power for the complete Llama7B Phase 2 replay.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_noc_router_postroute_activity_power",
+      "config_paths": [],
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_router_postroute_activity_power__l2_decoder_attention_score32_noc_router_postroute_activity_power_llama7b_v1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_router_postroute_activity_power__l2_decoder_attention_score32_noc_router_postroute_activity_power_llama7b_v1.md"
+      ],
+      "status": "pending_after_bare_router_ppa",
+      "comparison_role": "segmented_xy_router_bare_workload_energy",
+      "paired_baseline_item_id": "l1_segmented_xy_router_node5_bare_ppa_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+        "l1_segmented_xy_mesh_noc_phase1_v1_r7",
+        "l1_segmented_xy_router_node5_bare_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "replace_intrinsic_router_vectorless_energy_with_exact_replay_power",
+        "reason": "The result must preserve portable equivalence, physical lineage, annotation coverage, and energy evidence while raw VCD/ODB/SPEF remain evaluator-local."
+      },
+      "acceptance_notes": "Require complete cycle-level RTL/performance replay equivalence, isolated routed variants, explicit retimestamping of the unchanged cycle sequence to the routed target clock, direct VCD annotation, at least 95 percent sequential-register sidecar coverage, finite power, and timing-feasible best-point selection. Do not promote as aggregate mesh, endpoint/SRAM, or HBM/DRAM energy."
+    }
+  ]
+}

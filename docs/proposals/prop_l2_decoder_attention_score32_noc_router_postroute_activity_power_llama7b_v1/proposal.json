@@ -1,0 +1,68 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_noc_router_postroute_activity_power_llama7b_v1",
+  "created_utc": "2026-08-27T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Hierarchy-matched Llama7B router post-route activity power",
+  "abstraction_layer": "decoder_attention_score32_noc_router_postroute_activity_power",
+  "hypothesis": "Applying the exact cycle-verified node-5 Llama7B replay to the matching routed bare-router hierarchy will replace vectorless/scaled intrinsic-router energy without attributing synthetic harness, link, or memory power to the router.",
+  "direct_comparison": {
+    "primary_question": "What intrinsic routed energy does one interior router consume for the complete checked Llama7B Phase 2 replay?",
+    "include": [
+      "exact node-5 RTL/performance replay equivalence",
+      "all timing-feasible uniquely routed bare-router utilization points",
+      "direct VCD and sequential-register activity annotation",
+      "separate annotation-clock dynamic energy and physically feasible leakage duration"
+    ],
+    "exclude": [
+      "synthetic PPA traffic and observation harness",
+      "inter-router links and aggregate mesh clock tree",
+      "packet endpoints and SRAM macros",
+      "HBM/DRAM controller and PHY"
+    ]
+  },
+  "expected_benefit": [
+    "replace intrinsic router vectorless power with workload activity",
+    "preserve energy/area/timing sensitivity across physical utilization points",
+    "provide an exact hierarchy anchor for the next Llama7B transport recost"
+  ],
+  "risks": [
+    "one interior router does not measure spatial activity variation or aggregate link power",
+    "the checked schedule uses a 1 ns source clock; the identical cycle sequence must be explicitly retimestamped to the routed target clock while retaining both clocks in provenance",
+    "raw VCD, ODB, and SPEF stay evaluator-local"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_noc_router_postroute_activity_power_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure hierarchy-matched routed node-5 router activity power for the complete Llama7B Phase 2 replay.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_noc_router_postroute_activity_power",
+      "comparison_role": "segmented_xy_router_bare_workload_energy",
+      "paired_baseline_item_id": "l1_segmented_xy_router_node5_bare_ppa_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
+        "l1_segmented_xy_mesh_noc_phase1_v1_r7",
+        "l1_segmented_xy_router_node5_bare_ppa_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "replace_intrinsic_router_vectorless_energy_with_exact_replay_power",
+        "reason": "The result must retain every physical point and choose energy only among timing-feasible routes with complete activity gates."
+      },
+      "status": "pending_after_bare_router_ppa"
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/npu_blocks/noc_segmented_mesh_router_node5_bare/config.json",
+    "runs/designs/npu_blocks/noc_segmented_mesh_router_node5_bare/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/generate_llm_decoder_attention_score32_noc_router_rtl_activity.py",
+    "npu/eval/audit_llm_decoder_attention_score32_noc_router_postroute_activity_power.py",
+    "npu/synth/run_postroute_vcd_power.py"
+  ]
+}

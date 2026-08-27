@@ -7517,6 +7517,46 @@ def test_generate_l2_campaign_task_adds_schedule_wrapper_postroute_activity_powe
             ]
 
 
+def test_generate_l2_campaign_task_adds_noc_router_postroute_activity_power_input() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                _make_l2_request(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_noc_router_postroute_activity_power_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_score32_noc_router_postroute_activity_power",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.task_request.request_payload["task"]["commands"][0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert "audit_llm_decoder_attention_score32_noc_router_postroute_activity_power.py" in run
+            assert "--config runs/designs/npu_blocks/noc_segmented_mesh_router_node5_bare/config.json" in run
+            assert "--metrics-csv runs/designs/npu_blocks/noc_segmented_mesh_router_node5_bare/metrics.csv" in run
+            assert "--schedule-json runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json" in run
+            assert decoder_inputs["attention_score32_noc_router_activity_dir"] == (
+                "/tmp/rtlgen_score32_noc_router_node5_postroute_activity_power"
+            )
+            assert decoder_inputs[
+                "attention_score32_noc_router_postroute_activity_power_local_only_artifacts"
+            ] == ["VCD", "ODB", "SPEF"]
+
+
 def test_generate_l2_campaign_task_adds_schedule_wrapper_activity_integrated_frontier_ranking_input() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
