@@ -160,7 +160,12 @@ def _schedule_replays(
     return tuple(replays), max_slots, tuple(violations)
 
 
-def simulate_exact_stats_once_shared_root(*, epoch: int = 0, vc: int = 1) -> SharedRootResult:
+def simulate_exact_stats_once_shared_root(
+    *,
+    epoch: int = 0,
+    vc: int = 1,
+    record_mesh_trace: bool = False,
+) -> SharedRootResult:
     release_cycles = {
         (source, packet): packet * PACKET_ROUND_RELEASE_INTERVAL_CYCLES
         for packet in range(PACKETS_PER_GROUP)
@@ -175,6 +180,7 @@ def simulate_exact_stats_once_shared_root(*, epoch: int = 0, vc: int = 1) -> Sha
         descriptors,
         rx_context_limits={ROOT_ENDPOINT: REMOTE_SOURCES},
         descriptor_scheduler="endpoint_parallel",
+        record_mesh_trace=record_mesh_trace,
     )
     replays, max_slots, violations = _schedule_replays(mesh, descriptors)
 

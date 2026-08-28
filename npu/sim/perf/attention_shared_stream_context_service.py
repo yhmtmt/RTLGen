@@ -213,6 +213,7 @@ def simulate_context_service(
     source_outstanding: int = 1,
     max_iterations: int = 32,
     max_cycles: int = 250_000,
+    record_mesh_trace: bool = False,
 ) -> ContextServiceResult:
     """Solve and replay a complete context-service workload."""
 
@@ -256,6 +257,18 @@ def simulate_context_service(
         )
         completion_handshakes = next_completions
         if next_admissions == admission_cycles:
+            if record_mesh_trace:
+                packet_mesh = simulate_packet_mesh(
+                    descriptors,
+                    descriptor_scheduler="endpoint_parallel",
+                    tx_outstanding_limits={
+                        endpoint: source_outstanding for endpoint in range(ENDPOINTS)
+                    },
+                    source_sram_request_ready_schedule=source_sram_request_ready,
+                    destination_sram_ready_schedule=destination_sram_write_ready,
+                    max_cycles=max_cycles,
+                    record_mesh_trace=True,
+                )
             admissions = tuple(
                 ContextHandshake(
                     cycle=cycle,
