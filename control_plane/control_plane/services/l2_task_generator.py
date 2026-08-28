@@ -7488,6 +7488,71 @@ def _decoder_attention_score32_noc_router_postroute_activity_power_evidence(
     }
 
 
+def _decoder_attention_score32_noc_exact_router_postroute_activity_power_evidence(
+    *, item_id: str
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    config = "runs/designs/npu_blocks/noc_segmented_mesh_router_node5_bare/config.json"
+    metrics_csv = "runs/designs/npu_blocks/noc_segmented_mesh_router_node5_bare/metrics.csv"
+    orfs_design_config = (
+        "/orfs/flow/designs/nangate45/noc_segmented_mesh_router_node5_bare/config.mk"
+    )
+    activity_dir = "/tmp/rtlgen_score32_noc_exact_router_node5_postroute_activity_power"
+    out = f"{base}/decoder_attention_score32_noc_exact_router_postroute_activity_power__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_noc_exact_router_postroute_activity_power__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_score32_noc_exact_router_bare_config": config,
+            "attention_score32_noc_exact_router_bare_metrics_csv": metrics_csv,
+            "attention_score32_noc_exact_router_orfs_design_config": orfs_design_config,
+            "attention_score32_noc_exact_router_activity_dir": activity_dir,
+            "attention_score32_noc_exact_router_postroute_activity_power_out": out,
+            "attention_score32_noc_exact_router_postroute_activity_power_report": report,
+            "attention_score32_noc_exact_router_transport_contract": {
+                "partial_link_bits_per_beat": 419,
+                "partial_payload_bits_per_beat": 328,
+                "release_contract": "group_major_actual_valid_ready",
+                "phases": 5,
+                "total_flits": 70948,
+            },
+            "attention_score32_noc_exact_router_postroute_activity_power_scope": (
+                "Regenerate and cycle-verify one complete VC0 shared-context phase and four "
+                "group-major stats-once VC1 phases from actual producer/SRAM valid-ready behavior; "
+                "annotate every timing-feasible hierarchy-matched bare-router route."
+            ),
+            "attention_score32_noc_exact_router_postroute_activity_power_promotion_gate": (
+                "Require all five exact RTL/performance replay phases, 70948 total flits, direct VCD "
+                "annotation, at least 95 percent sequential-register sidecar coverage, finite routed "
+                "power, no macro activity, and timing-feasible selection."
+            ),
+            "attention_score32_noc_exact_router_postroute_activity_power_local_only_artifacts": [
+                "VCD",
+                "ODB",
+                "SPEF",
+            ],
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_score32_noc_exact_router_postroute_activity_power",
+                "run": (
+                    "python3 npu/eval/"
+                    "audit_llm_decoder_attention_score32_noc_exact_router_postroute_activity_power.py "
+                    "--repo-root . "
+                    f"--config {config} "
+                    f"--metrics-csv {metrics_csv} "
+                    f"--orfs-design-config {orfs_design_config} "
+                    f"--activity-dir {activity_dir} "
+                    f"--out {out} "
+                    f"--out-md {report} "
+                    "--timeout-seconds 1800"
+                ),
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+    }
+
+
 def _decoder_attention_score32_exact_reduction_recost_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     base_item_id = "l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1"
@@ -13374,6 +13439,7 @@ def _build_payload(
         "decoder_attention_score32_integrated_frontier_ranking",
         "decoder_attention_score32_schedule_wrapper_postroute_activity_power",
         "decoder_attention_score32_noc_router_postroute_activity_power",
+        "decoder_attention_score32_noc_exact_router_postroute_activity_power",
         "decoder_attention_score32_exact_reduction_recost",
         "decoder_attention_score32_folded_global_exact_reduction_recost",
         "decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank",
@@ -13812,6 +13878,12 @@ def _build_payload(
         elif abstraction_layer_name == "decoder_attention_score32_noc_router_postroute_activity_power":
             decoder_evidence = _decoder_attention_score32_noc_router_postroute_activity_power_evidence(
                 item_id=item_id
+            )
+        elif abstraction_layer_name == "decoder_attention_score32_noc_exact_router_postroute_activity_power":
+            decoder_evidence = (
+                _decoder_attention_score32_noc_exact_router_postroute_activity_power_evidence(
+                    item_id=item_id
+                )
             )
         elif abstraction_layer_name == "decoder_attention_score32_exact_reduction_recost":
             decoder_evidence = _decoder_attention_score32_exact_reduction_recost_evidence(item_id=item_id)

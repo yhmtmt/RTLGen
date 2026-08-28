@@ -7557,6 +7557,53 @@ def test_generate_l2_campaign_task_adds_noc_router_postroute_activity_power_inpu
             ] == ["VCD", "ODB", "SPEF"]
 
 
+def test_generate_l2_campaign_task_adds_noc_exact_router_postroute_activity_power_input() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                _make_l2_request(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_score32_noc_exact_router_postroute_activity_power_llama7b_v2",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_score32_noc_exact_router_postroute_activity_power",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.task_request.request_payload["task"]["commands"][0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+
+            assert "audit_llm_decoder_attention_score32_noc_exact_router_postroute_activity_power.py" in run
+            assert "--config runs/designs/npu_blocks/noc_segmented_mesh_router_node5_bare/config.json" in run
+            assert "--metrics-csv runs/designs/npu_blocks/noc_segmented_mesh_router_node5_bare/metrics.csv" in run
+            assert "--repo-root ." in run
+            assert "--timeout-seconds 1800" in run
+            assert "--schedule-json" not in run
+            assert "noc_phase2_schedule_llama7b_v1_r1" not in run
+            assert decoder_inputs["attention_score32_noc_exact_router_transport_contract"] == {
+                "partial_link_bits_per_beat": 419,
+                "partial_payload_bits_per_beat": 328,
+                "release_contract": "group_major_actual_valid_ready",
+                "phases": 5,
+                "total_flits": 70948,
+            }
+            assert decoder_inputs[
+                "attention_score32_noc_exact_router_postroute_activity_power_local_only_artifacts"
+            ] == ["VCD", "ODB", "SPEF"]
+
+
 def test_generate_l2_campaign_task_adds_schedule_wrapper_activity_integrated_frontier_ranking_input() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
