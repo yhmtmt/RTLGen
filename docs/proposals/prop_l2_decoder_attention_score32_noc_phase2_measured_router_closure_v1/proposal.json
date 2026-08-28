@@ -30,9 +30,17 @@
     "The router area lower bound and power estimate are component accounting only and are not substitutes for full-fabric PPA."
   ],
   "needs_mapper_change": false,
+  "revision": {
+    "reason": "wrong_precision_and_release_contract",
+    "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+    "invalid_dependency_item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1"
+  },
   "required_evaluations": [
     {
       "task_type": "l2_campaign",
+      "item_id": "l2_decoder_attention_score32_noc_phase2_measured_router_closure_llama7b_v1",
+      "status": "retracted_wrong_precision_and_release_contract",
+      "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
       "evaluation_mode": "frontier_detail",
       "objective": "score32_noc_phase2_measured_router_closure",
       "cost_class": "small",

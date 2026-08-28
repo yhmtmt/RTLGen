@@ -9,7 +9,12 @@
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_score32_exact_llama2_mha_final_frontier",
       "comparison_role": "exact_model_frontier_decision",
-      "status": "pending_after_dependencies_merge",
+      "status": "retracted_transitive_wrong_precision_and_release_contract",
+      "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+      "revision": {
+        "reason": "transitive_wrong_precision_and_release_contract",
+        "invalid_dependency_item_id": "l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1"
+      },
       "depends_on_item_ids": [
         "l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1",
         "l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1"
@@ -21,7 +26,7 @@
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_llama2_mha_final_frontier__l2_decoder_attention_score32_exact_llama2_mha_final_frontier_v1.json",
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_llama2_mha_final_frontier__l2_decoder_attention_score32_exact_llama2_mha_final_frontier_v1.md"
       ],
-      "acceptance_notes": "Require exact structural and native quality identity, report all four objectives separately, and retain GQA rows as nonpromotable references."
+      "acceptance_notes": "Retracted transitively. Rebuild the frontier only after exact transport, endpoint/mesh activity, and corrected HBM recost artifacts merge."
     }
   ]
 }

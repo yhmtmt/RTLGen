@@ -7,6 +7,11 @@
   "title": "Join exact Llama-2-7B MHA hardware and precision evidence",
   "abstraction_layer": "decoder_attention_score32_exact_llama2_mha_final_frontier",
   "hypothesis": "Joining the corrected global-HBM exact-MHA recost with exact-checkpoint score32 quality will establish the first structurally and arithmetically valid Llama-2-7B candidate, while exposing remaining energy, memory-policy, and FP16 comparison gaps.",
+  "revision": {
+    "reason": "transitive_wrong_precision_and_release_contract",
+    "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+    "invalid_dependency_item_id": "l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1"
+  },
   "direct_comparison": {
     "primary_question": "Which currently measured architecture is nondominated within each identical workload/accounting boundary after enforcing exact Llama-2-7B model and context identity?",
     "include": [
@@ -43,6 +48,8 @@
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_score32_exact_llama2_mha_final_frontier",
       "comparison_role": "exact_model_frontier_decision",
+      "status": "retracted_transitive_wrong_precision_and_release_contract",
+      "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
       "depends_on_item_ids": [
         "l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1",
         "l2_decoder_attention_score32_exact_llama2_mha_generation_quality_v1"

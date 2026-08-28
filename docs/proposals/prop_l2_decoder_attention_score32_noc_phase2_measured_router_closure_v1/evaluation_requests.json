@@ -13,7 +13,12 @@
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_measured_router_closure__l2_decoder_attention_score32_noc_phase2_measured_router_closure_llama7b_v1.json",
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_measured_router_closure__l2_decoder_attention_score32_noc_phase2_measured_router_closure_llama7b_v1.md"
       ],
-      "status": "pending",
+      "status": "retracted_wrong_precision_and_release_contract",
+      "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+      "revision": {
+        "reason": "wrong_precision_and_release_contract",
+        "invalid_dependency_item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1"
+      },
       "comparison_role": "measured_router_closure_consumer",
       "paired_baseline_item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
       "depends_on_item_ids": [
@@ -26,7 +31,7 @@
         "direction": "record_measured_router_closure_without_full_mesh_overclaim",
         "reason": "The result should record a conservative no-reroute drain-time upper bound, a router-area lower bound, and an activity-dependent router-power estimate while keeping the remaining full-mesh and memory gaps explicit."
       },
-      "acceptance_notes": "Accept only the exact corrected 8-wave/128-tile Phase 2 v2 artifact and the exact p5/w256/vc4/d4 segmented-router primitive. Treat no-reroute timing only as an upper bound, router area only as a lower bound, and router power only as an activity-dependent estimate. Do not treat any component sum as aggregate placed-mesh PPA."
+      "acceptance_notes": "Retracted. The 16-bit per-wave schedule is invalid; do not dispatch, promote, or use this artifact in a frontier."
     }
   ]
 }
