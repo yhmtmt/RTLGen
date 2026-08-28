@@ -144,6 +144,10 @@ class ModeCompareRegressionTest(unittest.TestCase):
                 "module toy(input clk, input a, output y); assign y = a; endmodule\n",
                 encoding="utf-8",
             )
+            (verilog_dir / "helper.sv").write_text(
+                "module helper(input logic a, output logic y); always_comb y = a; endmodule\n",
+                encoding="utf-8",
+            )
             sdc = tmp / "constraint.sdc"
             sdc.write_text("create_clock [get_ports clk] -period 10\n", encoding="utf-8")
 
@@ -166,6 +170,8 @@ class ModeCompareRegressionTest(unittest.TestCase):
                 self.run_block_sweep.SRC_BASE = old_src
 
             config_text = (design_dir / "config.mk").read_text(encoding="utf-8")
+            self.assertIn("$(DESIGN_HOME)/src/toy_block/helper.sv", config_text)
+            self.assertIn("$(DESIGN_HOME)/src/toy_block/toy.v", config_text)
             self.assertIn(
                 "export POST_FLOORPLAN_TCL = $(DESIGN_HOME)/nangate45/toy_block/post_floorplan_tie_root_fix.tcl",
                 config_text,
@@ -770,10 +776,20 @@ class ModeCompareRegressionTest(unittest.TestCase):
                 "endmodule\n",
                 encoding="utf-8",
             )
+            (verilog_dir / "systemverilog_helper.sv").write_text(
+                "module systemverilog_helper(input logic value, output logic result);\n"
+                "  always_comb result = value;\n"
+                "endmodule\n",
+                encoding="utf-8",
+            )
 
             self.assertEqual(
-                {"helper", "npu_top"},
+                {"helper", "npu_top", "systemverilog_helper"},
                 self.run_block_sweep.verilog_module_names(verilog_dir),
+            )
+            self.assertEqual(
+                ["systemverilog_helper.sv", "top.v"],
+                [path.name for path in self.run_block_sweep.verilog_source_paths(verilog_dir)],
             )
             with self.assertRaisesRegex(ValueError, "missing_helper"):
                 self.run_block_sweep.validate_synth_keep_modules(

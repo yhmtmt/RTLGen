@@ -1,0 +1,36 @@
+{
+  "proposal_id": "prop_l1_segmented_xy_mesh4x4_direct_ppa_v1",
+  "source_commit": "TBD",
+  "requested_items": [
+    {
+      "item_id": "l1_segmented_xy_mesh4x4_direct_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the canonical direct-port sixteen-router segmented mesh without synthetic harness logic.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "config_paths": [
+        "runs/designs/npu_blocks/noc_segmented_mesh4x4_direct/config.json"
+      ],
+      "sweep_path": "runs/campaigns/noc/l1_segmented_xy_mesh4x4/sweeps/nangate45_direct_hierarchy_v1.json",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/noc_segmented_mesh4x4_direct/metrics.csv",
+        "runs/designs/npu_blocks/noc_segmented_mesh4x4_direct/physical_hierarchy_report.json",
+        "runs/designs/npu_blocks/noc_segmented_mesh4x4_direct/timing_debug_report.md"
+      ],
+      "status": "pending_after_mesh_baseline",
+      "comparison_role": "direct_functional_segmented_mesh_physical_anchor",
+      "paired_baseline_item_id": "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r2",
+      "depends_on_item_ids": [
+        "l1_segmented_xy_mesh_noc_phase1_v1_r7",
+        "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_functional_mesh_physical_cost_without_harness",
+        "reason": "The compact aggregate target cannot accept endpoint workload activity and includes synthetic boundary logic."
+      },
+      "acceptance_notes": "Require canonical source identity, a logic-free functional wrapper, all sixteen routers, the explicit 8962-pin perimeter gate, complete PPA, timing feasibility, retained routed artifacts, and isolated flow identity. Debug-counter pins, endpoints/SRAM, and HBM/DRAM remain excluded."
+    }
+  ]
+}
