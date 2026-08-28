@@ -7,6 +7,14 @@
   "abstraction_layer": "architecture_block",
   "title": "Place the composed SRAM packet endpoints and 4x4 segmented mesh",
   "hypothesis": "The exact sixteen-endpoint, sixteen-router registered-credit composition can be physically bounded at the same floorplan envelope as the aggregate mesh, replacing linear endpoint-plus-router composition with a placed control/fabric anchor.",
+  "revision": {
+    "reason": "obsolete_dependencies_and_unmatched_floorplan",
+    "invalid_dependency_item_ids": [
+      "l1_noc_sram_packet_endpoint_phase2_v1_r4",
+      "l1_segmented_xy_mesh4x4_aggregate_ppa_v1"
+    ],
+    "replacement_plan": "Define an r2 synthesis prefilter and physical sweep only after aggregate r4 establishes a valid composed floorplan baseline and endpoint path identity is proven."
+  },
   "direct_comparison": {
     "primary_question": "What physical overhead appears when finite packet endpoints, SRAM boundary handshakes, and the complete segmented mesh are placed together?",
     "include": [
@@ -43,6 +51,7 @@
       "evaluation_mode": "ppa",
       "abstraction_layer": "architecture_block",
       "comparison_role": "composed_sram_endpoint_mesh_physical_anchor",
+      "status": "superseded_obsolete_dependencies_and_floorplan",
       "depends_on_item_ids": [
         "l1_segmented_xy_mesh_noc_phase1_v1_r7",
         "l1_noc_sram_packet_endpoint_phase2_v1_r4",
@@ -56,7 +65,8 @@
       "sweep_path": "runs/campaigns/noc/l1_sram_packet_mesh4x4/sweeps/nangate45_composed_feasibility.json",
       "expected_outputs": [
         "runs/designs/noc/l1_noc_sram_packet_mesh4x4_w256_vc4_d4_td4_to8_rx8_wrapper/metrics.csv"
-      ]
+      ],
+      "acceptance_notes": "Superseded. Do not dispatch: aggregate v1 is obsolete, endpoint r4 lacks required path identity, and the fixed 3.2 mm floorplan is not a matched macro envelope."
     }
   ]
 }
