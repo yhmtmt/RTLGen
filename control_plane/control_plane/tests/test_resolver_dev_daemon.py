@@ -874,6 +874,81 @@ def test_dev_resolver_resolves_case_for_superseded_item_and_closes_issue() -> No
     assert case.resolution_json["reason"] == "work_item_inactive"
 
 
+def test_dev_resolver_resolves_source_mismatch_after_exact_checkout_run() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    _seed_assigned_ready_source_mismatch(engine)
+
+    required_commit = "b" * 40
+    with Session(engine) as session:
+        work_item = session.query(WorkItem).filter(WorkItem.item_id == "needs-source").one()
+        work_item.state = WorkItemState.FAILED
+        session.add(
+            ResolverCase(
+                id="case-source-satisfied",
+                fingerprint="assigned_ready_source_mismatch:source_commit_unsatisfied",
+                failure_class="assigned_ready_source_mismatch",
+                owner="eval",
+                status="awaiting_remote",
+                severity="high",
+                issue_number=303,
+                first_item_id="needs-source",
+                latest_item_id="needs-source",
+                first_run_key="no_run",
+                latest_run_key="no_run",
+                machine_key="eval-source",
+                source_commit=required_commit,
+                repo_root="/repo",
+                evidence_json={"item_id": "needs-source"},
+                resolution_json={},
+                updated_at=utcnow() - timedelta(minutes=1),
+            )
+        )
+        session.commit()
+        session.add(
+            Run(
+                run_key="run-exact-source",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                checkout_commit=required_commit,
+                status=RunStatus.FAILED,
+                result_payload={},
+            )
+        )
+        session.commit()
+
+    session_factory = build_session_factory(engine)
+    with patch(
+        "control_plane.services.resolver_dev_daemon.fetch_issue",
+        return_value=type("Issue", (), {"state": "open"})(),
+    ) as fetch_issue_mock, patch(
+        "control_plane.services.resolver_dev_daemon.close_issue_for_case"
+    ) as close_issue_mock, patch(
+        "control_plane.services.resolver_dev_daemon.time.sleep"
+    ):
+        result = run_dev_resolver(
+            session_factory,
+            ResolverDevDaemonConfig(repo="yhmtmt/RTLGen", repo_root="/repo", poll_seconds=0, max_polls=1),
+        )
+
+    with Session(engine) as session:
+        case = session.query(ResolverCase).filter(ResolverCase.id == "case-source-satisfied").one()
+
+    assert result.poll_count == 1
+    assert fetch_issue_mock.call_count == 1
+    assert close_issue_mock.call_count == 1
+    assert case.status == "resolved"
+    assert case.resolution_json == {
+        "reason": "source_requirement_satisfied_by_run",
+        "item_id": "needs-source",
+        "work_item_state": "failed",
+        "run_key": "run-exact-source",
+        "run_status": "failed",
+        "checkout_commit": required_commit,
+    }
+
+
 def test_dev_resolver_suppresses_duplicate_evidence_changed_comment() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_all(engine)

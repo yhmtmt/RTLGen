@@ -13,6 +13,7 @@ from control_plane.clock import utcnow
 from control_plane.models.enums import WorkItemState
 from control_plane.models.resolver_actions import ResolverAction
 from control_plane.models.resolver_cases import ResolverCase
+from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.models.resolver_observations import ResolverObservation
 from control_plane.services.completion_retry_service import CompletionRetryError, request_submission_retry
@@ -196,6 +197,30 @@ def _resolve_case_if_item_inactive(session: Session, *, repo: str, case: Resolve
     if work_item is None:
         resolution = {"reason": "work_item_missing", "item_id": item_id}
     else:
+        if case.failure_class == "assigned_ready_source_mismatch" and case.source_commit:
+            matching_run = (
+                session.query(Run)
+                .filter(Run.work_item_id == work_item.id)
+                .filter(Run.checkout_commit == case.source_commit)
+                .filter(Run.created_at >= case.updated_at)
+                .order_by(Run.attempt.desc())
+                .first()
+            )
+            if matching_run is not None:
+                resolution = {
+                    "reason": "source_requirement_satisfied_by_run",
+                    "item_id": item_id,
+                    "work_item_state": work_item.state.value,
+                    "run_key": matching_run.run_key,
+                    "run_status": matching_run.status.value,
+                    "checkout_commit": matching_run.checkout_commit,
+                }
+                mark_resolved(session, case=case, resolution=resolution)
+                if case.issue_number is not None:
+                    remote_issue = fetch_issue(repo, int(case.issue_number))
+                    if str(remote_issue.state or "").lower() == "open":
+                        close_issue_for_case(repo, int(case.issue_number))
+                return True
         state = work_item.state
         if state not in {WorkItemState.SUPERSEDED, WorkItemState.MERGED}:
             return False
