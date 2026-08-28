@@ -6,12 +6,18 @@ on:
     paths:
       - ".github/workflows/npu-synth-tests.yml"
       - "npu/synth/**"
+      - "scripts/run_sweep.py"
+      - "tests/test_noc_segmented_mesh4x4_aggregate_retry.py"
       - "tests/test_run_block_sweep_mode_compare.py"
+      - "tests/test_run_sweep.py"
   pull_request:
     paths:
       - ".github/workflows/npu-synth-tests.yml"
       - "npu/synth/**"
+      - "scripts/run_sweep.py"
+      - "tests/test_noc_segmented_mesh4x4_aggregate_retry.py"
       - "tests/test_run_block_sweep_mode_compare.py"
+      - "tests/test_run_sweep.py"
   workflow_dispatch:
 
 jobs:
@@ -27,5 +33,12 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Run mode_compare regression tests
-        run: python tests/test_run_block_sweep_mode_compare.py
+      - name: Install test dependencies
+        run: python -m pip install pytest
+
+      - name: Run synthesis sweep regression tests
+        run: >-
+          python -m pytest -q
+          tests/test_noc_segmented_mesh4x4_aggregate_retry.py
+          tests/test_run_block_sweep_mode_compare.py
+          tests/test_run_sweep.py

@@ -29,11 +29,25 @@ def test_aggregate_r2_bypasses_stale_v1_parameter_identity() -> None:
     assert make_run_id(v1_params) != make_run_id(r2_params)
 
 
-def test_direct_mesh_depends_only_on_fresh_aggregate_revision() -> None:
+def test_r3_intentionally_reuses_r2_parameter_identity_to_test_cache_gate() -> None:
+    requests = _load(
+        "docs/proposals/prop_l1_segmented_xy_mesh4x4_aggregate_ppa_v1/"
+        "evaluation_requests.json"
+    )["requested_items"]
+    r2 = next(item for item in requests if item["item_id"].endswith("_r2"))
+    r3 = next(item for item in requests if item["item_id"].endswith("_r3"))
+    assert r2["status"] == "superseded_incomplete_cache_reuse"
+    assert r2["superseded_by_item_id"] == r3["item_id"]
+    assert r3["sweep_path"] == r2["sweep_path"]
+    assert "Re-running ineligible cached run" in r3["acceptance_notes"]
+
+
+def test_direct_mesh_depends_only_on_cache_safe_aggregate_revision() -> None:
     direct = _load(
         "docs/proposals/prop_l1_segmented_xy_mesh4x4_direct_ppa_v1/"
         "evaluation_requests.json"
     )["requested_items"][0]
-    assert direct["paired_baseline_item_id"] == "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r2"
-    assert "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r2" in direct["depends_on_item_ids"]
+    assert direct["paired_baseline_item_id"] == "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r3"
+    assert "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r3" in direct["depends_on_item_ids"]
+    assert "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r2" not in direct["depends_on_item_ids"]
     assert "l1_segmented_xy_mesh4x4_aggregate_ppa_v1" not in direct["depends_on_item_ids"]
