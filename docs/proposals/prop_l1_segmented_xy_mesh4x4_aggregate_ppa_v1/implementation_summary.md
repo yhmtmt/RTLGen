@@ -8,5 +8,10 @@
 - Added an immutable r2 sweep after both v1 attempts reused the same incomplete
   `--skip_existing` result without executing OpenROAD.
 
-The r2 physical job is dependency-ready after the corrected r7 router result;
+- Added r3 to prove the strict generic cache gate, which reached `make` but
+  returned exit 2 without transporting the decisive ORFS stage log.
+- Added r4 with a clean flow identity and bounded ORFS failure evidence in the
+  linked result, so either PPA or the exact physical failure boundary is usable.
+
+The r4 physical job is dependency-ready after the corrected r7 router result;
 it must be generated only after this source revision merges.
