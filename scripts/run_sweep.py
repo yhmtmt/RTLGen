@@ -63,8 +63,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEST_BASE = Path("/orfs/flow/designs")
 REPORT_BASE = Path("/orfs/flow/reports")
 RESULT_BASE = Path("/orfs/flow/results")
+LOG_BASE = Path("/orfs/flow/logs")
 SRC_BASE = DEST_BASE / "src"
 REQUIRED_PPA_METRICS = ("critical_path_ns", "die_area", "total_power_mw")
+FAILURE_LOG_LIMIT = 3
+FAILURE_LOG_TAIL_LINES = 100
+FAILURE_LOG_TAIL_CHARS = 16_384
 
 
 def normalize_repo_path(path_str: str) -> str:
@@ -427,6 +431,73 @@ def resolve_flow_output_paths(
     )
 
 
+def collect_flow_failure_evidence(
+    *,
+    platform: str,
+    wrapper: str,
+    flow_variant: str,
+) -> Dict[str, object]:
+    """Retain bounded ORFS diagnostics in result.json for remote failures."""
+    log_dir = LOG_BASE / platform / wrapper / flow_variant
+    result_dir = RESULT_BASE / platform / wrapper / flow_variant
+    evidence: Dict[str, object] = {
+        "log_dir": str(log_dir),
+        "log_dir_exists": log_dir.is_dir(),
+        "result_dir": str(result_dir),
+        "result_dir_exists": result_dir.is_dir(),
+        "logs": [],
+        "result_entries": [],
+    }
+
+    if log_dir.is_dir():
+        candidates = sorted(
+            (
+                path
+                for path in log_dir.iterdir()
+                if path.is_file() and path.suffix in (".log", ".txt")
+            ),
+            key=lambda path: path.stat().st_mtime_ns,
+            reverse=True,
+        )[:FAILURE_LOG_LIMIT]
+        logs = []
+        for path in candidates:
+            try:
+                lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+                tail = "\n".join(lines[-FAILURE_LOG_TAIL_LINES:])[-FAILURE_LOG_TAIL_CHARS:]
+                stat = path.stat()
+                logs.append(
+                    {
+                        "path": str(path),
+                        "size_bytes": stat.st_size,
+                        "mtime_ns": stat.st_mtime_ns,
+                        "tail": tail,
+                    }
+                )
+            except OSError as exc:
+                logs.append({"path": str(path), "read_error": str(exc)})
+        evidence["logs"] = logs
+
+    if result_dir.is_dir():
+        try:
+            entries = sorted(
+                (path for path in result_dir.iterdir()),
+                key=lambda path: path.stat().st_mtime_ns,
+                reverse=True,
+            )[:20]
+            evidence["result_entries"] = [
+                {
+                    "path": str(path),
+                    "is_file": path.is_file(),
+                    "size_bytes": path.stat().st_size if path.is_file() else None,
+                    "mtime_ns": path.stat().st_mtime_ns,
+                }
+                for path in entries
+            ]
+        except OSError as exc:
+            evidence["result_entries_error"] = str(exc)
+    return evidence
+
+
 def isolated_flow_variant(flow_params: Dict[str, object], run_id: str) -> str:
     base_variant = str(flow_params.get("FLOW_VARIANT", "")).strip() or "sweep"
     suffix = f"__{run_id}"
@@ -540,6 +611,17 @@ def run_single(
     except subprocess.CalledProcessError as e:
         run_record["status"] = "failed"
         run_record["error"] = str(e)
+        run_record["make_returncode"] = e.returncode
+        try:
+            run_record["failure_evidence"] = collect_flow_failure_evidence(
+                platform=platform,
+                wrapper=wrapper,
+                flow_variant=flow_variant,
+            )
+        except Exception as evidence_error:  # Preserve the primary make failure.
+            run_record["failure_evidence"] = {
+                "collection_error": f"{type(evidence_error).__name__}: {evidence_error}"
+            }
 
     # FLOW_VARIANT, not TAG, selects the ORFS report/result directory. Each
     # parameter point receives a run-id suffix so its physical artifacts cannot
