@@ -42,12 +42,29 @@ def test_r3_intentionally_reuses_r2_parameter_identity_to_test_cache_gate() -> N
     assert "Re-running ineligible cached run" in r3["acceptance_notes"]
 
 
+def test_r4_uses_clean_flow_identity_and_requires_failure_evidence() -> None:
+    requests = _load(
+        "docs/proposals/prop_l1_segmented_xy_mesh4x4_aggregate_ppa_v1/"
+        "evaluation_requests.json"
+    )["requested_items"]
+    r3 = next(item for item in requests if item["item_id"].endswith("_r3"))
+    r4 = next(item for item in requests if item["item_id"].endswith("_r4"))
+    sweep = _load(r4["sweep_path"])
+    params = cartesian_product(sweep["flow_params"])[0]
+    assert r3["status"] == "superseded_missing_orfs_failure_evidence"
+    assert r3["superseded_by_item_id"] == r4["item_id"]
+    assert params["FLOW_VARIANT"] == "mesh4x4_aggregate_r4_diag"
+    assert "make_returncode" in r4["acceptance_notes"]
+    assert "failure_evidence" in r4["acceptance_notes"]
+
+
 def test_direct_mesh_depends_only_on_cache_safe_aggregate_revision() -> None:
     direct = _load(
         "docs/proposals/prop_l1_segmented_xy_mesh4x4_direct_ppa_v1/"
         "evaluation_requests.json"
     )["requested_items"][0]
-    assert direct["paired_baseline_item_id"] == "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r3"
-    assert "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r3" in direct["depends_on_item_ids"]
+    assert direct["paired_baseline_item_id"] == "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r4"
+    assert "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r4" in direct["depends_on_item_ids"]
+    assert "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r3" not in direct["depends_on_item_ids"]
     assert "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r2" not in direct["depends_on_item_ids"]
     assert "l1_segmented_xy_mesh4x4_aggregate_ppa_v1" not in direct["depends_on_item_ids"]
