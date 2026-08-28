@@ -84,6 +84,7 @@ def test_failed_run_does_not_parse_stale_base_reports(tmp_path: Path, monkeypatc
 
     monkeypatch.setattr(run_sweep, "REPORT_BASE", report_base)
     monkeypatch.setattr(run_sweep, "RESULT_BASE", result_base)
+    monkeypatch.setattr(run_sweep, "LOG_BASE", tmp_path / "orfs" / "logs")
     monkeypatch.setattr(run_sweep, "ensure_design_assets", lambda *_args, **_kwargs: tmp_path / "config.mk")
     monkeypatch.setattr(run_sweep, "snapshot_artifacts", lambda *_args, **_kwargs: None)
 
@@ -105,4 +106,124 @@ def test_failed_run_does_not_parse_stale_base_reports(tmp_path: Path, monkeypatc
     result = json.loads(result_path.read_text(encoding="utf-8"))
     assert result["status"] == "failed"
     assert result["metrics"] == {}
-    assert result["reports"]["finish"].endswith("macro_pin_failed/6_finish.rpt")
+    assert result["reports"]["finish"].endswith(
+        f"sweep__{result['param_hash']}/6_finish.rpt"
+    )
+    assert result["make_returncode"] == 2
+    assert result["failure_evidence"]["log_dir_exists"] is False
+
+
+def test_failed_run_retains_bounded_orfs_log_tail(tmp_path: Path, monkeypatch) -> None:
+    run_sweep = _load_run_sweep_module()
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "operations": [
+                    {
+                        "type": "l1_memory_noc_primitive",
+                        "module_name": "router",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    wrapper = "router_wrapper"
+    logs = tmp_path / "orfs" / "logs"
+    results = tmp_path / "orfs" / "results"
+    reports = tmp_path / "orfs" / "reports"
+    params = {"CLOCK_PERIOD": 1.8, "FLOW_VARIANT": "router_diag"}
+    run_id = run_sweep.make_run_id(params)
+    variant = run_sweep.isolated_flow_variant(params, run_id)
+    log_dir = logs / "nangate45" / wrapper / variant
+    result_dir = results / "nangate45" / wrapper / variant
+    log_dir.mkdir(parents=True)
+    result_dir.mkdir(parents=True)
+    (log_dir / "1_1_yosys.log").write_text(
+        "\n".join(f"line {index}" for index in range(130)) + "\nERROR: synthesis failed\n",
+        encoding="utf-8",
+    )
+    (result_dir / "1_synth.v").write_text("partial netlist\n", encoding="utf-8")
+
+    monkeypatch.setattr(run_sweep, "LOG_BASE", logs)
+    monkeypatch.setattr(run_sweep, "RESULT_BASE", results)
+    monkeypatch.setattr(run_sweep, "REPORT_BASE", reports)
+    monkeypatch.setattr(
+        run_sweep,
+        "ensure_design_assets",
+        lambda *_args, **_kwargs: tmp_path / "generated",
+    )
+    monkeypatch.setattr(run_sweep, "snapshot_artifacts", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        run_sweep.subprocess,
+        "run",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            subprocess.CalledProcessError(2, "make")
+        ),
+    )
+
+    out_root = tmp_path / "runs"
+    run_sweep.run_single(config_path, "nangate45", params, out_root, False, False)
+    result = json.loads(
+        (out_root / wrapper / "work" / run_id / "result.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    evidence = result["failure_evidence"]
+    assert evidence["log_dir"] == str(log_dir)
+    assert evidence["logs"][0]["path"].endswith("1_1_yosys.log")
+    assert evidence["logs"][0]["tail"].startswith("line 31")
+    assert evidence["logs"][0]["tail"].endswith("ERROR: synthesis failed")
+    assert evidence["result_entries"][0]["path"].endswith("1_synth.v")
+
+
+def test_failure_evidence_error_does_not_mask_make_failure(tmp_path: Path, monkeypatch) -> None:
+    run_sweep = _load_run_sweep_module()
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "operations": [
+                    {
+                        "type": "l1_memory_noc_primitive",
+                        "module_name": "router",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        run_sweep,
+        "ensure_design_assets",
+        lambda *_args, **_kwargs: tmp_path / "generated",
+    )
+    monkeypatch.setattr(run_sweep, "snapshot_artifacts", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        run_sweep,
+        "collect_flow_failure_evidence",
+        lambda **_kwargs: (_ for _ in ()).throw(OSError("diagnostic read failed")),
+    )
+    monkeypatch.setattr(
+        run_sweep.subprocess,
+        "run",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            subprocess.CalledProcessError(2, "make")
+        ),
+    )
+
+    params = {"CLOCK_PERIOD": 1.8}
+    out_root = tmp_path / "runs"
+    run_sweep.run_single(config_path, "nangate45", params, out_root, False, False)
+    run_id = run_sweep.make_run_id(params)
+    result = json.loads(
+        (out_root / "router_wrapper" / "work" / run_id / "result.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert result["status"] == "failed"
+    assert result["make_returncode"] == 2
+    assert result["failure_evidence"] == {
+        "collection_error": "OSError: diagnostic read failed"
+    }
