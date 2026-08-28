@@ -42,10 +42,10 @@
       "evaluation_mode": "ppa",
       "abstraction_layer": "architecture_block",
       "comparison_role": "direct_functional_segmented_mesh_physical_anchor",
-      "paired_baseline_item_id": "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r2",
+      "paired_baseline_item_id": "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r3",
       "depends_on_item_ids": [
         "l1_segmented_xy_mesh_noc_phase1_v1_r7",
-        "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r2"
+        "l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r3"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,

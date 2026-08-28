@@ -36,7 +36,7 @@ For each parameter set the script:
 2) Writes a per-run SDC (clock period override) under out_root.
 3) Runs OpenROAD via `make` with TAG isolation and env overrides from flow_params.
 4) Parses timing/area/power from the resulting reports and writes result.json.
-5) Appends a summary row to <design>/metrics.csv for ML ingestion.
+5) Upserts a summary row in <design>/metrics.csv for ML ingestion.
 
 Notes:
 - Designed to run serially; set --dry_run to print the sweep matrix only.
@@ -49,6 +49,7 @@ import datetime
 import hashlib
 import itertools
 import json
+import math
 import os
 import sys
 from pathlib import Path
@@ -63,6 +64,7 @@ DEST_BASE = Path("/orfs/flow/designs")
 REPORT_BASE = Path("/orfs/flow/reports")
 RESULT_BASE = Path("/orfs/flow/results")
 SRC_BASE = DEST_BASE / "src"
+REQUIRED_PPA_METRICS = ("critical_path_ns", "die_area", "total_power_mw")
 
 
 def normalize_repo_path(path_str: str) -> str:
@@ -321,6 +323,97 @@ def safe_float(val):
         return None
 
 
+def current_repo_head() -> str:
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=REPO_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return ""
+
+
+def current_repo_is_clean() -> bool:
+    try:
+        return not subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=REPO_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return False
+
+
+def reusable_result(
+    result_path: Path,
+    *,
+    design: str,
+    platform: str,
+    config_hash: str,
+    param_hash: str,
+    flow_params: Dict[str, object],
+    effective_flow_variant: str,
+    repo_head_sha: str,
+    repo_clean: bool,
+) -> Tuple[bool, str]:
+    if not repo_head_sha:
+        return False, "repository source identity is unavailable"
+    if not repo_clean:
+        return False, "repository has tracked source modifications"
+    try:
+        record = json.loads(result_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return False, f"unreadable result: {exc}"
+    if not isinstance(record, dict):
+        return False, "result is not a JSON object"
+
+    expected_identity = {
+        "design": design,
+        "platform": platform,
+        "config_hash": config_hash,
+        "param_hash": param_hash,
+        "flow_params": flow_params,
+        "effective_flow_variant": effective_flow_variant,
+        "repo_head_sha": repo_head_sha,
+        "repo_clean": True,
+    }
+    for field, expected in expected_identity.items():
+        if record.get(field) != expected:
+            return False, f"{field} identity mismatch"
+    if record.get("status") != "ok":
+        return False, f"status is {record.get('status')!r}, not 'ok'"
+
+    metrics = record.get("metrics")
+    if not isinstance(metrics, dict):
+        return False, "metrics are missing"
+    for field in REQUIRED_PPA_METRICS:
+        value = safe_float(metrics.get(field))
+        if value is None or not math.isfinite(value):
+            return False, f"metric {field} is missing or non-finite"
+
+    reports = record.get("reports")
+    if not isinstance(reports, dict):
+        return False, "physical report paths are missing"
+    finish_rpt, def_path = resolve_flow_output_paths(
+        platform=platform,
+        wrapper=design,
+        flow_variant=effective_flow_variant,
+    )
+    expected_reports = {"finish": finish_rpt, "def": def_path}
+    for field, expected_path in expected_reports.items():
+        recorded = reports.get(field)
+        if not recorded or Path(str(recorded)) != expected_path:
+            return False, f"{field} report identity mismatch"
+        if not expected_path.is_file():
+            return False, f"{field} report is not retained"
+    return True, "complete identity-matched physical result"
+
+
 def resolve_flow_output_paths(
     *,
     platform: str,
@@ -354,6 +447,8 @@ def run_single(
     run_id = make_run_id(flow_params)
     tag = flow_params.get("TAG", f"run_{run_id}")
     flow_variant = isolated_flow_variant(flow_params, run_id)
+    repo_head_sha = current_repo_head()
+    repo_clean = current_repo_is_clean()
 
     circuit_root = out_root / wrapper
     work_root = circuit_root / "work"
@@ -362,8 +457,23 @@ def run_single(
 
     result_path = run_dir / "result.json"
     if skip_existing and result_path.exists():
-        print(f"[INFO] Skipping existing run: {run_dir}")
-        return
+        reusable, reason = reusable_result(
+            result_path,
+            design=wrapper,
+            platform=platform,
+            config_hash=config_hash,
+            param_hash=run_id,
+            flow_params=flow_params,
+            effective_flow_variant=flow_variant,
+            repo_head_sha=repo_head_sha,
+            repo_clean=repo_clean,
+        )
+        if reusable:
+            cached_record = json.loads(result_path.read_text(encoding="utf-8"))
+            append_index(circuit_root, cached_record)
+            print(f"[INFO] Skipping reusable run: {run_dir} ({reason})")
+            return
+        print(f"[INFO] Re-running ineligible cached run: {run_dir} ({reason})")
 
     # Prepare SDC
     clock_period = None
@@ -386,6 +496,8 @@ def run_single(
         "tag": tag,
         "flow_params": flow_params,
         "effective_flow_variant": flow_variant,
+        "repo_head_sha": repo_head_sha,
+        "repo_clean": repo_clean,
         "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
         "reports": {},
         "metrics": {},
@@ -398,7 +510,11 @@ def run_single(
         print(f"[DRY RUN] Would execute make for {wrapper} with params {flow_params}")
         return
 
-    dest_platform_dir = ensure_design_assets(config_path, platform, force=False)
+    dest_platform_dir = ensure_design_assets(
+        config_path,
+        platform,
+        force=skip_existing and result_path.exists(),
+    )
     snapshot_artifacts(config_path, wrapper, circuit_root)
     design_config_path = dest_platform_dir / "config.mk"
 
@@ -450,8 +566,12 @@ def run_single(
         if die_area:
             metrics["die_area"] = die_area
         run_record["metrics"] = metrics
-        required_metrics = ("critical_path_ns", "die_area", "total_power_mw")
-        missing_metrics = [name for name in required_metrics if safe_float(metrics.get(name)) is None]
+        missing_metrics = [
+            name
+            for name in REQUIRED_PPA_METRICS
+            if safe_float(metrics.get(name)) is None
+            or not math.isfinite(float(metrics[name]))
+        ]
         if missing_metrics:
             run_record["status"] = "metrics_missing"
             run_record["error"] = (
@@ -481,29 +601,66 @@ def append_index(circuit_root: Path, record: Dict[str, object]):
         "params_json",
         "result_path",
     ]
-    exists = index_path.exists()
-    with index_path.open("a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=header, lineterminator="\n")
-        if not exists:
-            writer.writeheader()
-        metrics = record.get("metrics", {})
-        writer.writerow(
-            {
-                "design": record.get("design", ""),
-                "platform": record.get("platform", ""),
-                "config_hash": record.get("config_hash", ""),
-                "param_hash": record.get("param_hash", ""),
-                "tag": record.get("tag", ""),
-                "status": record.get("status", ""),
-                "critical_path_ns": metrics.get("critical_path_ns", ""),
-                "die_area": metrics.get("die_area", ""),
-                "total_power_mw": metrics.get("total_power_mw", ""),
-                "params_json": json.dumps(record.get("flow_params", {}), sort_keys=True),
-                "result_path": normalize_repo_path(
-                    str(record.get("result_path", record.get("param_hash", "")))
-                ),
-            }
-        )
+    rows: List[Dict[str, object]] = []
+    fieldnames = list(header)
+    replacement_identity = (
+        str(record.get("design", "")),
+        str(record.get("platform", "")),
+        str(record.get("config_hash", "")),
+        str(record.get("param_hash", "")),
+    )
+    if index_path.is_file():
+        with index_path.open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            fieldnames = list(reader.fieldnames or header)
+            fieldnames.extend(field for field in header if field not in fieldnames)
+            for source_row in reader:
+                row = dict(source_row)
+                extras = row.pop(None, None)
+                if extras:
+                    fragments = [
+                        str(row.get("params_json", "")),
+                        str(row.get("result_path", "")),
+                        *(str(value) for value in extras),
+                    ]
+                    row["result_path"] = fragments.pop()
+                    row["params_json"] = ",".join(fragments)
+                normalized = {field: row.get(field, "") for field in fieldnames}
+                row_identity = (
+                    str(normalized.get("design", "")),
+                    str(normalized.get("platform", "")),
+                    str(normalized.get("config_hash", "")),
+                    str(normalized.get("param_hash", "")),
+                )
+                if row_identity != replacement_identity:
+                    rows.append(normalized)
+
+    metrics = record.get("metrics", {})
+    row = {field: "" for field in fieldnames}
+    row.update(
+        {
+            "design": record.get("design", ""),
+            "platform": record.get("platform", ""),
+            "config_hash": record.get("config_hash", ""),
+            "param_hash": record.get("param_hash", ""),
+            "tag": record.get("tag", ""),
+            "status": record.get("status", ""),
+            "critical_path_ns": metrics.get("critical_path_ns", ""),
+            "die_area": metrics.get("die_area", ""),
+            "total_power_mw": metrics.get("total_power_mw", ""),
+            "params_json": json.dumps(record.get("flow_params", {}), sort_keys=True),
+            "result_path": normalize_repo_path(
+                str(record.get("result_path", record.get("param_hash", "")))
+            ),
+        }
+    )
+    rows.append(row)
+    temp_path = index_path.with_suffix(index_path.suffix + ".tmp")
+    with temp_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+    temp_path.replace(index_path)
 
 
 def main():
