@@ -8,7 +8,12 @@
       "objective": "Rerun the complete corrected score32 mesh schedule at measured router clock bounds.",
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_score32_noc_phase2_measured_router_clock_reroute",
-      "status": "pending_after_dependencies_merge",
+      "status": "retracted_wrong_precision_and_release_contract",
+      "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+      "revision": {
+        "reason": "wrong_precision_and_release_contract",
+        "invalid_dependency_item_id": "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1"
+      },
       "depends_on_item_ids": [
         "l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1",
         "l1_segmented_xy_mesh_noc_phase1_v1_r7"
@@ -19,7 +24,7 @@
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_measured_router_clock_reroute__l2_decoder_attention_score32_noc_phase2_measured_router_clock_reroute_llama7b_v1.json",
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_measured_router_clock_reroute__l2_decoder_attention_score32_noc_phase2_measured_router_clock_reroute_llama7b_v1.md"
       ],
-      "acceptance_notes": "Require exact 8-wave/128-tile coverage and complete flit delivery in both clock cases. Keep aggregate mesh PPA, workload-matched router power, SRAM placement, HBM/DRAM, and root-finalizer compute explicit. Do not dispatch before both dependencies merge."
+      "acceptance_notes": "Retracted. The 16-bit per-wave schedule is invalid; do not dispatch, promote, or use this artifact in a frontier."
     }
   ]
 }

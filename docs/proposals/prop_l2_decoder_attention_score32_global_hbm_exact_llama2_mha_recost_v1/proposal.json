@@ -25,9 +25,17 @@
       "promotion from Mistral GQA4 arithmetic evidence"
     ]
   },
+  "revision": {
+    "reason": "transitive_wrong_precision_and_release_contract",
+    "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+    "invalid_dependency_item_id": "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1"
+  },
   "required_evaluations": [
     {
       "task_type": "l2_campaign",
+      "item_id": "l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1",
+      "status": "retracted_transitive_wrong_precision_and_release_contract",
+      "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
       "evaluation_mode": "frontier_detail",
       "depends_on_item_ids": [
         "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1"

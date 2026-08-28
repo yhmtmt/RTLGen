@@ -9,7 +9,12 @@
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_score32_global_hbm_exact_llama2_mha_recost",
       "comparison_role": "structural_frontier_correction",
-      "status": "pending_after_dependency_merge",
+      "status": "retracted_transitive_wrong_precision_and_release_contract",
+      "retracted_by_item_id": "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+      "revision": {
+        "reason": "transitive_wrong_precision_and_release_contract",
+        "invalid_dependency_item_id": "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1"
+      },
       "depends_on_item_ids": [
         "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1"
       ],
@@ -19,7 +24,7 @@
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_global_hbm_exact_llama2_mha_recost__l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1.json",
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_global_hbm_exact_llama2_mha_recost__l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1.md"
       ],
-      "acceptance_notes": "Replay aggregate active-cluster HBM bytes, rebuild MHA compute and memory quantities at both 131072 and native 4096 context, include measured replay-controller area and latency-scaled energy, never compare unlike contexts in one Pareto set, and refuse native promotion without native Llama-2-7B score32 quality evidence."
+      "acceptance_notes": "Retracted transitively. Rebuild only after an exact-transport endpoint/mesh result replaces the invalid finite-endpoint recost."
     }
   ]
 }

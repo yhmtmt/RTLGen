@@ -26,7 +26,12 @@
           "l1_noc_llama7b_phase2_command_scheduler_v1",
           "l2_decoder_attention_score32_noc_phase2_generated_scheduler_equivalence_llama7b_v1",
           "l2_decoder_attention_score32_noc_phase2_finite_endpoint_composed_recost_llama7b_v1",
-          "l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1"
+          "l2_decoder_attention_score32_finite_endpoint_final_frontier_llama7b_v1",
+          "l2_decoder_attention_score32_noc_phase2_measured_router_closure_llama7b_v1",
+          "l2_decoder_attention_score32_noc_phase2_measured_router_clock_reroute_llama7b_v1",
+          "l2_decoder_attention_score32_noc_phase2_composed_mesh_reroute_llama7b_v1",
+          "l2_decoder_attention_score32_global_hbm_exact_llama2_mha_recost_v1",
+          "l2_decoder_attention_score32_exact_llama2_mha_final_frontier_v1"
         ],
         "invalidates": {
           "artifact": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
