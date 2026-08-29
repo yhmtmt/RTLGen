@@ -245,6 +245,7 @@ def test_read_config_target_records_memory_noc_timing_path_identity(tmp_path: Pa
         "runs/designs/noc/noc_endpoint_wrapper/timing_debug_report.md"
     ]
     assert "--design-dir runs/designs/noc/noc_endpoint_wrapper" in target.commands[2]["run"]
+    assert "--require-complete-path" in target.commands[2]["run"]
 
 
 def test_read_config_target_builds_shared_sram_k_round_scheduler_commands(tmp_path: Path) -> None:

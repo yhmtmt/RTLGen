@@ -221,7 +221,10 @@ declared clock.
 
 Every generated Layer-1 `l1_memory_noc_primitive` PPA task must run
 `extract_openroad_timing_summary.py` after the sweep and retain the resulting
-`timing_debug_report.md` as an expected portable artifact. A scalar
+`timing_debug_report.md` as an expected portable artifact. The extractor must
+run with `--require-complete-path`, so the job fails when the preferred final
+stage lacks complete startpoint, endpoint, path group/type, arrival, required
+time, or slack data. A scalar
 `critical_path_ns` without the corresponding startpoint, endpoint, path group,
 path type, arrival, required time, and slack evidence is insufficient for first
 promotion of an endpoint, router, FIFO, scheduler, or composed NoC macro anchor.

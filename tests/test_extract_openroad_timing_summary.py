@@ -81,6 +81,7 @@ Path Type: max
             str(out_path),
             "--max-paths",
             "4",
+            "--require-complete-path",
         ],
         check=True,
     )
@@ -95,3 +96,60 @@ Path Type: max
     assert "Worst Timing Paths Across All Stages" in report
     assert report.index("stream_buf_reg[0]") < report.index("seed_state[0]")
     assert "This section must not be included" not in report
+
+
+def test_extract_openroad_timing_summary_rejects_missing_path_identity(
+    tmp_path: Path,
+) -> None:
+    design_dir = tmp_path / "runs" / "designs" / "noc" / "router"
+    report_dir = tmp_path / "orfs" / "reports"
+    design_dir.mkdir(parents=True)
+    report_dir.mkdir(parents=True)
+    finish_report = report_dir / "6_finish.rpt"
+    finish_report.write_text(
+        "finish critical path delay\n-----\n1.25\n",
+        encoding="utf-8",
+    )
+    with (design_dir / "metrics.csv").open(
+        "w", encoding="utf-8", newline=""
+    ) as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=[
+                "param_hash",
+                "tag",
+                "status",
+                "critical_path_ns",
+                "result_path",
+            ],
+        )
+        writer.writeheader()
+        writer.writerow(
+            {
+                "param_hash": "missingpath",
+                "tag": "base",
+                "status": "ok",
+                "critical_path_ns": "1.25",
+                "result_path": str(finish_report),
+            }
+        )
+
+    out_path = design_dir / "timing_debug_report.md"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/extract_openroad_timing_summary.py",
+            "--design-dir",
+            str(design_dir),
+            "--out",
+            str(out_path),
+            "--require-complete-path",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "no complete preferred-stage timing path" in result.stderr
+    assert not out_path.exists()

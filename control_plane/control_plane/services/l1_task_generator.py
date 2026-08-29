@@ -788,7 +788,7 @@ def _read_config_target(
                     "run": (
                         "python3 npu/eval/extract_openroad_timing_summary.py "
                         f"--design-dir {out_root}/{wrapper} "
-                        f"--out {timing_report} --max-paths 8"
+                        f"--out {timing_report} --max-paths 8 --require-complete-path"
                     ),
                 }
             )
