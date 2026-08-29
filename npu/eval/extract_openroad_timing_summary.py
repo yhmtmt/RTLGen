@@ -305,6 +305,18 @@ def _preferred_stage_paths(paths: list[TimingPath]) -> tuple[str | None, list[Ti
     return stage, sorted(selected, key=_timing_path_sort_key)
 
 
+def _is_complete_timing_path(path: TimingPath) -> bool:
+    return bool(
+        path.startpoint
+        and path.endpoint
+        and path.path_group
+        and path.path_type
+        and path.slack is not None
+        and path.arrival is not None
+        and path.required is not None
+    )
+
+
 def _append_timing_path_section(lines: list[str], paths: list[TimingPath], *, max_paths: int) -> None:
     for index, path in enumerate(paths[:max_paths], start=1):
         lines.extend(
@@ -335,6 +347,7 @@ def build_report(
     max_rows: int,
     max_paths: int,
     max_bytes: int,
+    require_complete_path: bool = False,
 ) -> str:
     rows = _sorted_metric_rows(_load_metrics(design_dir))[:max_rows]
     lines: list[str] = [
@@ -352,6 +365,7 @@ def build_report(
     all_paths: list[TimingPath] = []
     inspected: list[Path] = []
     summary_by_file: dict[str, list[str]] = {}
+    incomplete_path_rows: list[str] = []
     for row in rows:
         density = ""
         params_text = str(row.get("params_json", "")).strip()
@@ -378,13 +392,31 @@ def build_report(
         )
         candidates = candidate_report_paths(row)
         inspected.extend(candidates)
+        row_paths: list[TimingPath] = []
         for candidate in sorted(candidates, key=_report_path_sort_key):
             paths = extract_timing_paths(candidate, max_bytes=max_bytes)
             all_paths.extend(paths)
+            row_paths.extend(paths)
             if not paths:
                 summary = _summary_lines(candidate, max_bytes=max_bytes)
                 if summary:
                     summary_by_file[str(candidate)] = summary
+        _, preferred_row_paths = _preferred_stage_paths(
+            _dedupe_timing_paths(row_paths)
+        )
+        if require_complete_path and not any(
+            _is_complete_timing_path(path) for path in preferred_row_paths
+        ):
+            incomplete_path_rows.append(
+                str(row.get("param_hash") or row.get("tag") or "<unidentified>")
+            )
+
+    if incomplete_path_rows:
+        raise ValueError(
+            "no complete preferred-stage timing path with startpoint, endpoint, "
+            "path group/type, arrival, required time, and slack for metrics rows: "
+            + ", ".join(incomplete_path_rows)
+        )
 
     unique_paths = _dedupe_timing_paths(all_paths)
     preferred_stage, preferred_paths = _preferred_stage_paths(unique_paths)
@@ -444,6 +476,7 @@ def main() -> int:
     parser.add_argument("--max-rows", type=int, default=4)
     parser.add_argument("--max-paths", type=int, default=8)
     parser.add_argument("--max-bytes", type=int, default=10 * 1024 * 1024)
+    parser.add_argument("--require-complete-path", action="store_true")
     args = parser.parse_args()
 
     report = build_report(
@@ -451,6 +484,7 @@ def main() -> int:
         max_rows=args.max_rows,
         max_paths=args.max_paths,
         max_bytes=args.max_bytes,
+        require_complete_path=args.require_complete_path,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(report, encoding="utf-8")
