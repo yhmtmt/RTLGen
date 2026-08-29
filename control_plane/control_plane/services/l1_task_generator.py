@@ -758,29 +758,47 @@ def _read_config_target(
             raise Layer1TaskGenerationError(f"unsupported single-operation design type in {config_path}: {op_type}")
         module_name = entry["module_name"]
         wrapper = f"{module_name}_wrapper"
-        return Layer1ConfigTarget(
-            design_kind="wrapper",
-            design_name=wrapper,
-            expected_metrics_path=f"{out_root}/{wrapper}/metrics.csv",
-            commands=[
-                {
-                    "name": "build_generator",
-                    "run": _with_oss_cad_path("cmake -S . -B build && cmake --build build --target rtlgen"),
-                },
-                {
-                    "name": "run_sweep",
-                    "run": _with_oss_cad_path(
-                        (
+        commands = [
+            {
+                "name": "build_generator",
+                "run": _with_oss_cad_path(
+                    "cmake -S . -B build && cmake --build build --target rtlgen"
+                ),
+            },
+            {
+                "name": "run_sweep",
+                "run": _with_oss_cad_path(
+                    (
                         "python3 scripts/run_sweep.py "
                         "--configs {config_paths} "
                         "--platform {platform} "
                         f"--sweep {{sweep_path}} "
                         f"--out_root {out_root} "
                         "--force_gen --skip_existing"
-                        )
+                    )
+                ),
+            },
+        ]
+        expected_report_paths: list[str] = []
+        if op_type == "l1_memory_noc_primitive":
+            timing_report = f"{out_root}/{wrapper}/timing_debug_report.md"
+            commands.append(
+                {
+                    "name": "extract_l1_memory_noc_primitive_timing_paths",
+                    "run": (
+                        "python3 npu/eval/extract_openroad_timing_summary.py "
+                        f"--design-dir {out_root}/{wrapper} "
+                        f"--out {timing_report} --max-paths 8"
                     ),
-                },
-            ],
+                }
+            )
+            expected_report_paths.append(timing_report)
+        return Layer1ConfigTarget(
+            design_kind="wrapper",
+            design_name=wrapper,
+            expected_metrics_path=f"{out_root}/{wrapper}/metrics.csv",
+            expected_report_paths=expected_report_paths,
+            commands=commands,
         )
     elif "top_name" in cfg and "segmented_mesh4x4_direct" in cfg:
         top_name = str(cfg["top_name"]).strip()

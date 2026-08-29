@@ -198,6 +198,55 @@ def test_read_config_target_builds_shared_sram_adapter_remote_commands(tmp_path:
     assert "--top attention_shared_sram_read_group_adapter_w256_s2" in target.commands[2]["run"]
 
 
+def test_read_config_target_records_memory_noc_timing_path_identity(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    design_dir = repo_root / "runs/designs/noc/endpoint"
+    design_dir.mkdir(parents=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "version": "1.1",
+                "operands": [
+                    {
+                        "name": "flit",
+                        "bit_width": 256,
+                        "signed": False,
+                        "kind": "int",
+                    }
+                ],
+                "operations": [
+                    {
+                        "type": "l1_memory_noc_primitive",
+                        "module_name": "noc_endpoint",
+                        "operand": "flit",
+                        "options": {"primitive": "sram_packet_endpoint"},
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    target = _read_config_target(
+        config_path,
+        repo_root=repo_root,
+        config_rel=str(config_path.relative_to(repo_root)),
+        out_root="runs/designs/noc",
+        make_target=None,
+    )
+
+    assert [command["name"] for command in target.commands] == [
+        "build_generator",
+        "run_sweep",
+        "extract_l1_memory_noc_primitive_timing_paths",
+    ]
+    assert target.expected_report_paths == [
+        "runs/designs/noc/noc_endpoint_wrapper/timing_debug_report.md"
+    ]
+    assert "--design-dir runs/designs/noc/noc_endpoint_wrapper" in target.commands[2]["run"]
+
+
 def test_read_config_target_builds_shared_sram_k_round_scheduler_commands(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     design_dir = repo_root / "runs/designs/npu_blocks/attention_shared_sram_k_round_scheduler_b17_w17"
