@@ -192,9 +192,8 @@ def _path_from_text(value: str) -> Path | None:
     return Path(text)
 
 
-def _result_paths_from_work_json(row: dict[str, str]) -> list[Path]:
-    result_json = _path_from_text(row.get("work_result_json", ""))
-    if result_json is None or not result_json.exists():
+def _result_paths_from_json(result_json: Path | None) -> list[Path]:
+    if result_json is None or not result_json.exists() or not result_json.is_file():
         return []
     try:
         payload = json.loads(result_json.read_text(encoding="utf-8"))
@@ -211,6 +210,12 @@ def _result_paths_from_work_json(row: dict[str, str]) -> list[Path]:
             if isinstance(value, str) and value.strip():
                 paths.append(Path(value))
     return paths
+
+
+def _result_paths_from_work_json(row: dict[str, str]) -> list[Path]:
+    return _result_paths_from_json(
+        _path_from_text(row.get("work_result_json", ""))
+    )
 
 
 def _dedupe(paths: Iterable[Path]) -> list[Path]:
@@ -230,6 +235,8 @@ def candidate_report_paths(row: dict[str, str]) -> list[Path]:
     result_path = _path_from_text(row.get("result_path", ""))
     if result_path is not None:
         anchors.append(result_path)
+        if result_path.suffix.lower() == ".json":
+            anchors.extend(_result_paths_from_json(result_path))
     anchors.extend(_result_paths_from_work_json(row))
 
     candidates: list[Path] = []
@@ -366,6 +373,7 @@ def build_report(
     inspected: list[Path] = []
     summary_by_file: dict[str, list[str]] = {}
     incomplete_path_rows: list[str] = []
+    preferred_paths_by_row: list[tuple[str, str | None, list[TimingPath]]] = []
     for row in rows:
         density = ""
         params_text = str(row.get("params_json", "")).strip()
@@ -401,15 +409,20 @@ def build_report(
                 summary = _summary_lines(candidate, max_bytes=max_bytes)
                 if summary:
                     summary_by_file[str(candidate)] = summary
-        _, preferred_row_paths = _preferred_stage_paths(
+        preferred_row_stage, preferred_row_paths = _preferred_stage_paths(
             _dedupe_timing_paths(row_paths)
         )
+        row_identity = str(
+            row.get("param_hash") or row.get("tag") or "<unidentified>"
+        )
+        preferred_paths_by_row.append(
+            (row_identity, preferred_row_stage, preferred_row_paths)
+        )
         if require_complete_path and not any(
-            _is_complete_timing_path(path) for path in preferred_row_paths
+            _is_complete_timing_path(path)
+            for path in preferred_row_paths[:max_paths]
         ):
-            incomplete_path_rows.append(
-                str(row.get("param_hash") or row.get("tag") or "<unidentified>")
-            )
+            incomplete_path_rows.append(row_identity)
 
     if incomplete_path_rows:
         raise ValueError(
@@ -433,6 +446,22 @@ def build_report(
             lines.append(f"- `{path}`")
     else:
         lines.append("- none")
+
+    lines.extend(["", "## Per-Metrics-Row Preferred Timing Paths", ""])
+    for row_identity, row_stage, row_paths in preferred_paths_by_row:
+        lines.extend(
+            [
+                f"### `{row_identity}`",
+                "",
+                f"- preferred_stage: `{row_stage or ''}`",
+                f"- preferred_path_count: {len(row_paths)}",
+                "",
+            ]
+        )
+        if row_paths:
+            _append_timing_path_section(lines, row_paths, max_paths=max_paths)
+        else:
+            lines.extend(["No timing paths found for this metrics row.", ""])
 
     lines.extend(
         [
