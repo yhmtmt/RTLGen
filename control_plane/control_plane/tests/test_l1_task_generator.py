@@ -4569,6 +4569,8 @@ def test_checked_in_bare_router_requires_all_three_complete_ppa_rows() -> None:
             task = work_item.task_request.request_payload["task"]
             assert task["metadata"]["required_complete_ppa_rows"] == 3
             assert "exactly 3 distinct status=ok param_hash rows" in task["acceptance"][0]
+            assert "declared lightweight expected_outputs" in task["acceptance"][1]
+            assert "metrics.csv only" not in task["acceptance"][1]
 
 
 def test_generate_l1_sweep_task_supports_direct_noc_mesh_config() -> None:

@@ -3036,7 +3036,8 @@ def _build_payload(
             "expected_outputs": expected_outputs,
             "acceptance": [
                 metrics_acceptance,
-                "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+                "Committed outputs are limited to the declared lightweight expected_outputs; "
+                "runs/index.csv is exported centrally after merge",
                 "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass",
             ],
             "metadata": {
