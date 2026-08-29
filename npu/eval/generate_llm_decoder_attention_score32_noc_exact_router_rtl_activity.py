@@ -48,6 +48,7 @@ class ExactRouterPhase:
     packet_count: int
     flit_count: int
     context_count: int
+    service_cycles: int | None = None
     group: int | None = None
 
 
@@ -95,6 +96,7 @@ def build_exact_phase_models() -> tuple[ExactRouterPhase, ...]:
             packet_count=SHARED_PACKETS,
             flit_count=SHARED_FLITS,
             context_count=SHARED_CONTEXTS,
+            service_cycles=shared.cycles,
         )
     ]
     for group in range(REDUCTION_GROUPS):
@@ -119,6 +121,7 @@ def build_exact_phase_models() -> tuple[ExactRouterPhase, ...]:
                 packet_count=packet_count,
                 flit_count=flit_count,
                 context_count=REDUCTION_SOURCES,
+                service_cycles=max(row.final_output_cycle for row in reduction.replays) + 1,
                 group=group,
             )
         )
@@ -181,6 +184,11 @@ def build_manifest(
                 ],
                 "measured_cycles": phase.mesh_result.cycles,
                 "full_context_cycles": phase.mesh_result.cycles,
+                "service_cycles": (
+                    phase.mesh_result.cycles
+                    if phase.service_cycles is None
+                    else phase.service_cycles
+                ),
                 "packet_count": phase.packet_count,
                 "flit_count": phase.flit_count,
                 "context_count": phase.context_count,

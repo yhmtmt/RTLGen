@@ -5373,6 +5373,111 @@ def _decoder_attention_score32_noc_phase2_exact_transport_revision_evidence(
     }
 
 
+def _decoder_attention_score32_noc_mixed_vc_arbitration_envelope_evidence(
+    *,
+    item_id: str,
+    depends_on_item_ids: list[str] | None,
+    proposal_id: str | None,
+    proposal_path: str | None,
+) -> dict[str, Any]:
+    expected_item_id = (
+        "l2_decoder_attention_score32_noc_mixed_vc_arbitration_envelope_llama7b_v1"
+    )
+    expected_proposal_id = (
+        "prop_l2_decoder_attention_score32_noc_mixed_vc_arbitration_envelope_v1"
+    )
+    expected_dependencies = {
+        "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+        (
+            "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+            "rotation_equivalence_llama7b_v1_r3"
+        ),
+    }
+    if item_id != expected_item_id:
+        raise Layer2TaskGenerationError(
+            "score32 mixed-VC arbitration envelope only permits its registered item"
+        )
+    if str(proposal_id or "").strip() != expected_proposal_id:
+        raise Layer2TaskGenerationError("score32 mixed-VC arbitration proposal_id mismatch")
+    if str(proposal_path or "").strip() != (
+        f"docs/proposals/{expected_proposal_id}/proposal.json"
+    ):
+        raise Layer2TaskGenerationError("score32 mixed-VC arbitration proposal_path mismatch")
+    if set(depends_on_item_ids or []) != expected_dependencies:
+        raise Layer2TaskGenerationError(
+            "score32 mixed-VC arbitration requires exact transport and full GQA8 rotation evidence"
+        )
+
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_score32_noc_mixed_vc_arbitration_envelope__{item_id}.json"
+    report = f"{base}/decoder_attention_score32_noc_mixed_vc_arbitration_envelope__{item_id}.md"
+    command = _bounded_launcher_command(
+        memory_high="2G",
+        memory_max="3G",
+        cpu_quota="100%",
+        tasks_max=64,
+        runtime_max_sec=1200,
+        child_command=[
+            "python3",
+            (
+                "npu/eval/analyze_llm_decoder_attention_score32_noc_"
+                "mixed_vc_arbitration_envelope.py"
+            ),
+            "--repo-root",
+            ".",
+            "--output-json",
+            out,
+            "--output-md",
+            report,
+            "--overlap-fractions",
+            "0,0.25,0.5,0.75,1",
+            "--policies",
+            "vc_round_robin,fifo",
+        ],
+    )
+    return {
+        "inputs": {
+            "attention_score32_noc_mixed_vc_arbitration_out": out,
+            "attention_score32_noc_mixed_vc_arbitration_report": report,
+            "attention_score32_noc_mixed_vc_arbitration_contract": {
+                "shared_vc0_flits": 60928,
+                "reduction_vc1_flits": 10020,
+                "total_flits": 70948,
+                "overlap_fractions": [0.0, 0.25, 0.5, 0.75, 1.0],
+                "endpoint_injection_policies": ["vc_round_robin", "fifo"],
+            },
+        },
+        "commands": [
+            {
+                "name": "analyze_attention_score32_noc_mixed_vc_arbitration_envelope",
+                "run": command,
+            }
+        ],
+        "expected_outputs": [out, report],
+        "evidence_only": True,
+        "worker_resources": {
+            "exclusive_worker": True,
+            "memory_high": "2G",
+            "memory_max": "3G",
+            "cpu_quota": "100%",
+            "tasks_max": 64,
+            "outer_timeout_seconds": 1500,
+            "stall_timeout_seconds": 600,
+        },
+        "acceptance": [
+            "Require exactly 60928 VC0 plus 10020 VC1 delivered flits in every row",
+            "Require all five offsets for both vc_round_robin and fifo endpoint policies",
+            "Require four VC1 groups to retain sequential two-slot adapter lifecycle spacing",
+            "Record source queue depth and reject overlap promotion on any endpoint injection stall or per-VC depth above one",
+            "Do not select the minimum raw router cycle row when it depends on unbounded queued source releases",
+            "Preserve the missing authoritative SRAM-residency and cycle-aligned reducer readiness events",
+            "Keep HBM/DRAM control and PHY explicitly external",
+            "Write exactly one JSON and one Markdown report",
+            "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
+        ],
+    }
+
+
 def _decoder_attention_shared_sram_read_group_adapter_frontier_evidence(
     *,
     item_id: str,
@@ -13382,6 +13487,7 @@ def _build_payload(
         "decoder_attention_kv_onchip_service_schedule",
         "decoder_attention_score32_noc_phase2_schedule",
         "decoder_attention_score32_noc_phase2_exact_transport",
+        "decoder_attention_score32_noc_mixed_vc_arbitration_envelope",
         "decoder_attention_shared_sram_read_group_adapter_frontier",
         "decoder_attention_score32_noc_phase2_measured_router_closure",
         "decoder_attention_score32_noc_phase2_measured_router_clock_reroute",
@@ -13624,6 +13730,15 @@ def _build_payload(
         elif abstraction_layer_name == "decoder_attention_score32_noc_phase2_exact_transport":
             decoder_evidence = (
                 _decoder_attention_score32_noc_phase2_exact_transport_revision_evidence(
+                    item_id=item_id,
+                    depends_on_item_ids=depends_on_item_ids,
+                    proposal_id=proposal_id,
+                    proposal_path=proposal_path,
+                )
+            )
+        elif abstraction_layer_name == "decoder_attention_score32_noc_mixed_vc_arbitration_envelope":
+            decoder_evidence = (
+                _decoder_attention_score32_noc_mixed_vc_arbitration_envelope_evidence(
                     item_id=item_id,
                     depends_on_item_ids=depends_on_item_ids,
                     proposal_id=proposal_id,

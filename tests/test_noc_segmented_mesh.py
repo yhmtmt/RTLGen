@@ -1152,6 +1152,117 @@ def test_mesh_schedule_order_is_independent_of_wrapped_wire_tag() -> None:
     assert [delivery.flit.tag for delivery in result.deliveries] == [255, 0]
 
 
+def test_mesh_endpoint_vc_round_robin_prevents_one_vc_from_monopolizing_injection() -> None:
+    flows = [
+        TrafficFlow(
+            name=name,
+            source=0,
+            destination=1,
+            payload_bytes=32,
+            packet_payload_bytes=32,
+            vc=vc,
+            release_cycle=0,
+            schedule_order=order,
+        )
+        for order, (name, vc) in enumerate(
+            (("vc0_a", 0), ("vc0_b", 0), ("vc1_a", 1), ("vc1_b", 1))
+        )
+    ]
+    scheduled = [item for flow in flows for item in packetize_traffic_flow(flow)]
+
+    fifo = simulate_scheduled_flits(scheduled, max_cycles=32)
+    round_robin = simulate_scheduled_flits(
+        scheduled,
+        endpoint_injection_policy="vc_round_robin",
+        max_cycles=32,
+    )
+
+    assert [flit.label for trace in fifo.traces for _, flit in trace.injected] == [
+        "vc0_a",
+        "vc0_b",
+        "vc1_a",
+        "vc1_b",
+    ]
+    assert [flit.label for trace in round_robin.traces for _, flit in trace.injected] == [
+        "vc0_a",
+        "vc1_a",
+        "vc0_b",
+        "vc1_b",
+    ]
+    assert fifo.max_endpoint_vc_occupancy == (2, 2, 0, 0)
+    assert round_robin.max_endpoint_input_occupancy == 4
+    assert round_robin.max_endpoint_vc_occupancy == (2, 2, 0, 0)
+
+
+def test_mesh_endpoint_ready_callback_observes_held_flit_vc() -> None:
+    flows = [
+        TrafficFlow(
+            name="vc1",
+            source=0,
+            destination=1,
+            payload_bytes=32,
+            packet_payload_bytes=32,
+            vc=1,
+        )
+    ]
+    seen: list[tuple[int, int, int | None]] = []
+
+    def endpoint_ready(cycle: int, endpoint: int, flit: ModelFlit | None) -> bool:
+        seen.append((cycle, endpoint, None if flit is None else flit.vc))
+        return flit is None or cycle >= 5
+
+    result = simulate_scheduled_flits(
+        packetize_traffic_flow(flows[0]),
+        endpoint_out_ready=endpoint_ready,
+        max_cycles=32,
+    )
+
+    assert result.deliveries[0].cycle >= 5
+    assert any(endpoint == 1 and vc == 1 for _, endpoint, vc in seen)
+
+
+def test_mesh_rejects_ambiguous_endpoint_ready_configuration() -> None:
+    flow = TrafficFlow(name="single", source=0, destination=1, payload_bytes=32, vc=0)
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        simulate_scheduled_flits(
+            packetize_traffic_flow(flow),
+            endpoint_out_ready_schedule=[[True] * 16],
+            endpoint_out_ready=lambda _cycle, _endpoint, _flit: True,
+        )
+
+
+def test_mesh_counter_only_mode_preserves_counts_without_cycle_objects() -> None:
+    flows = _multiflow_mesh_flows()
+    scheduled = [item for flow in flows for item in packetize_traffic_flow(flow)]
+
+    detailed = simulate_scheduled_flits(scheduled, max_cycles=256)
+    compact = simulate_scheduled_flits(
+        scheduled,
+        max_cycles=256,
+        record_mesh_trace=False,
+        record_link_transfers=False,
+    )
+
+    assert compact.cycles == detailed.cycles
+    assert compact.traces == ()
+    assert compact.link_transfers == ()
+    assert compact.deliveries == detailed.deliveries
+    assert compact.mesh_contention_cycles == detailed.mesh_contention_cycles
+    assert [row.accepted_flit_count for row in compact.router_summaries] == [
+        row.accepted_flit_count for row in detailed.router_summaries
+    ]
+
+
+def test_mesh_counter_only_mode_rejects_router_replay_capture() -> None:
+    flow = TrafficFlow(name="single", source=0, destination=1, payload_bytes=32, vc=0)
+    with pytest.raises(ValueError, match="requires record_mesh_trace"):
+        simulate_scheduled_flits(
+            packetize_traffic_flow(flow),
+            capture_router_replay_nodes=(0,),
+            record_mesh_trace=False,
+        )
+
+
 def test_mesh_flow_and_packet_order_remain_distinct_across_tag_wrap() -> None:
     flows = [
         TrafficFlow(
