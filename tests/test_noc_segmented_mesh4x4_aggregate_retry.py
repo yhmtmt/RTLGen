@@ -55,6 +55,7 @@ def test_r4_uses_clean_flow_identity_and_requires_failure_evidence() -> None:
     assert r3["superseded_by_item_id"] == r4["item_id"]
     assert params["FLOW_VARIANT"] == "mesh4x4_aggregate_r4_diag"
     assert r4["required_complete_ppa_rows"] == 1
+    assert "l1_segmented_xy_router_node5_bare_ppa_v1" in r4["depends_on_item_ids"]
     assert r4["expected_outputs"][-1].endswith("timing_debug_report.md")
     assert "exactly one complete finite PPA row" in r4["acceptance_notes"]
     assert "make_returncode" in r4["acceptance_notes"]

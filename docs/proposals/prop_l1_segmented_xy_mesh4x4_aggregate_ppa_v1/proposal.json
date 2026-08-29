@@ -156,6 +156,10 @@
       ],
       "required_complete_ppa_rows": 1,
       "status": "pending_portable_timing_contract_merge",
+      "depends_on_item_ids": [
+        "l1_segmented_xy_mesh_noc_phase1_v1_r7",
+        "l1_segmented_xy_router_node5_bare_ppa_v1"
+      ],
       "expected_result": {
         "direction": "separate_stale_orfs_state_from_reproducible_aggregate_failure",
         "reason": "A new flow variant starts from a clean ORFS target; any failure must retain its return code, newest ORFS log tails, and result-directory inventory in result.json."
