@@ -24,6 +24,7 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
+      "required_complete_ppa_rows": 3,
       "expected_result": {
         "direction": "measure_intrinsic_router_and_enable_postroute_activity",
         "reason": "The r7 router-plus-harness result cannot accept the bare-router replay VCD as exact workload power evidence."

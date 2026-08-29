@@ -47,6 +47,7 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
+      "required_complete_ppa_rows": 3,
       "config_paths": [
         "runs/designs/npu_blocks/noc_segmented_mesh_router_node5_bare/config.json"
       ],

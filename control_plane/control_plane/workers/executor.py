@@ -232,6 +232,20 @@ def _l1_requires_complete_ppa(evaluation_mode: str) -> bool:
     return str(evaluation_mode).strip().lower().startswith("ppa")
 
 
+def _l1_required_complete_ppa_rows(work_item: WorkItem) -> int:
+    payload = getattr(work_item.task_request, "request_payload", None)
+    if not isinstance(payload, dict):
+        return 0
+    task = payload.get("task") or {}
+    metadata = task.get("metadata") if isinstance(task, dict) else {}
+    if not isinstance(metadata, dict):
+        return 0
+    try:
+        return max(int(metadata.get("required_complete_ppa_rows") or 0), 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 def _has_complete_ppa(row: dict[str, str]) -> bool:
     for key in ("critical_path_ns", "die_area", "total_power_mw"):
         try:
@@ -272,6 +286,7 @@ def _l1_metrics_acceptance(
     require_ok_status: bool = True,
     allow_measurement_partial_success: bool = False,
     require_complete_ppa: bool = False,
+    required_complete_ppa_rows: int = 0,
 ) -> L1MetricsAcceptance:
     repo_path = Path(repo_root).resolve()
     errors: list[str] = []
@@ -295,6 +310,13 @@ def _l1_metrics_acceptance(
             continue
         ok_rows = [row for row in rows if str(row.get("status", "")).strip().lower() == "ok"]
         complete_ppa_rows = [row for row in ok_rows if _has_complete_ppa(row)]
+        complete_ppa_hashes = sorted(
+            {
+                str(row.get("param_hash", "")).strip()
+                for row in complete_ppa_rows
+                if str(row.get("param_hash", "")).strip()
+            }
+        )
         if ok_rows:
             ok_file_count += 1
         else:
@@ -312,6 +334,13 @@ def _l1_metrics_acceptance(
                 f"{output}: no status=ok row with complete PPA metrics "
                 "(critical_path_ns,die_area,total_power_mw; "
                 f"incomplete_param_hashes={','.join(incomplete_hashes) or '<none>'})"
+            )
+        if required_complete_ppa_rows > 0 and len(complete_ppa_hashes) != required_complete_ppa_rows:
+            errors.append(
+                f"{output}: expected exactly {required_complete_ppa_rows} distinct status=ok param_hash rows "
+                "with complete PPA metrics "
+                f"(found={len(complete_ppa_hashes)}; "
+                f"param_hashes={','.join(complete_ppa_hashes) or '<none>'})"
             )
     if (
         allow_measurement_partial_success
@@ -1033,6 +1062,7 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             require_ok_status=not _l1_acceptance_allows_non_ok_metrics(work_item),
             allow_measurement_partial_success=_l1_allows_measurement_partial_success(evaluation_mode),
             require_complete_ppa=_l1_requires_complete_ppa(evaluation_mode),
+            required_complete_ppa_rows=_l1_required_complete_ppa_rows(work_item),
         )
         acceptance_errors = acceptance.errors
         acceptance_warnings = acceptance.warnings
