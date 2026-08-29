@@ -365,6 +365,7 @@ def build_report(
     all_paths: list[TimingPath] = []
     inspected: list[Path] = []
     summary_by_file: dict[str, list[str]] = {}
+    incomplete_path_rows: list[str] = []
     for row in rows:
         density = ""
         params_text = str(row.get("params_json", "")).strip()
@@ -391,23 +392,34 @@ def build_report(
         )
         candidates = candidate_report_paths(row)
         inspected.extend(candidates)
+        row_paths: list[TimingPath] = []
         for candidate in sorted(candidates, key=_report_path_sort_key):
             paths = extract_timing_paths(candidate, max_bytes=max_bytes)
             all_paths.extend(paths)
+            row_paths.extend(paths)
             if not paths:
                 summary = _summary_lines(candidate, max_bytes=max_bytes)
                 if summary:
                     summary_by_file[str(candidate)] = summary
+        _, preferred_row_paths = _preferred_stage_paths(
+            _dedupe_timing_paths(row_paths)
+        )
+        if require_complete_path and not any(
+            _is_complete_timing_path(path) for path in preferred_row_paths
+        ):
+            incomplete_path_rows.append(
+                str(row.get("param_hash") or row.get("tag") or "<unidentified>")
+            )
+
+    if incomplete_path_rows:
+        raise ValueError(
+            "no complete preferred-stage timing path with startpoint, endpoint, "
+            "path group/type, arrival, required time, and slack for metrics rows: "
+            + ", ".join(incomplete_path_rows)
+        )
 
     unique_paths = _dedupe_timing_paths(all_paths)
     preferred_stage, preferred_paths = _preferred_stage_paths(unique_paths)
-    if require_complete_path and not any(
-        _is_complete_timing_path(path) for path in preferred_paths
-    ):
-        raise ValueError(
-            "no complete preferred-stage timing path with startpoint, endpoint, "
-            "path group/type, arrival, required time, and slack"
-        )
     all_stage_paths = sorted(unique_paths, key=_timing_path_sort_key)
     lines.extend(
         [

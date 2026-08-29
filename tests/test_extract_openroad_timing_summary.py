@@ -102,10 +102,25 @@ def test_extract_openroad_timing_summary_rejects_missing_path_identity(
     tmp_path: Path,
 ) -> None:
     design_dir = tmp_path / "runs" / "designs" / "noc" / "router"
-    report_dir = tmp_path / "orfs" / "reports"
+    complete_report_dir = tmp_path / "orfs" / "reports" / "complete"
+    missing_report_dir = tmp_path / "orfs" / "reports" / "missing"
     design_dir.mkdir(parents=True)
-    report_dir.mkdir(parents=True)
-    finish_report = report_dir / "6_finish.rpt"
+    complete_report_dir.mkdir(parents=True)
+    missing_report_dir.mkdir(parents=True)
+    complete_report = complete_report_dir / "6_finish_check.rpt"
+    complete_report.write_text(
+        """Startpoint: input_reg[0] (rising edge-triggered flip-flop clocked by clk)
+Endpoint: output_reg[0] (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  data arrival time               1.00
+  data required time              1.25
+  slack (MET)                     0.25
+""",
+        encoding="utf-8",
+    )
+    finish_report = missing_report_dir / "6_finish.rpt"
     finish_report.write_text(
         "finish critical path delay\n-----\n1.25\n",
         encoding="utf-8",
@@ -124,6 +139,15 @@ def test_extract_openroad_timing_summary_rejects_missing_path_identity(
             ],
         )
         writer.writeheader()
+        writer.writerow(
+            {
+                "param_hash": "completepath",
+                "tag": "base",
+                "status": "ok",
+                "critical_path_ns": "1.0",
+                "result_path": str(complete_report),
+            }
+        )
         writer.writerow(
             {
                 "param_hash": "missingpath",
@@ -152,4 +176,5 @@ def test_extract_openroad_timing_summary_rejects_missing_path_identity(
 
     assert result.returncode != 0
     assert "no complete preferred-stage timing path" in result.stderr
+    assert "missingpath" in result.stderr
     assert not out_path.exists()
