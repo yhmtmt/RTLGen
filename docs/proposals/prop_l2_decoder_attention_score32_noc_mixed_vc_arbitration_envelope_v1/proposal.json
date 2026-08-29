@@ -51,6 +51,8 @@
   "knowledge_refs": [
     "npu/eval/generate_llm_decoder_attention_score32_noc_exact_router_rtl_activity.py",
     "npu/sim/perf/attention_exact_mixed_vc_router.py",
-    "npu/sim/perf/noc_segmented_mesh.py"
+    "npu/sim/perf/noc_segmented_mesh.py",
+    "npu/sim/perf/noc_endpoint_vc_injection_arbiter.py",
+    "npu/sim/rtl/noc_endpoint_vc_injection_arbiter.sv"
   ]
 }
