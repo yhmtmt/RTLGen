@@ -54,6 +54,9 @@ def test_r4_uses_clean_flow_identity_and_requires_failure_evidence() -> None:
     assert r3["status"] == "superseded_missing_orfs_failure_evidence"
     assert r3["superseded_by_item_id"] == r4["item_id"]
     assert params["FLOW_VARIANT"] == "mesh4x4_aggregate_r4_diag"
+    assert r4["required_complete_ppa_rows"] == 1
+    assert r4["expected_outputs"][-1].endswith("timing_debug_report.md")
+    assert "exactly one complete finite PPA row" in r4["acceptance_notes"]
     assert "make_returncode" in r4["acceptance_notes"]
     assert "failure_evidence" in r4["acceptance_notes"]
 
