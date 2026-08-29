@@ -12,6 +12,11 @@
   returned exit 2 without transporting the decisive ORFS stage log.
 - Added r4 with a clean flow identity and bounded ORFS failure evidence in the
   linked result, so either PPA or the exact physical failure boundary is usable.
+- Tightened r4 after the endpoint timing audit: its generated task now requires
+  exactly one complete PPA row and retains a portable timing debug report. This
+  prevents a scalar critical-path value from entering mesh composition without
+  register/path identity evidence.
 
-The r4 physical job is dependency-ready after the corrected r7 router result;
-it must be generated only after this source revision merges.
+The r4 physical job is dependency-ready after the corrected r7 router result,
+but remains intentionally unassigned until the hierarchy-matched bare-router
+result is recovered and reviewed. Regenerate r4 after this contract merges.
