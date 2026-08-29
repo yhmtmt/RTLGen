@@ -192,9 +192,8 @@ def _path_from_text(value: str) -> Path | None:
     return Path(text)
 
 
-def _result_paths_from_work_json(row: dict[str, str]) -> list[Path]:
-    result_json = _path_from_text(row.get("work_result_json", ""))
-    if result_json is None or not result_json.exists():
+def _result_paths_from_json(result_json: Path | None) -> list[Path]:
+    if result_json is None or not result_json.exists() or not result_json.is_file():
         return []
     try:
         payload = json.loads(result_json.read_text(encoding="utf-8"))
@@ -211,6 +210,12 @@ def _result_paths_from_work_json(row: dict[str, str]) -> list[Path]:
             if isinstance(value, str) and value.strip():
                 paths.append(Path(value))
     return paths
+
+
+def _result_paths_from_work_json(row: dict[str, str]) -> list[Path]:
+    return _result_paths_from_json(
+        _path_from_text(row.get("work_result_json", ""))
+    )
 
 
 def _dedupe(paths: Iterable[Path]) -> list[Path]:
@@ -230,6 +235,8 @@ def candidate_report_paths(row: dict[str, str]) -> list[Path]:
     result_path = _path_from_text(row.get("result_path", ""))
     if result_path is not None:
         anchors.append(result_path)
+        if result_path.suffix.lower() == ".json":
+            anchors.extend(_result_paths_from_json(result_path))
     anchors.extend(_result_paths_from_work_json(row))
 
     candidates: list[Path] = []

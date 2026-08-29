@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -178,3 +179,74 @@ Path Type: max
     assert "no complete preferred-stage timing path" in result.stderr
     assert "missingpath" in result.stderr
     assert not out_path.exists()
+
+
+def test_extract_openroad_timing_summary_dereferences_result_path_json(
+    tmp_path: Path,
+) -> None:
+    design_dir = tmp_path / "runs" / "designs" / "noc" / "mesh"
+    work_dir = design_dir / "work" / "abcd1234"
+    report_dir = tmp_path / "orfs" / "reports" / "mesh" / "variant"
+    design_dir.mkdir(parents=True)
+    work_dir.mkdir(parents=True)
+    report_dir.mkdir(parents=True)
+    timing_report = report_dir / "6_finish_check.rpt"
+    timing_report.write_text(
+        """Startpoint: source_reg[0] (rising edge-triggered flip-flop clocked by clk)
+Endpoint: sink_reg[0] (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  data arrival time               1.50
+  data required time              2.00
+  slack (MET)                     0.50
+""",
+        encoding="utf-8",
+    )
+    result_json = work_dir / "result.json"
+    result_json.write_text(
+        json.dumps({"reports": {"finish": str(timing_report)}}) + "\n",
+        encoding="utf-8",
+    )
+    with (design_dir / "metrics.csv").open(
+        "w", encoding="utf-8", newline=""
+    ) as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=[
+                "param_hash",
+                "tag",
+                "status",
+                "critical_path_ns",
+                "result_path",
+            ],
+        )
+        writer.writeheader()
+        writer.writerow(
+            {
+                "param_hash": "abcd1234",
+                "tag": "mesh",
+                "status": "ok",
+                "critical_path_ns": "1.5",
+                "result_path": str(result_json),
+            }
+        )
+
+    out_path = design_dir / "timing_debug_report.md"
+    subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/extract_openroad_timing_summary.py",
+            "--design-dir",
+            str(design_dir),
+            "--out",
+            str(out_path),
+            "--require-complete-path",
+        ],
+        check=True,
+    )
+
+    report = out_path.read_text(encoding="utf-8")
+    assert str(timing_report) in report
+    assert "source_reg[0]" in report
+    assert "sink_reg[0]" in report
