@@ -445,6 +445,27 @@ def _resolve_requested_entry_int(
         return explicit
 
 
+def _resolve_required_complete_ppa_rows(entry: dict[str, Any] | None) -> int:
+    if not isinstance(entry, dict) or "required_complete_ppa_rows" not in entry:
+        return 0
+    raw_value = entry.get("required_complete_ppa_rows")
+    if isinstance(raw_value, bool):
+        raise Layer1TaskGenerationError(
+            "required_complete_ppa_rows must be a non-negative integer"
+        )
+    try:
+        value = int(raw_value)
+    except (TypeError, ValueError) as exc:
+        raise Layer1TaskGenerationError(
+            "required_complete_ppa_rows must be a non-negative integer"
+        ) from exc
+    if value < 0 or str(raw_value).strip() != str(value):
+        raise Layer1TaskGenerationError(
+            "required_complete_ppa_rows must be a non-negative integer"
+        )
+    return value
+
+
 def _retry_base(item_id: str) -> str:
     return item_id.rsplit("_r", 1)[0] if "_r" in item_id else item_id
 
@@ -3149,14 +3170,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         explicit=request.priority,
         default=1,
     )
-    required_complete_ppa_rows = _resolve_requested_entry_int(
-        requested_entry,
-        key="required_complete_ppa_rows",
-        explicit=0,
-        default=0,
-    )
-    if required_complete_ppa_rows < 0:
-        raise Layer1TaskGenerationError("required_complete_ppa_rows must be non-negative")
+    required_complete_ppa_rows = _resolve_required_complete_ppa_rows(requested_entry)
     _validate_architecture_block_sweep_policy(
         sweep_path=(repo_root / sweep_path).resolve(),
         abstraction_layer=effective_abstraction_layer,

@@ -27,11 +27,21 @@ from control_plane.services.l1_task_generator import (
     Layer1TaskGenerationError,
     _multivalue_cluster_binary_fsm_profile,
     _read_config_target,
+    _resolve_required_complete_ppa_rows,
     _synth_only_targets,
     _validate_requested_expected_outputs,
     _validate_replacement_sweep_isolation,
     generate_l1_sweep_task,
 )
+
+
+@pytest.mark.parametrize("value", [True, "three", "03", -1])
+def test_required_complete_ppa_rows_rejects_malformed_values(value: object) -> None:
+    with pytest.raises(
+        Layer1TaskGenerationError,
+        match="required_complete_ppa_rows must be a non-negative integer",
+    ):
+        _resolve_required_complete_ppa_rows({"required_complete_ppa_rows": value})
 
 
 def test_requested_expected_outputs_reject_noncanonical_sweep_root() -> None:

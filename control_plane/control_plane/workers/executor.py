@@ -240,10 +240,18 @@ def _l1_required_complete_ppa_rows(work_item: WorkItem) -> int:
     metadata = task.get("metadata") if isinstance(task, dict) else {}
     if not isinstance(metadata, dict):
         return 0
-    try:
-        return max(int(metadata.get("required_complete_ppa_rows") or 0), 0)
-    except (TypeError, ValueError):
+    raw_value = metadata.get("required_complete_ppa_rows")
+    if raw_value is None:
         return 0
+    if isinstance(raw_value, bool):
+        return -1
+    try:
+        value = int(raw_value)
+    except (TypeError, ValueError):
+        return -1
+    if value < 0 or str(raw_value).strip() != str(value):
+        return -1
+    return value
 
 
 def _has_complete_ppa(row: dict[str, str]) -> bool:
@@ -293,6 +301,11 @@ def _l1_metrics_acceptance(
     warnings: list[str] = []
     ok_file_count = 0
     non_ok_file_count = 0
+    if required_complete_ppa_rows < 0:
+        errors.append(
+            "task metadata required_complete_ppa_rows must be a non-negative integer"
+        )
+        required_complete_ppa_rows = 0
     for output in expected_outputs:
         if not str(output).endswith("metrics.csv"):
             continue

@@ -7,6 +7,7 @@ import tempfile
 import subprocess
 import threading
 import time
+from types import SimpleNamespace
 from unittest import mock
 
 from sqlalchemy import create_engine
@@ -28,6 +29,7 @@ from control_plane.workers.executor import (
     WorkerConfig,
     _classify_failure,
     _l1_metrics_acceptance,
+    _l1_required_complete_ppa_rows,
     _materialize_generated_inputs,
 )
 
@@ -557,6 +559,29 @@ def test_l1_ppa_exact_row_count_rejects_extra_complete_rows() -> None:
         "with complete PPA metrics (found=4; param_hashes=point1,point2,point3,point4)"
     ]
     assert accepted.errors == []
+
+
+def test_l1_ppa_rejects_malformed_required_complete_row_metadata() -> None:
+    work_item = SimpleNamespace(
+        task_request=SimpleNamespace(
+            request_payload={
+                "task": {"metadata": {"required_complete_ppa_rows": "three"}}
+            }
+        )
+    )
+    required_rows = _l1_required_complete_ppa_rows(work_item)
+
+    result = _l1_metrics_acceptance(
+        repo_root=".",
+        expected_outputs=[],
+        require_complete_ppa=True,
+        required_complete_ppa_rows=required_rows,
+    )
+
+    assert required_rows == -1
+    assert result.errors == [
+        "task metadata required_complete_ppa_rows must be a non-negative integer"
+    ]
 
 
 def test_l1_measurement_only_accepts_mixed_ok_and_failed_metrics_as_boundary_evidence() -> None:
