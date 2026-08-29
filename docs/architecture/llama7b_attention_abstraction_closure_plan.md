@@ -266,20 +266,21 @@ evidence gaps:
   one-entry prefetch buffer are concrete RTL. Command SRAM bitcells, placement,
   macro energy, and the command population/inter-wave refill producer remain
   separate evidence rather than hidden flops.
-- Physical composition: the prepared
-  `l1_noc_sram_packet_mesh4x4_composed_ppa_v1` item places the complete
-  endpoint/mesh hierarchy at the same initial floorplan envelope as the
-  aggregate mesh. Its checked-in harness installs collision-free descriptors,
-  exercises one- through eight-flit packets and all VCs, applies finite SRAM
-  and completion backpressure, and rotates local observation across all 256
-  payload bits. It remains dependency-gated behind router, endpoint, and
-  aggregate-mesh anchors and is not workload-activity or SRAM-macro evidence.
+- Physical composition: `l1_noc_sram_packet_mesh4x4_composed_ppa_v1` is
+  retired. Its fixed 3.2 mm square floorplan was not derived from a successful
+  aggregate route, and endpoint r4 still lacks the setup-path identity required
+  by its own promotion gate. Create a replacement composed sweep only after
+  aggregate r4 supplies a clean routed perimeter/floorplan and the endpoint
+  path class is proven. The replacement must retain all endpoints, routers,
+  links, scheduler descriptors, finite SRAM interfaces, completion
+  backpressure, and all 256 payload bits; it is still not SRAM-macro evidence.
 - Composed schedule substitution: the prepared
   `l2_decoder_attention_score32_noc_phase2_composed_mesh_reroute_llama7b_v1`
-  item waits for the corrected workload schedule and composed endpoint/mesh
-  promotion. It reruns all eight waves and 128 tiles at the conservative
-  composed clock, replaces primitive area/power sums with aggregate placed
-  evidence, and keeps SRAM macros plus workload-matched activity explicit.
+  item and its measured-router ancestors are retracted. They consumed the old
+  16-bit/per-wave transport schedule, so their latency, traffic, and energy
+  cannot be revised by scalar substitution. A replacement must consume the
+  exact five-phase transport revision and a newly promoted endpoint/mesh
+  composition, then keep SRAM macros plus workload-matched activity explicit.
 - Credit timing: the original router FIFO allowed a full queue's input ready
   to depend on a same-cycle downstream pop. Across bidirectional links this
   formed a combinational ready fixpoint. FIFO credits now depend only on
@@ -297,6 +298,13 @@ evidence gaps:
   it is not a placed 4x4 mesh result. Aggregate links, wiring, congestion,
   endpoint SRAM placement, and clock distribution remain explicit until an
   aggregate physical slice is measured.
+- The exact transport revision supersedes the old per-wave schedule. It emits
+  one VC0 phase with 7,616 packets / 60,928 flits and four VC1 phases with 315
+  packets / 2,505 flits each, for 70,948 flits total. Packets use 419-bit link
+  beats carrying a 328-bit payload under the actual-valid-ready, group-major
+  contract. Any activity, composed-mesh, or frontier descendant must name this
+  exact revision boundary; parameter-only recost of a retracted descendant is
+  invalid.
 - HBM/DRAM controller RTL and vendor current signoff remain outside the RTLGen
   chip boundary. They stay as source-backed service and energy envelopes, not
   as free components and not as claims of RTL closure.
@@ -555,24 +563,31 @@ run the already queued exp-LUT branch:
     throughput, energy, area, and precision only after each substituted term
     names its measured source and leaves no incompatible category mixed into
     the same rank.
-16. Harden `l1_segmented_xy_router_node5_bare_ppa_v1` after router r7, then run
-    `l2_decoder_attention_score32_noc_router_postroute_activity_power_llama7b_v1`.
-    Regenerate and cycle-verify the Llama7B node-5 VCD on the evaluator;
-    require physical-top source identity, unique effective flow variants,
-    explicit retimestamping of the unchanged cycle sequence from the source
-    schedule clock to the routed target clock, direct VCD annotation, and at
-    least 95 percent sequential-register sidecar coverage before using the
-    result. Keep the result as intrinsic router energy until the routed 4x4
-    composition measures links and the mesh clock tree.
-17. After the compact aggregate mesh baseline, harden
-    `l1_segmented_xy_mesh4x4_direct_ppa_v1`. This target must expose all
-    functional endpoint ready/valid and flit ports on the canonical sixteen-
-    router hierarchy, exclude debug-counter pins and synthetic traffic logic,
-    prove the 8,962-pin perimeter bound, and retain isolated routed artifacts.
-    Compare it with the compact aggregate harness to identify boundary cost,
-    then use this exact hierarchy for compact endpoint VCD plus per-router
-    sequential-activity annotation. Only that post-route activity result can
-    replace composed/vectorless NoC energy in the Llama7B frontier ranking.
+16. Recover or rerun `l1_segmented_xy_router_node5_bare_ppa_v1` after router
+    r7. Require all 40/50/60 percent utilization rows at 1.8 ns, exact isolated
+    flow variants, complete finite PPA, retained routed artifacts, and explicit
+    register-to-register setup-path identity. A stale lease or one accepted row
+    is not enough to satisfy this gate.
+17. After the bare-router result merges, run
+    `l2_decoder_attention_score32_noc_exact_router_postroute_activity_power_llama7b_v2`.
+    Regenerate and cycle-verify all five exact transport phases on the remote
+    evaluator. Require phase cardinality gates, physical-top source identity,
+    unique effective flow variants, direct VCD annotation, timing feasibility,
+    and at least 95 percent sequential-register sidecar coverage. Keep the
+    result as intrinsic router energy; it excludes aggregate links, mesh clock
+    tree, endpoint/SRAM activity, and HBM/DRAM.
+18. Run `l1_segmented_xy_mesh4x4_aggregate_ppa_v1_r4` from its clean isolated
+    flow and retain new failure evidence if it does not route. If successful,
+    use its routed dimensions and reports to derive the replacement composed
+    endpoint/mesh floorplan rather than reusing the retired 3.2 mm envelope.
+    This aggregate result measures canonical routers plus inter-router links
+    and clock distribution, but not endpoint/SRAM logic.
+19. Prove endpoint r4 setup-path identity or run an independently registered
+    replacement, then create the new composed endpoint/mesh PPA and exact
+    activity jobs. Only those measurements can replace vectorless/scaled NoC
+    and endpoint energy in the Llama7B frontier. Simultaneous VC0/VC1 shared-
+    mesh arbitration remains explicit until the composed replay exercises it
+    under the exact five-phase producer schedule.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.
