@@ -27,11 +27,21 @@ from control_plane.services.l1_task_generator import (
     Layer1TaskGenerationError,
     _multivalue_cluster_binary_fsm_profile,
     _read_config_target,
+    _resolve_required_complete_ppa_rows,
     _synth_only_targets,
     _validate_requested_expected_outputs,
     _validate_replacement_sweep_isolation,
     generate_l1_sweep_task,
 )
+
+
+@pytest.mark.parametrize("value", [True, "three", "03", -1])
+def test_required_complete_ppa_rows_rejects_malformed_values(value: object) -> None:
+    with pytest.raises(
+        Layer1TaskGenerationError,
+        match="required_complete_ppa_rows must be a non-negative integer",
+    ):
+        _resolve_required_complete_ppa_rows({"required_complete_ppa_rows": value})
 
 
 def test_requested_expected_outputs_reject_noncanonical_sweep_root() -> None:
@@ -4470,6 +4480,46 @@ def test_generate_l1_sweep_task_supports_bare_noc_router_config() -> None:
                 "runs/designs/npu_blocks/noc_router_node5_bare/metrics.csv",
                 "runs/designs/npu_blocks/noc_router_node5_bare/timing_debug_report.md",
             ]
+
+
+def test_checked_in_bare_router_requires_all_three_complete_ppa_rows() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        source_root = Path(__file__).resolve().parents[3]
+        proposal_rel = "docs/proposals/prop_l1_segmented_xy_router_node5_bare_ppa_v1"
+        config_rel = "runs/designs/npu_blocks/noc_segmented_mesh_router_node5_bare/config.json"
+        sweep_rel = (
+            "runs/campaigns/noc/l1_segmented_xy_mesh_router/sweeps/"
+            "nangate45_node5_bare_v1.json"
+        )
+        shutil.copytree(source_root / proposal_rel, repo_root / proposal_rel)
+        _copy_fixture_file(src_repo_root=source_root, dst_repo_root=repo_root, rel_path=config_rel)
+        _copy_fixture_file(src_repo_root=source_root, dst_repo_root=repo_root, rel_path=sweep_rel)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                _make_l1_request(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_rel,
+                    config_paths=[config_rel],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    item_id="l1_segmented_xy_router_node5_bare_ppa_v1",
+                    proposal_id="prop_l1_segmented_xy_router_node5_bare_ppa_v1",
+                    proposal_path=f"{proposal_rel}/proposal.json",
+                    source_commit=source_commit,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            task = work_item.task_request.request_payload["task"]
+            assert task["metadata"]["required_complete_ppa_rows"] == 3
+            assert "exactly 3 distinct status=ok param_hash rows" in task["acceptance"][0]
 
 
 def test_generate_l1_sweep_task_supports_direct_noc_mesh_config() -> None:

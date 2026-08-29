@@ -7,6 +7,7 @@ import tempfile
 import subprocess
 import threading
 import time
+from types import SimpleNamespace
 from unittest import mock
 
 from sqlalchemy import create_engine
@@ -24,7 +25,13 @@ from control_plane.services.run_service import request_run_cancel
 from control_plane.services.worker_service import run_worker
 from control_plane.workers.command_runner import CommandResult
 from control_plane.workers.checkout import cleanup_checkout, prepare_checkout, _materialize_missing_submodules
-from control_plane.workers.executor import WorkerConfig, _classify_failure, _materialize_generated_inputs
+from control_plane.workers.executor import (
+    WorkerConfig,
+    _classify_failure,
+    _l1_metrics_acceptance,
+    _l1_required_complete_ppa_rows,
+    _materialize_generated_inputs,
+)
 
 
 def seed_ready_work_item(session: Session, *, item_id: str, repo_root: Path, failing: bool) -> WorkItem:
@@ -454,6 +461,127 @@ def test_l1_ppa_worker_rejects_ok_rows_without_complete_physical_metrics() -> No
                 f"{metrics_rel}: no status=ok row with complete PPA metrics "
                 "(critical_path_ns,die_area,total_power_mw; incomplete_param_hashes=blankppa)"
             ]
+
+
+def test_l1_ppa_worker_requires_distinct_complete_row_count() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        item_id = "item_l1_three_point_ppa"
+        metrics_rel = f"runs/campaigns/{item_id}/metrics.csv"
+        with Session(engine) as session:
+            seed_ready_work_item(session, item_id=item_id, repo_root=repo_root, failing=False)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.task_type = "l1_sweep"
+            work_item.layer = "layer1"
+            work_item.assigned_machine_key = "worker-1"
+            work_item.task_request.request_payload = {
+                "developer_loop": {"evaluation": {"mode": "ppa"}},
+                "task": {"metadata": {"required_complete_ppa_rows": 3}},
+            }
+            work_item.command_manifest = [
+                {
+                    "name": "write_partial_ppa_metrics",
+                    "run": (
+                        "python3 -c \"from pathlib import Path; "
+                        f"p=Path('{metrics_rel}'); "
+                        "p.parent.mkdir(parents=True, exist_ok=True); "
+                        "p.write_text('design,status,param_hash,critical_path_ns,die_area,total_power_mw\\n"
+                        "unit,ok,point1,1.0,100.0,1.0\\n"
+                        "unit,ok,point2,1.1,101.0,1.1\\n"
+                        "unit,ok,point2,1.1,101.0,1.1\\n', encoding='utf-8')\""
+                    ),
+                }
+            ]
+            work_item.expected_outputs = [metrics_rel]
+            session.commit()
+
+        session_factory = build_session_factory(engine)
+        results = run_worker(
+            session_factory,
+            config=WorkerConfig(
+                repo_root=str(repo_root),
+                machine_key="worker-1",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                capability_filter={"platform": "nangate45", "flow": "openroad"},
+                enforce_source_commit=False,
+                lease_seconds=60,
+                heartbeat_seconds=1,
+                max_retry_attempts=1,
+            ),
+            max_items=1,
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "failed"
+        with Session(engine) as session:
+            run = session.query(Run).filter_by(run_key=results[0].run_key).one()
+            assert run.result_payload["acceptance_errors"] == [
+                f"{metrics_rel}: expected exactly 3 distinct status=ok param_hash rows "
+                "with complete PPA metrics (found=2; param_hashes=point1,point2)"
+            ]
+
+
+def test_l1_ppa_exact_row_count_rejects_extra_complete_rows() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td)
+        metrics_rel = "runs/designs/unit/metrics.csv"
+        metrics_path = repo_root / metrics_rel
+        metrics_path.parent.mkdir(parents=True)
+        rows = "".join(
+            f"unit,ok,point{index},1.{index},10{index}.0,1.{index}\n"
+            for index in range(1, 5)
+        )
+        metrics_path.write_text(
+            "design,status,param_hash,critical_path_ns,die_area,total_power_mw\n" + rows,
+            encoding="utf-8",
+        )
+
+        result = _l1_metrics_acceptance(
+            repo_root=str(repo_root),
+            expected_outputs=[metrics_rel],
+            require_complete_ppa=True,
+            required_complete_ppa_rows=3,
+        )
+        accepted = _l1_metrics_acceptance(
+            repo_root=str(repo_root),
+            expected_outputs=[metrics_rel],
+            require_complete_ppa=True,
+            required_complete_ppa_rows=4,
+        )
+
+    assert result.errors == [
+        f"{metrics_rel}: expected exactly 3 distinct status=ok param_hash rows "
+        "with complete PPA metrics (found=4; param_hashes=point1,point2,point3,point4)"
+    ]
+    assert accepted.errors == []
+
+
+def test_l1_ppa_rejects_malformed_required_complete_row_metadata() -> None:
+    work_item = SimpleNamespace(
+        task_request=SimpleNamespace(
+            request_payload={
+                "task": {"metadata": {"required_complete_ppa_rows": "three"}}
+            }
+        )
+    )
+    required_rows = _l1_required_complete_ppa_rows(work_item)
+
+    result = _l1_metrics_acceptance(
+        repo_root=".",
+        expected_outputs=[],
+        require_complete_ppa=True,
+        required_complete_ppa_rows=required_rows,
+    )
+
+    assert required_rows == -1
+    assert result.errors == [
+        "task metadata required_complete_ppa_rows must be a non-negative integer"
+    ]
 
 
 def test_l1_measurement_only_accepts_mixed_ok_and_failed_metrics_as_boundary_evidence() -> None:

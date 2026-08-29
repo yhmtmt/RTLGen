@@ -445,6 +445,27 @@ def _resolve_requested_entry_int(
         return explicit
 
 
+def _resolve_required_complete_ppa_rows(entry: dict[str, Any] | None) -> int:
+    if not isinstance(entry, dict) or "required_complete_ppa_rows" not in entry:
+        return 0
+    raw_value = entry.get("required_complete_ppa_rows")
+    if isinstance(raw_value, bool):
+        raise Layer1TaskGenerationError(
+            "required_complete_ppa_rows must be a non-negative integer"
+        )
+    try:
+        value = int(raw_value)
+    except (TypeError, ValueError) as exc:
+        raise Layer1TaskGenerationError(
+            "required_complete_ppa_rows must be a non-negative integer"
+        ) from exc
+    if value < 0 or str(raw_value).strip() != str(value):
+        raise Layer1TaskGenerationError(
+            "required_complete_ppa_rows must be a non-negative integer"
+        )
+    return value
+
+
 def _retry_base(item_id: str) -> str:
     return item_id.rsplit("_r", 1)[0] if "_r" in item_id else item_id
 
@@ -2940,6 +2961,7 @@ def _build_payload(
     requires_materialized_refs: bool,
     trial_policy: dict[str, int],
     acceptance_notes: str | None,
+    required_complete_ppa_rows: int,
 ) -> dict[str, Any]:
     acceptance_notes_text = str(acceptance_notes or "").strip()
     boundary_acceptance = (
@@ -2953,6 +2975,11 @@ def _build_payload(
         if boundary_acceptance
         else "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep"
     )
+    if required_complete_ppa_rows > 0:
+        metrics_acceptance = (
+            "Each generated wrapper metrics.csv contains exactly "
+            f"{required_complete_ppa_rows} distinct status=ok param_hash rows with complete finite PPA metrics"
+        )
 
     payload = {
         "version": 0.1,
@@ -2994,7 +3021,10 @@ def _build_payload(
                 "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
                 "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass",
             ],
-            "metadata": {"acceptance_notes": acceptance_notes_text},
+            "metadata": {
+                "acceptance_notes": acceptance_notes_text,
+                "required_complete_ppa_rows": required_complete_ppa_rows,
+            },
         },
         "handoff": {
             "branch": f"eval/{item_id}/<session_id>",
@@ -3053,7 +3083,7 @@ def _build_payload(
                 "requires_merged_inputs": requires_merged_inputs,
                 "requires_materialized_refs": requires_materialized_refs,
             }
-    if not acceptance_notes_text:
+    if not acceptance_notes_text and required_complete_ppa_rows <= 0:
         payload["task"].pop("metadata", None)
     return payload
 
@@ -3140,6 +3170,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         explicit=request.priority,
         default=1,
     )
+    required_complete_ppa_rows = _resolve_required_complete_ppa_rows(requested_entry)
     _validate_architecture_block_sweep_policy(
         sweep_path=(repo_root / sweep_path).resolve(),
         abstraction_layer=effective_abstraction_layer,
@@ -3309,6 +3340,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         requires_materialized_refs=effective_requires_materialized_refs,
         trial_policy=trial_policy,
         acceptance_notes=request.acceptance_notes,
+        required_complete_ppa_rows=required_complete_ppa_rows,
     )
     payload["source_requirement"] = build_source_requirement(
         repo_root=repo_root,
