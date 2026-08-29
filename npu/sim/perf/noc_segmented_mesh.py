@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from typing import Iterable, Iterator
+from typing import Callable, Iterable, Iterator
 
 MESH_X = 4
 MESH_Y = 4
@@ -222,6 +222,9 @@ class MeshSimulationResult:
     router_summaries: tuple[RouterSimulationResult, ...]
     endpoint_injected_flit_count: int
     endpoint_input_stall_cycles: tuple[int, ...]
+    max_endpoint_input_occupancy: int = 0
+    max_endpoint_vc_occupancy: tuple[int, ...] = ()
+    mesh_contention_cycles: int = 0
 
 
 @dataclass
@@ -642,15 +645,27 @@ def simulate_scheduled_flits(
     scheduled_flits: Iterable[ScheduledFlit],
     *,
     endpoint_out_ready_schedule: list[list[bool]] | None = None,
+    endpoint_out_ready: Callable[[int, int, ModelFlit | None], bool] | None = None,
+    endpoint_injection_policy: str = "fifo",
     fifo_depth: int = DEFAULT_FIFO_DEPTH,
     vc_count: int = VIRTUAL_CHANNELS,
     max_cycles: int = 100000,
     fast_forward_idle: bool = False,
     capture_router_replay_nodes: Iterable[int] | None = None,
+    record_mesh_trace: bool = True,
+    record_link_transfers: bool = True,
 ) -> MeshSimulationResult:
+    if endpoint_injection_policy not in ("fifo", "vc_round_robin"):
+        raise ValueError("endpoint_injection_policy must be fifo or vc_round_robin")
+    if endpoint_out_ready_schedule is not None and endpoint_out_ready is not None:
+        raise ValueError(
+            "endpoint_out_ready_schedule and endpoint_out_ready are mutually exclusive"
+        )
     replay_nodes = set(capture_router_replay_nodes or ())
     if any(not 0 <= node < ENDPOINTS for node in replay_nodes):
         raise ValueError(f"capture_router_replay_nodes entries must be in [0, {ENDPOINTS - 1}]")
+    if replay_nodes and not record_mesh_trace:
+        raise ValueError("router replay capture requires record_mesh_trace=True")
     ordered = sorted(
         scheduled_flits,
         key=lambda item: (
@@ -662,6 +677,11 @@ def simulate_scheduled_flits(
         ),
     )
     release_queues: list[deque[ScheduledFlit]] = [deque() for _ in range(ENDPOINTS)]
+    vc_release_queues: list[list[deque[ScheduledFlit]]] = [
+        [deque() for _ in range(vc_count)] for _ in range(ENDPOINTS)
+    ]
+    fifo_vc_occupancies = [[0] * vc_count for _ in range(ENDPOINTS)]
+    endpoint_vc_rr = [0] * ENDPOINTS
     future = deque(ordered)
     states = [
         _RouterState(
@@ -679,6 +699,29 @@ def simulate_scheduled_flits(
     cycle_traces: list[MeshCycleTrace] = []
     endpoint_input_stall_cycles = [0] * ENDPOINTS
     endpoint_injected_flit_count = 0
+    max_endpoint_input_occupancy = 0
+    max_endpoint_vc_occupancy = [0] * vc_count
+    mesh_contention_cycles = 0
+
+    def queues_empty() -> bool:
+        if endpoint_injection_policy == "fifo":
+            return all(not queue for queue in release_queues)
+        return all(
+            not queue
+            for endpoint_queues in vc_release_queues
+            for queue in endpoint_queues
+        )
+
+    def selected_local_queue(node: int) -> tuple[deque[ScheduledFlit] | None, int | None]:
+        if endpoint_injection_policy == "fifo":
+            queue = release_queues[node]
+            return (queue if queue else None), None
+        queues = vc_release_queues[node]
+        for offset in range(vc_count):
+            vc = (endpoint_vc_rr[node] + offset) % vc_count
+            if queues[vc]:
+                return queues[vc], vc
+        return None, None
 
     cycle = 0
     while cycle < max_cycles:
@@ -686,19 +729,63 @@ def simulate_scheduled_flits(
             fast_forward_idle
             and future
             and future[0].release_cycle > cycle
-            and all(not queue for queue in release_queues)
+            and queues_empty()
             and all(state.idle() for state in states)
         ):
             cycle = future[0].release_cycle
 
         while future and future[0].release_cycle <= cycle:
             released = future.popleft()
-            release_queues[released.flit.source].append(released)
+            if not 0 <= released.flit.vc < vc_count:
+                raise ValueError(
+                    f"scheduled flit VC {released.flit.vc} is outside configured vc_count={vc_count}"
+                )
+            if endpoint_injection_policy == "fifo":
+                release_queues[released.flit.source].append(released)
+                fifo_vc_occupancies[released.flit.source][released.flit.vc] += 1
+            else:
+                vc_release_queues[released.flit.source][released.flit.vc].append(
+                    released
+                )
+
+        if endpoint_injection_policy == "fifo":
+            occupancies = [len(queue) for queue in release_queues]
+            max_endpoint_input_occupancy = max(
+                max_endpoint_input_occupancy, max(occupancies, default=0)
+            )
+            for vc in range(vc_count):
+                max_endpoint_vc_occupancy[vc] = max(
+                    max_endpoint_vc_occupancy[vc],
+                    max(
+                        (row[vc] for row in fifo_vc_occupancies),
+                        default=0,
+                    ),
+                )
+        else:
+            occupancies = [
+                sum(len(queue) for queue in endpoint_queues)
+                for endpoint_queues in vc_release_queues
+            ]
+            max_endpoint_input_occupancy = max(
+                max_endpoint_input_occupancy, max(occupancies, default=0)
+            )
+            for vc in range(vc_count):
+                max_endpoint_vc_occupancy[vc] = max(
+                    max_endpoint_vc_occupancy[vc],
+                    max(
+                        (len(endpoint_queues[vc]) for endpoint_queues in vc_release_queues),
+                        default=0,
+                    ),
+                )
 
         router_inputs: list[list[RouterCycleInput]] = []
+        selected_local_queues: list[deque[ScheduledFlit] | None] = []
+        selected_local_vcs: list[int | None] = []
         for node in range(ENDPOINTS):
             inputs = [RouterCycleInput(False, None) for _ in range(PORTS)]
-            local_queue = release_queues[node]
+            local_queue, selected_vc = selected_local_queue(node)
+            selected_local_queues.append(local_queue)
+            selected_local_vcs.append(selected_vc)
             if local_queue:
                 inputs[PORT_LOCAL] = RouterCycleInput(True, local_queue[0].flit)
             for port in (PORT_NORTH, PORT_SOUTH, PORT_EAST, PORT_WEST):
@@ -711,10 +798,24 @@ def simulate_scheduled_flits(
                     inputs[port] = RouterCycleInput(True, flit)
             router_inputs.append(inputs)
 
-        endpoint_out_ready = _resolve_endpoint_out_ready(endpoint_out_ready_schedule, cycle)
+        if endpoint_out_ready is None:
+            resolved_endpoint_out_ready = _resolve_endpoint_out_ready(
+                endpoint_out_ready_schedule, cycle
+            )
+        else:
+            resolved_endpoint_out_ready = [
+                bool(
+                    endpoint_out_ready(
+                        cycle,
+                        node,
+                        states[node].out_holding[PORT_LOCAL],
+                    )
+                )
+                for node in range(ENDPOINTS)
+            ]
         out_ready = [[False] * PORTS for _ in range(ENDPOINTS)]
         for node in range(ENDPOINTS):
-            out_ready[node][PORT_LOCAL] = endpoint_out_ready[node]
+            out_ready[node][PORT_LOCAL] = resolved_endpoint_out_ready[node]
 
         # Input credit is a function of registered FIFO occupancy only. First
         # sample those credits, then calculate link readiness and the final
@@ -724,7 +825,7 @@ def simulate_scheduled_flits(
             for node in range(ENDPOINTS)
         ]
         for node in range(ENDPOINTS):
-            out_ready[node][PORT_LOCAL] = endpoint_out_ready[node]
+            out_ready[node][PORT_LOCAL] = resolved_endpoint_out_ready[node]
             for port in (PORT_NORTH, PORT_SOUTH, PORT_EAST, PORT_WEST):
                 neighbor = _neighbor(node, port)
                 if neighbor is None:
@@ -752,15 +853,26 @@ def simulate_scheduled_flits(
                 capture_replay_signals=node in replay_nodes,
             )
             cycle_router_traces.append(trace)
-            router_traces[node].append(trace)
-            router_forwarded[node].extend(trace.forwarded)
-            local_queue = release_queues[node]
+            if record_mesh_trace:
+                router_traces[node].append(trace)
+                router_forwarded[node].extend(trace.forwarded)
+            local_queue = selected_local_queues[node]
             if local_queue and trace.ready[PORT_LOCAL]:
-                cycle_injected.append((node, local_queue.popleft().flit))
+                injected = local_queue.popleft().flit
+                cycle_injected.append((node, injected))
                 endpoint_injected_flit_count += 1
+                selected_vc = selected_local_vcs[node]
+                if selected_vc is not None:
+                    endpoint_vc_rr[node] = (selected_vc + 1) % vc_count
+                else:
+                    fifo_vc_occupancies[node][injected.vc] -= 1
                 cycle_endpoint_stall.append(0)
             else:
-                stalled = 1 if local_queue else 0
+                if endpoint_injection_policy == "fifo":
+                    has_queued = bool(release_queues[node])
+                else:
+                    has_queued = any(vc_release_queues[node])
+                stalled = 1 if has_queued else 0
                 cycle_endpoint_stall.append(stalled)
                 endpoint_input_stall_cycles[node] += stalled
             for port, flit in trace.forwarded:
@@ -781,23 +893,29 @@ def simulate_scheduled_flits(
                     destination_port=destination_port,
                     flit=flit,
                 )
-                link_transfers.append(transfer)
-                cycle_links.append(transfer)
+                if record_link_transfers:
+                    link_transfers.append(transfer)
+                    cycle_links.append(transfer)
 
-        cycle_traces.append(
-            MeshCycleTrace(
-                cycle=cycle,
-                router_traces=tuple(cycle_router_traces),
-                injected=tuple(cycle_injected),
-                deliveries=tuple(cycle_deliveries),
-                link_transfers=tuple(cycle_links),
-                endpoint_in_ready=tuple(trace.ready[PORT_LOCAL] for trace in cycle_router_traces),
-                endpoint_out_ready=tuple(endpoint_out_ready),
-                endpoint_input_stall=tuple(cycle_endpoint_stall),
+        if any(trace.contention for trace in cycle_router_traces):
+            mesh_contention_cycles += 1
+        if record_mesh_trace:
+            cycle_traces.append(
+                MeshCycleTrace(
+                    cycle=cycle,
+                    router_traces=tuple(cycle_router_traces),
+                    injected=tuple(cycle_injected),
+                    deliveries=tuple(cycle_deliveries),
+                    link_transfers=tuple(cycle_links),
+                    endpoint_in_ready=tuple(
+                        trace.ready[PORT_LOCAL] for trace in cycle_router_traces
+                    ),
+                    endpoint_out_ready=tuple(resolved_endpoint_out_ready),
+                    endpoint_input_stall=tuple(cycle_endpoint_stall),
+                )
             )
-        )
 
-        if not future and all(not queue for queue in release_queues) and all(state.idle() for state in states):
+        if not future and queues_empty() and all(state.idle() for state in states):
             return MeshSimulationResult(
                 cycles=cycle + 1,
                 traces=tuple(cycle_traces),
@@ -809,6 +927,9 @@ def simulate_scheduled_flits(
                 ),
                 endpoint_injected_flit_count=endpoint_injected_flit_count,
                 endpoint_input_stall_cycles=tuple(endpoint_input_stall_cycles),
+                max_endpoint_input_occupancy=max_endpoint_input_occupancy,
+                max_endpoint_vc_occupancy=tuple(max_endpoint_vc_occupancy),
+                mesh_contention_cycles=mesh_contention_cycles,
             )
 
         cycle += 1

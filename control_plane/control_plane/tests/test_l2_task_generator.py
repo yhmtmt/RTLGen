@@ -14780,6 +14780,76 @@ def test_generate_l2_campaign_task_adds_score32_phase2_exact_transport_revision(
             )
 
 
+def test_generate_l2_campaign_task_adds_score32_mixed_vc_arbitration_envelope() -> None:
+    item_id = "l2_decoder_attention_score32_noc_mixed_vc_arbitration_envelope_llama7b_v1"
+    proposal_id = "prop_l2_decoder_attention_score32_noc_mixed_vc_arbitration_envelope_v1"
+    dependencies = [
+        "l2_decoder_attention_score32_noc_phase2_exact_transport_revision_llama7b_v1",
+        (
+            "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_"
+            "rotation_equivalence_llama7b_v1_r3"
+        ),
+    ]
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                _make_l2_request(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id=item_id,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id=proposal_id,
+                    proposal_path=f"docs/proposals/{proposal_id}/proposal.json",
+                    abstraction_layer=(
+                        "decoder_attention_score32_noc_mixed_vc_arbitration_envelope"
+                    ),
+                    evaluation_mode="frontier_detail",
+                    depends_on_item_ids=dependencies,
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run = work_item.command_manifest[0]["run"]
+            assert work_item.state == WorkItemState.BLOCKED
+            assert "mixed_vc_arbitration_envelope.py" in run
+            assert "--overlap-fractions 0,0.25,0.5,0.75,1" in run
+            assert "--policies vc_round_robin,fifo" in run
+            assert "--runtime-max-sec 1200" in run
+            assert work_item.input_manifest["worker_resources"] == {
+                "exclusive_worker": True,
+                "memory_high": "2G",
+                "memory_max": "3G",
+                "cpu_quota": "100%",
+                "tasks_max": 64,
+                "outer_timeout_seconds": 1500,
+                "stall_timeout_seconds": 600,
+            }
+            contract = work_item.input_manifest["decoder_contract"][
+                "attention_score32_noc_mixed_vc_arbitration_contract"
+            ]
+            assert contract["total_flits"] == 70948
+            assert contract["endpoint_injection_policies"] == [
+                "vc_round_robin",
+                "fifo",
+            ]
+            assert any(
+                "reject overlap promotion" in str(rule)
+                for rule in work_item.acceptance_rules
+            )
+
+
 def test_generate_l2_campaign_task_rejects_noncanonical_score32_noc_phase2_item() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
