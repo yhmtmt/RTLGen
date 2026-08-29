@@ -41,16 +41,30 @@ def test_analyzer_does_not_promote_buffer_hungry_overlap(monkeypatch) -> None:
         base = positioned[1].offset_cycles
         feasible = base == 100
         mesh = SimpleNamespace(
-            cycles=180 if feasible else 150,
+            cycles=195 if feasible else 150,
             endpoint_input_stall_cycles=(0,) * 16,
+        )
+        drains = {
+            row.phase.name: row.phase.mesh_result.cycles for row in positioned
+        }
+        isolated_bound = max(
+            row.offset_cycles + drains[row.phase.name] for row in positioned
         )
         return SimpleNamespace(
             mesh=mesh,
             phase_offsets=tuple(
                 (row.phase.name, row.offset_cycles) for row in positioned
             ),
-            isolated_router_completion_cycle=170,
-            router_completion_delta_cycles=mesh.cycles - 170,
+            last_delivery_cycle_by_phase=tuple(
+                (
+                    row.phase.name,
+                    row.offset_cycles + drains[row.phase.name] - 1,
+                )
+                for row in positioned
+            ),
+            isolated_router_drain_cycles_by_phase=tuple(drains.items()),
+            isolated_router_drain_bound_cycles=isolated_bound,
+            router_completion_delta_cycles=mesh.cycles - isolated_bound,
             mesh_contention_cycles=10,
             router_contention_cycles_total=20,
             max_router_input_occupancy=4,
@@ -86,6 +100,13 @@ def test_analyzer_does_not_promote_buffer_hungry_overlap(monkeypatch) -> None:
     )
     assert report["summary"]["promotable_overlap_case_id"] is None
     assert report["source_contract"]["total_flits"] == 70_948
+    nonoverlap = next(
+        row
+        for row in report["rows"]
+        if row["reduction_base_fraction_of_vc0_service"] == 1.0
+    )
+    assert nonoverlap["router_completion_delta_cycles"] == 0
+    assert nonoverlap["transport_completion_bound_cycles"] == 200
 
 
 def test_analyzer_rejects_wrong_exact_phase_cardinality() -> None:

@@ -91,6 +91,7 @@ def test_mixed_router_replay_applies_phase_offset() -> None:
     }
     assert delivery_cycles["second"] >= 20
     assert result.phase_offsets == (("first", 0), ("second", 20))
+    assert result.router_completion_delta_cycles == 0
 
 
 def test_mixed_router_replay_rejects_duplicate_phase_names() -> None:

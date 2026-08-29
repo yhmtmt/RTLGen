@@ -52,7 +52,9 @@ class MixedVcRouterReplay:
     phase_flit_counts: tuple[tuple[str, int], ...]
     delivered_flits_by_phase: tuple[tuple[str, int], ...]
     delivered_flits_by_vc: tuple[tuple[int, int], ...]
-    isolated_router_completion_cycle: int
+    last_delivery_cycle_by_phase: tuple[tuple[str, int], ...]
+    isolated_router_drain_cycles_by_phase: tuple[tuple[str, int], ...]
+    isolated_router_drain_bound_cycles: int
     router_completion_delta_cycles: int
     mesh_contention_cycles: int
     router_contention_cycles_total: int
@@ -118,6 +120,22 @@ def _endpoint_ready(_cycle: int, endpoint: int, flit: ModelFlit | None) -> bool:
     return ((_cycle + endpoint) & 0xF) != 0
 
 
+def _isolated_router_drain_cycles(phase: RouterPhase) -> int:
+    deliveries = [
+        delivery
+        for trace in phase.mesh_result.traces
+        for delivery in trace.deliveries
+    ]
+    if len(deliveries) != phase.flit_count:
+        raise ValueError(
+            f"phase {phase.name} recorded {len(deliveries)} isolated deliveries; "
+            f"expected {phase.flit_count}"
+        )
+    if not deliveries:
+        raise ValueError(f"phase {phase.name} has no isolated router deliveries")
+    return max(delivery.cycle for delivery in deliveries) + 1
+
+
 def simulate_mixed_vc_router_replay(
     phases: Iterable[PositionedRouterPhase],
     *,
@@ -148,10 +166,14 @@ def simulate_mixed_vc_router_replay(
 
     delivered_by_phase: Counter[str] = Counter()
     delivered_by_vc: Counter[int] = Counter()
+    last_delivery_by_phase: dict[str, int] = {}
     for delivery in mesh.deliveries:
         phase_name = delivery.flit.label.split("::", 1)[0]
         delivered_by_phase[phase_name] += 1
         delivered_by_vc[delivery.flit.vc] += 1
+        last_delivery_by_phase[phase_name] = max(
+            last_delivery_by_phase.get(phase_name, -1), delivery.cycle
+        )
 
     expected_by_phase = {row.phase.name: row.phase.flit_count for row in positioned}
     if dict(delivered_by_phase) != expected_by_phase:
@@ -162,8 +184,12 @@ def simulate_mixed_vc_router_replay(
     if mesh.endpoint_injected_flit_count != len(scheduled):
         raise ValueError("shared-router replay did not inject every exact phase flit")
 
-    isolated_completion = max(
-        row.offset_cycles + row.phase.mesh_result.cycles for row in positioned
+    isolated_drains = {
+        row.phase.name: _isolated_router_drain_cycles(row.phase)
+        for row in positioned
+    }
+    isolated_drain_bound = max(
+        row.offset_cycles + isolated_drains[row.phase.name] for row in positioned
     )
     return MixedVcRouterReplay(
         mesh=mesh,
@@ -172,8 +198,10 @@ def simulate_mixed_vc_router_replay(
         phase_flit_counts=tuple((row.phase.name, row.phase.flit_count) for row in positioned),
         delivered_flits_by_phase=tuple(sorted(delivered_by_phase.items())),
         delivered_flits_by_vc=tuple(sorted(delivered_by_vc.items())),
-        isolated_router_completion_cycle=isolated_completion,
-        router_completion_delta_cycles=mesh.cycles - isolated_completion,
+        last_delivery_cycle_by_phase=tuple(sorted(last_delivery_by_phase.items())),
+        isolated_router_drain_cycles_by_phase=tuple(sorted(isolated_drains.items())),
+        isolated_router_drain_bound_cycles=isolated_drain_bound,
+        router_completion_delta_cycles=mesh.cycles - isolated_drain_bound,
         mesh_contention_cycles=mesh.mesh_contention_cycles,
         router_contention_cycles_total=sum(
             row.arbitration_contention_cycles for row in mesh.router_summaries

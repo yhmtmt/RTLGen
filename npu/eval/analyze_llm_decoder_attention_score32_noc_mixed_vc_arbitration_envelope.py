@@ -150,9 +150,6 @@ def analyze(
     shared_service = _service_cycles(shared)
     reduction_service = sum(_service_cycles(phase) for phase in reductions)
     total_flits = sum(phase.flit_count for phase in phase_rows)
-    reduction_tail = max(
-        _service_cycles(phase) - phase.mesh_result.cycles for phase in reductions
-    )
     rows: list[JsonDict] = []
     for policy in policy_rows:
         for fraction in fractions:
@@ -167,6 +164,19 @@ def analyze(
                 endpoint_injection_policy=policy,
                 max_cycles=max_cycles,
             )
+            isolated_drains = dict(replay.isolated_router_drain_cycles_by_phase)
+            phase_tails = {
+                row.phase.name: _service_cycles(row.phase)
+                - isolated_drains[row.phase.name]
+                for row in positioned
+            }
+            if any(value < 0 for value in phase_tails.values()):
+                raise ValueError("phase service ends before its isolated router drain")
+            last_deliveries = dict(replay.last_delivery_cycle_by_phase)
+            transport_completion_bound = max(
+                last_deliveries[name] + 1 + phase_tails[name]
+                for name in last_deliveries
+            )
             rows.append(
                 {
                     "case_id": f"{policy}_offset_{fraction:.2f}",
@@ -175,8 +185,11 @@ def analyze(
                     "reduction_base_cycle": reduction_base,
                     "phase_offsets": dict(replay.phase_offsets),
                     "router_drain_cycles": replay.mesh.cycles,
-                    "transport_completion_bound_cycles": replay.mesh.cycles + reduction_tail,
-                    "isolated_router_completion_cycle": replay.isolated_router_completion_cycle,
+                    "transport_completion_bound_cycles": transport_completion_bound,
+                    "isolated_router_drain_bound_cycles": replay.isolated_router_drain_bound_cycles,
+                    "isolated_router_drain_cycles_by_phase": isolated_drains,
+                    "endpoint_tail_cycles_by_phase": phase_tails,
+                    "last_delivery_cycle_by_phase": last_deliveries,
                     "router_completion_delta_cycles": replay.router_completion_delta_cycles,
                     "mesh_contention_cycles": replay.mesh_contention_cycles,
                     "router_contention_cycles_total": replay.router_contention_cycles_total,
@@ -216,6 +229,8 @@ def analyze(
         if directly_realizable_overlap
         else "shared_mesh_overlap_requires_backpressure_coupled_endpoint_replay"
     )
+    canonical_drains = rows[0]["isolated_router_drain_cycles_by_phase"]
+    canonical_tails = rows[0]["endpoint_tail_cycles_by_phase"]
     return {
         "version": 1,
         "model": "llama7b_score32_exact_mixed_vc_router_arbitration_envelope",
@@ -241,12 +256,13 @@ def analyze(
             ),
             "single_mesh_nonoverlap_completion_cycles": shared_service
             + reduction_service,
-            "reduction_replay_tail_cycles": reduction_tail,
             "phases": [
                 {
                     "name": phase.name,
                     "group": phase.group,
-                    "router_cycles": phase.mesh_result.cycles,
+                    "phase_lifecycle_cycles": phase.mesh_result.cycles,
+                    "isolated_router_drain_cycles": canonical_drains[phase.name],
+                    "endpoint_tail_cycles": canonical_tails[phase.name],
                     "service_cycles": _service_cycles(phase),
                     "flit_count": phase.flit_count,
                 }
