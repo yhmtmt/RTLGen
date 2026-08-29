@@ -219,6 +219,16 @@ Do not feed a diagnostic timing outlier into aggregate composition or an
 architecture ranking merely because the flow completed and the row meets its
 declared clock.
 
+Every generated Layer-1 `l1_memory_noc_primitive` PPA task must run
+`extract_openroad_timing_summary.py` after the sweep and retain the resulting
+`timing_debug_report.md` as an expected portable artifact. A scalar
+`critical_path_ns` without the corresponding startpoint, endpoint, path group,
+path type, arrival, required time, and slack evidence is insufficient for first
+promotion of an endpoint, router, FIFO, scheduler, or composed NoC macro anchor.
+If an older successful run omitted this artifact, recover it from the retained
+ORFS reports or issue an artifact-isolated replacement run; do not infer path
+identity from the scalar delay.
+
 ## Revision Dependency Rule
 
 When an evaluation item is superseded, downstream `depends_on_item_ids` must
