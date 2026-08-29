@@ -91,6 +91,8 @@ Path Type: max
     assert "raw_path_block_count: 2" in report
     assert "unique_path_block_count: 2" in report
     assert "preferred_stage: `route`" in report
+    assert "Per-Metrics-Row Preferred Timing Paths" in report
+    assert "### `abcd1234`" in report
     assert "stream_buf_reg[0]" in report
     assert "softmax_unit/sum_reg[7]" in report
     assert "-3.8349" in report
@@ -250,3 +252,68 @@ Path Type: max
     assert str(timing_report) in report
     assert "source_reg[0]" in report
     assert "sink_reg[0]" in report
+
+
+def test_required_complete_path_must_be_in_retained_slice(tmp_path: Path) -> None:
+    design_dir = tmp_path / "runs" / "designs" / "noc" / "endpoint"
+    report_dir = tmp_path / "orfs" / "reports" / "endpoint"
+    design_dir.mkdir(parents=True)
+    report_dir.mkdir(parents=True)
+    path_blocks = []
+    for index in range(9):
+        path_type = "Path Type: max\n" if index == 8 else ""
+        path_blocks.append(
+            f"""Startpoint: source_reg[{index}] (rising edge-triggered flip-flop clocked by clk)
+Endpoint: sink_reg[{index}] (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+{path_type}
+  data arrival time               {1.0 + index / 10.0:.1f}
+  data required time              2.0
+  slack (MET)                     {index / 10.0:.1f}
+"""
+        )
+    timing_report = report_dir / "6_finish_check.rpt"
+    timing_report.write_text("\n".join(path_blocks), encoding="utf-8")
+    with (design_dir / "metrics.csv").open(
+        "w", encoding="utf-8", newline=""
+    ) as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=[
+                "param_hash",
+                "tag",
+                "status",
+                "critical_path_ns",
+                "result_path",
+            ],
+        )
+        writer.writeheader()
+        writer.writerow(
+            {
+                "param_hash": "slicecheck",
+                "tag": "endpoint",
+                "status": "ok",
+                "critical_path_ns": "1.0",
+                "result_path": str(timing_report),
+            }
+        )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "npu/eval/extract_openroad_timing_summary.py",
+            "--design-dir",
+            str(design_dir),
+            "--out",
+            str(design_dir / "timing_debug_report.md"),
+            "--max-paths",
+            "8",
+            "--require-complete-path",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "slicecheck" in result.stderr

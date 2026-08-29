@@ -373,6 +373,7 @@ def build_report(
     inspected: list[Path] = []
     summary_by_file: dict[str, list[str]] = {}
     incomplete_path_rows: list[str] = []
+    preferred_paths_by_row: list[tuple[str, str | None, list[TimingPath]]] = []
     for row in rows:
         density = ""
         params_text = str(row.get("params_json", "")).strip()
@@ -408,15 +409,20 @@ def build_report(
                 summary = _summary_lines(candidate, max_bytes=max_bytes)
                 if summary:
                     summary_by_file[str(candidate)] = summary
-        _, preferred_row_paths = _preferred_stage_paths(
+        preferred_row_stage, preferred_row_paths = _preferred_stage_paths(
             _dedupe_timing_paths(row_paths)
         )
+        row_identity = str(
+            row.get("param_hash") or row.get("tag") or "<unidentified>"
+        )
+        preferred_paths_by_row.append(
+            (row_identity, preferred_row_stage, preferred_row_paths)
+        )
         if require_complete_path and not any(
-            _is_complete_timing_path(path) for path in preferred_row_paths
+            _is_complete_timing_path(path)
+            for path in preferred_row_paths[:max_paths]
         ):
-            incomplete_path_rows.append(
-                str(row.get("param_hash") or row.get("tag") or "<unidentified>")
-            )
+            incomplete_path_rows.append(row_identity)
 
     if incomplete_path_rows:
         raise ValueError(
@@ -440,6 +446,22 @@ def build_report(
             lines.append(f"- `{path}`")
     else:
         lines.append("- none")
+
+    lines.extend(["", "## Per-Metrics-Row Preferred Timing Paths", ""])
+    for row_identity, row_stage, row_paths in preferred_paths_by_row:
+        lines.extend(
+            [
+                f"### `{row_identity}`",
+                "",
+                f"- preferred_stage: `{row_stage or ''}`",
+                f"- preferred_path_count: {len(row_paths)}",
+                "",
+            ]
+        )
+        if row_paths:
+            _append_timing_path_section(lines, row_paths, max_paths=max_paths)
+        else:
+            lines.extend(["No timing paths found for this metrics row.", ""])
 
     lines.extend(
         [
