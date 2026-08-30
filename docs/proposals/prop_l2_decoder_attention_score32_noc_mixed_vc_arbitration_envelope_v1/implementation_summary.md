@@ -20,3 +20,11 @@
 - Retained internal transport as the default compatibility mode, with exactly
   one endpoint array and one private mesh for VC0 and exactly one private mesh
   for VC1.
+- Added a shared dual-producer transport containing sixteen held-grant
+  endpoint arbiters, exactly one segmented mesh, a VC0/VC1 ejection demux, and
+  fail-closed sticky errors for invalid injection or ejection VC identities.
+- Forwarded the external transport boundary through the complete VC0
+  admission service and composed that service with the complete VC1 reducer,
+  packet adapters, root storage, decoder, and final tree on the shared fabric.
+- Exposed the shared router accounting vectors to the exact reducer accounting
+  path and made the VC1 TX-only ejection readiness deterministic.

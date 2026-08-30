@@ -26,7 +26,15 @@ packet endpoints remain embodied on the VC0 side; the exact packet bridges,
 encoders, adapters, and shared-root composition remain embodied on the VC1
 side.
 
-The remaining transport abstraction is the composition above these boundaries:
-sixteen held-grant VC arbiters, one shared mesh, and a VC-aware ejection demux.
-That shared top must prove simultaneous backpressure-coupled execution before
-its physical cost or overlap replaces the measured dual-network baseline.
+The composition above these boundaries is now embodied as one top containing
+the complete VC0 admission/service hierarchy, the complete VC1 exact
+stats-once reducer hierarchy, sixteen held-grant VC arbiters, one shared mesh,
+and a VC-aware ejection demux. Both producer-private meshes are disabled, and
+the shared mesh's accounting vectors feed the reducer's existing transport
+counter contract.
+
+The remaining transport evidence is dynamic and physical rather than
+structural: simultaneous backpressure-coupled execution must first pass a
+bounded overlap proof, then the full 60,928-flit VC0 plus 10,020-flit VC1
+workload. A registered activity boundary must physically measure the composed
+top before its cost or overlap replaces the measured dual-network baseline.
