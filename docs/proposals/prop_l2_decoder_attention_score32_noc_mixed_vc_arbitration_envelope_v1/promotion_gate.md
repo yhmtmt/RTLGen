@@ -16,5 +16,10 @@ cycle model's arbitration decisions. The resulting shared top must be
 physically measured before its area, energy, or timing replaces a measured
 dual-network component.
 
-A bounded simultaneous replay is an integration gate only. It cannot replace
-the full 70,948-flit replay or establish the Llama7B frontier point.
+The bounded simultaneous replay remains an integration gate only. The actual
+composed top has now also passed the full 70,948-flit replay, so exact workload
+integrity and simultaneous backpressure behavior are satisfied. Functional
+promotion remains blocked until the full arbitration trace is compared
+decision-by-decision with the cycle model. The point also cannot establish or
+replace the Llama7B frontier until its composed hierarchy has measured timing,
+area, and power evidence.
