@@ -1,5 +1,7 @@
 `timescale 1ns/1ps
 
+`include "npu/sim/rtl/noc_sram_packet_endpoint_array16.sv"
+
 // Exact composition boundary for sixteen SRAM packet endpoints and the
 // deterministic-XY 4x4 segmented mesh. SRAM arrays and descriptor scheduling
 // remain outside this module, but every transfer between them is explicit.
@@ -87,75 +89,69 @@ module noc_sram_packet_mesh4x4 #(
   wire [NODES*VC_W-1:0] mesh_out_vc;
   wire [NODES*DATA_W-1:0] mesh_out_data;
 
-  genvar node_g;
-  generate
-    for (node_g = 0; node_g < NODES; node_g = node_g + 1) begin : gen_endpoints
-      noc_sram_packet_endpoint #(
-        .DATA_W(DATA_W),
-        .ENDPOINT_W(ENDPOINT_W),
-        .VC_W(VC_W),
-        .TAG_W(TAG_W),
-        .FRAGMENT_W(FRAGMENT_W),
-        .ADDR_W(ADDR_W),
-        .FLIT_COUNT_W(FLIT_COUNT_W),
-        .TX_DESC_DEPTH(TX_DESC_DEPTH),
-        .TX_OUTSTANDING(TX_OUTSTANDING),
-        .RX_CONTEXTS(RX_CONTEXTS),
-        .LOCAL_ENDPOINT_ID(node_g)
-      ) endpoint (
-        .clk(clk),
-        .rst_n(rst_n),
-        .tx_desc_valid(tx_desc_valid[node_g]),
-        .tx_desc_ready(tx_desc_ready[node_g]),
-        .tx_desc_destination(tx_desc_destination[(node_g*ENDPOINT_W) +: ENDPOINT_W]),
-        .tx_desc_vc(tx_desc_vc[(node_g*VC_W) +: VC_W]),
-        .tx_desc_tag(tx_desc_tag[(node_g*TAG_W) +: TAG_W]),
-        .tx_desc_base_addr(tx_desc_base_addr[(node_g*ADDR_W) +: ADDR_W]),
-        .tx_desc_flit_count(tx_desc_flit_count[(node_g*FLIT_COUNT_W) +: FLIT_COUNT_W]),
-        .tx_mem_req_valid(tx_mem_req_valid[node_g]),
-        .tx_mem_req_ready(tx_mem_req_ready[node_g]),
-        .tx_mem_req_addr(tx_mem_req_addr[(node_g*ADDR_W) +: ADDR_W]),
-        .tx_mem_rsp_valid(tx_mem_rsp_valid[node_g]),
-        .tx_mem_rsp_ready(tx_mem_rsp_ready[node_g]),
-        .tx_mem_rsp_data(tx_mem_rsp_data[(node_g*DATA_W) +: DATA_W]),
-        .tx_flit_valid(mesh_in_valid[node_g]),
-        .tx_flit_ready(mesh_in_ready[node_g]),
-        .tx_flit_source(mesh_in_source[(node_g*ENDPOINT_W) +: ENDPOINT_W]),
-        .tx_flit_destination(mesh_in_destination[(node_g*ENDPOINT_W) +: ENDPOINT_W]),
-        .tx_flit_vc(mesh_in_vc[(node_g*VC_W) +: VC_W]),
-        .tx_flit_tag(mesh_in_tag[(node_g*TAG_W) +: TAG_W]),
-        .tx_flit_fragment(mesh_in_fragment[(node_g*FRAGMENT_W) +: FRAGMENT_W]),
-        .tx_flit_last(mesh_in_last[node_g]),
-        .tx_flit_data(mesh_in_data[(node_g*DATA_W) +: DATA_W]),
-        .rx_desc_valid(rx_desc_valid[node_g]),
-        .rx_desc_ready(rx_desc_ready[node_g]),
-        .rx_desc_source(rx_desc_source[(node_g*ENDPOINT_W) +: ENDPOINT_W]),
-        .rx_desc_vc(rx_desc_vc[(node_g*VC_W) +: VC_W]),
-        .rx_desc_tag(rx_desc_tag[(node_g*TAG_W) +: TAG_W]),
-        .rx_desc_base_addr(rx_desc_base_addr[(node_g*ADDR_W) +: ADDR_W]),
-        .rx_desc_flit_count(rx_desc_flit_count[(node_g*FLIT_COUNT_W) +: FLIT_COUNT_W]),
-        .rx_flit_valid(mesh_out_valid[node_g]),
-        .rx_flit_ready(mesh_out_ready[node_g]),
-        .rx_flit_source(mesh_out_source[(node_g*ENDPOINT_W) +: ENDPOINT_W]),
-        .rx_flit_destination(mesh_out_destination[(node_g*ENDPOINT_W) +: ENDPOINT_W]),
-        .rx_flit_vc(mesh_out_vc[(node_g*VC_W) +: VC_W]),
-        .rx_flit_tag(mesh_out_tag[(node_g*TAG_W) +: TAG_W]),
-        .rx_flit_fragment(mesh_out_fragment[(node_g*FRAGMENT_W) +: FRAGMENT_W]),
-        .rx_flit_last(mesh_out_last[node_g]),
-        .rx_flit_data(mesh_out_data[(node_g*DATA_W) +: DATA_W]),
-        .rx_mem_write_valid(rx_mem_write_valid[node_g]),
-        .rx_mem_write_ready(rx_mem_write_ready[node_g]),
-        .rx_mem_write_addr(rx_mem_write_addr[(node_g*ADDR_W) +: ADDR_W]),
-        .rx_mem_write_data(rx_mem_write_data[(node_g*DATA_W) +: DATA_W]),
-        .rx_completion_valid(rx_completion_valid[node_g]),
-        .rx_completion_ready(rx_completion_ready[node_g]),
-        .rx_completion_source(rx_completion_source[(node_g*ENDPOINT_W) +: ENDPOINT_W]),
-        .rx_completion_vc(rx_completion_vc[(node_g*VC_W) +: VC_W]),
-        .rx_completion_tag(rx_completion_tag[(node_g*TAG_W) +: TAG_W]),
-        .protocol_error(endpoint_protocol_error[node_g])
-      );
-    end
-  endgenerate
+  noc_sram_packet_endpoint_array16 #(
+    .DATA_W(DATA_W),
+    .ENDPOINT_W(ENDPOINT_W),
+    .VC_W(VC_W),
+    .TAG_W(TAG_W),
+    .FRAGMENT_W(FRAGMENT_W),
+    .ADDR_W(ADDR_W),
+    .FLIT_COUNT_W(FLIT_COUNT_W),
+    .TX_DESC_DEPTH(TX_DESC_DEPTH),
+    .TX_OUTSTANDING(TX_OUTSTANDING),
+    .RX_CONTEXTS(RX_CONTEXTS)
+  ) endpoint_array (
+    .clk(clk),
+    .rst_n(rst_n),
+    .tx_desc_valid(tx_desc_valid),
+    .tx_desc_ready(tx_desc_ready),
+    .tx_desc_destination(tx_desc_destination),
+    .tx_desc_vc(tx_desc_vc),
+    .tx_desc_tag(tx_desc_tag),
+    .tx_desc_base_addr(tx_desc_base_addr),
+    .tx_desc_flit_count(tx_desc_flit_count),
+    .tx_mem_req_valid(tx_mem_req_valid),
+    .tx_mem_req_ready(tx_mem_req_ready),
+    .tx_mem_req_addr(tx_mem_req_addr),
+    .tx_mem_rsp_valid(tx_mem_rsp_valid),
+    .tx_mem_rsp_ready(tx_mem_rsp_ready),
+    .tx_mem_rsp_data(tx_mem_rsp_data),
+    .mesh_in_valid(mesh_in_valid),
+    .mesh_in_ready(mesh_in_ready),
+    .mesh_in_destination(mesh_in_destination),
+    .mesh_in_source(mesh_in_source),
+    .mesh_in_tag(mesh_in_tag),
+    .mesh_in_fragment(mesh_in_fragment),
+    .mesh_in_last(mesh_in_last),
+    .mesh_in_vc(mesh_in_vc),
+    .mesh_in_data(mesh_in_data),
+    .rx_desc_valid(rx_desc_valid),
+    .rx_desc_ready(rx_desc_ready),
+    .rx_desc_source(rx_desc_source),
+    .rx_desc_vc(rx_desc_vc),
+    .rx_desc_tag(rx_desc_tag),
+    .rx_desc_base_addr(rx_desc_base_addr),
+    .rx_desc_flit_count(rx_desc_flit_count),
+    .mesh_out_valid(mesh_out_valid),
+    .mesh_out_ready(mesh_out_ready),
+    .mesh_out_destination(mesh_out_destination),
+    .mesh_out_source(mesh_out_source),
+    .mesh_out_tag(mesh_out_tag),
+    .mesh_out_fragment(mesh_out_fragment),
+    .mesh_out_last(mesh_out_last),
+    .mesh_out_vc(mesh_out_vc),
+    .mesh_out_data(mesh_out_data),
+    .rx_mem_write_valid(rx_mem_write_valid),
+    .rx_mem_write_ready(rx_mem_write_ready),
+    .rx_mem_write_addr(rx_mem_write_addr),
+    .rx_mem_write_data(rx_mem_write_data),
+    .rx_completion_valid(rx_completion_valid),
+    .rx_completion_ready(rx_completion_ready),
+    .rx_completion_source(rx_completion_source),
+    .rx_completion_vc(rx_completion_vc),
+    .rx_completion_tag(rx_completion_tag),
+    .endpoint_protocol_error(endpoint_protocol_error)
+  );
 
   noc_segmented_mesh4x4 #(
     .DATA_W(DATA_W),
