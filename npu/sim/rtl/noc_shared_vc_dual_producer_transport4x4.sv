@@ -13,7 +13,7 @@ module noc_shared_vc_dual_producer_transport4x4 #(
   parameter integer VC_COUNT = 2,
   parameter integer FIFO_DEPTH = 4,
   parameter integer COUNTER_W = 32,
-  parameter integer ENABLE_DEBUG_COUNTERS = 0
+  parameter integer ENABLE_DEBUG_COUNTERS = 1
 ) (
   input wire clk,
   input wire rst_n,
@@ -60,7 +60,15 @@ module noc_shared_vc_dual_producer_transport4x4 #(
 
   output wire [15:0] injection_protocol_error,
   output reg [15:0] ejection_protocol_error,
-  output wire protocol_error
+  output wire protocol_error,
+  output wire [16*COUNTER_W-1:0] router_accepted_flit_count,
+  output wire [16*COUNTER_W-1:0] router_forwarded_flit_count,
+  output wire [16*COUNTER_W-1:0] router_input_stall_cycles,
+  output wire [16*COUNTER_W-1:0] router_output_stall_cycles,
+  output wire [16*COUNTER_W-1:0] router_contention_cycles,
+  output wire [16*COUNTER_W-1:0] router_current_input_occupancy,
+  output wire [16*COUNTER_W-1:0] router_max_input_occupancy,
+  output wire [16*5*COUNTER_W-1:0] router_route_flit_count
 );
   localparam integer NODES = 16;
   localparam [VC_W-1:0] PRODUCER0_EXPECTED_VC = {VC_W{1'b0}};
@@ -85,15 +93,6 @@ module noc_shared_vc_dual_producer_transport4x4 #(
   wire [15:0] mesh_endpoint_out_last_w;
   wire [16*VC_W-1:0] mesh_endpoint_out_vc_w;
   wire [16*DATA_W-1:0] mesh_endpoint_out_data_w;
-
-  wire [16*COUNTER_W-1:0] router_accepted_flit_count_w;
-  wire [16*COUNTER_W-1:0] router_forwarded_flit_count_w;
-  wire [16*COUNTER_W-1:0] router_input_stall_cycles_w;
-  wire [16*COUNTER_W-1:0] router_output_stall_cycles_w;
-  wire [16*COUNTER_W-1:0] router_contention_cycles_w;
-  wire [16*COUNTER_W-1:0] router_current_input_occupancy_w;
-  wire [16*COUNTER_W-1:0] router_max_input_occupancy_w;
-  wire [16*5*COUNTER_W-1:0] router_route_flit_count_w;
 
   wire [15:0] route_to_producer0_w;
   wire [15:0] route_to_producer1_w;
@@ -282,14 +281,14 @@ module noc_shared_vc_dual_producer_transport4x4 #(
     .endpoint_out_last(mesh_endpoint_out_last_w),
     .endpoint_out_vc(mesh_endpoint_out_vc_w),
     .endpoint_out_data(mesh_endpoint_out_data_w),
-    .router_accepted_flit_count(router_accepted_flit_count_w),
-    .router_forwarded_flit_count(router_forwarded_flit_count_w),
-    .router_input_stall_cycles(router_input_stall_cycles_w),
-    .router_output_stall_cycles(router_output_stall_cycles_w),
-    .router_contention_cycles(router_contention_cycles_w),
-    .router_current_input_occupancy(router_current_input_occupancy_w),
-    .router_max_input_occupancy(router_max_input_occupancy_w),
-    .router_route_flit_count(router_route_flit_count_w)
+    .router_accepted_flit_count(router_accepted_flit_count),
+    .router_forwarded_flit_count(router_forwarded_flit_count),
+    .router_input_stall_cycles(router_input_stall_cycles),
+    .router_output_stall_cycles(router_output_stall_cycles),
+    .router_contention_cycles(router_contention_cycles),
+    .router_current_input_occupancy(router_current_input_occupancy),
+    .router_max_input_occupancy(router_max_input_occupancy),
+    .router_route_flit_count(router_route_flit_count)
   );
 
 `ifndef SYNTHESIS
