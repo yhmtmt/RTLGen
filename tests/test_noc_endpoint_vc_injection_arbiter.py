@@ -132,21 +132,35 @@ def test_model_drops_wrong_vc_identity_and_sets_sticky_error() -> None:
 def test_model_matches_shared_mesh_vc_round_robin_injection_trace() -> None:
     flows = [
         TrafficFlow(
-            name=f"vc{vc}_{index}",
+            name=name,
             source=0,
-            destination=15,
-            payload_bytes=4 * 32,
+            destination=0,
+            payload_bytes=32,
             packet_payload_bytes=32,
             vc=vc,
-            release_cycle=index,
-            schedule_order=index,
+            release_cycle=release_cycle,
+            schedule_order=order,
         )
-        for index, vc in enumerate((0, 0, 1, 1))
+        for order, (name, vc, release_cycle) in enumerate(
+            (
+                ("block", 1, 0),
+                ("held_vc1", 1, 1),
+                ("late_vc0", 0, 2),
+            )
+        )
     ]
     scheduled = [item for flow in flows for item in packetize_traffic_flow(flow)]
+    endpoint_ready = []
+    for cycle in range(12):
+        row = [True] * 16
+        row[0] = cycle >= 6
+        endpoint_ready.append(row)
     mesh = simulate_scheduled_flits(
         scheduled,
+        endpoint_out_ready_schedule=endpoint_ready,
         endpoint_injection_policy="vc_round_robin",
+        fifo_depth=1,
+        vc_count=2,
         max_cycles=256,
     )
 
@@ -171,6 +185,11 @@ def test_model_matches_shared_mesh_vc_round_robin_injection_trace() -> None:
             queues[1].popleft()
 
     assert not future and not queues[0] and not queues[1]
+    assert [flit.label for trace in mesh.traces for _, flit in trace.injected] == [
+        "block",
+        "held_vc1",
+        "late_vc0",
+    ]
 
 
 def _tool(name: str) -> str | None:

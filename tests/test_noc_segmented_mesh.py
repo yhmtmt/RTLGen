@@ -1194,6 +1194,49 @@ def test_mesh_endpoint_vc_round_robin_prevents_one_vc_from_monopolizing_injectio
     assert round_robin.max_endpoint_vc_occupancy == (2, 2, 0, 0)
 
 
+def test_mesh_endpoint_vc_round_robin_holds_grant_across_input_stall() -> None:
+    flows = [
+        TrafficFlow(
+            name=name,
+            source=0,
+            destination=0,
+            payload_bytes=32,
+            packet_payload_bytes=32,
+            vc=vc,
+            release_cycle=release_cycle,
+            schedule_order=order,
+        )
+        for order, (name, vc, release_cycle) in enumerate(
+            (
+                ("block", 1, 0),
+                ("held_vc1", 1, 1),
+                ("late_vc0", 0, 2),
+            )
+        )
+    ]
+    endpoint_ready = []
+    for cycle in range(12):
+        row = [True] * 16
+        row[0] = cycle >= 6
+        endpoint_ready.append(row)
+
+    result = simulate_scheduled_flits(
+        [item for flow in flows for item in packetize_traffic_flow(flow)],
+        endpoint_out_ready_schedule=endpoint_ready,
+        endpoint_injection_policy="vc_round_robin",
+        fifo_depth=1,
+        vc_count=2,
+        max_cycles=32,
+    )
+
+    assert not result.traces[1].endpoint_in_ready[0]
+    assert [flit.label for trace in result.traces for _, flit in trace.injected] == [
+        "block",
+        "held_vc1",
+        "late_vc0",
+    ]
+
+
 def test_mesh_endpoint_ready_callback_observes_held_flit_vc() -> None:
     flows = [
         TrafficFlow(
