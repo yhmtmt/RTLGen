@@ -67,7 +67,10 @@ def _generate_tree(tmp_path: Path) -> Path:
     _tool("iverilog") is None or _tool("vvp") is None,
     reason="iverilog/vvp unavailable",
 )
-def test_exact_transport_wrapper_four_groups(tmp_path: Path) -> None:
+@pytest.mark.parametrize("external_mesh", [False, True])
+def test_exact_transport_wrapper_four_groups(
+    tmp_path: Path, external_mesh: bool
+) -> None:
     tree_dir = _generate_tree(tmp_path)
     simv = tmp_path / "exact_transport_wrapper.vvp"
     subprocess.run(
@@ -76,6 +79,8 @@ def test_exact_transport_wrapper_four_groups(tmp_path: Path) -> None:
             "-g2012",
             "-s",
             TOP,
+            "-P",
+            f"{TOP}.EXTERNAL_MESH={int(external_mesh)}",
             "-o",
             str(simv),
             str(tree_dir / "top.v"),
@@ -107,7 +112,10 @@ def test_exact_transport_wrapper_four_groups(tmp_path: Path) -> None:
 
 
 @pytest.mark.skipif(_tool("yosys") is None, reason="yosys unavailable")
-def test_exact_transport_wrapper_structural_composition(tmp_path: Path) -> None:
+@pytest.mark.parametrize(("internal_mesh", "expected_meshes"), [(1, 1), (0, 0)])
+def test_exact_transport_wrapper_structural_composition(
+    tmp_path: Path, internal_mesh: int, expected_meshes: int
+) -> None:
     tree_dir = _generate_tree(tmp_path)
     netlist = tmp_path / "exact_transport_wrapper.json"
     subprocess.run(
@@ -119,6 +127,7 @@ def test_exact_transport_wrapper_structural_composition(tmp_path: Path) -> None:
             + " ".join(str(path) for path in RTL_SOURCES)
             + " "
             + str(tree_dir / "top.v")
+            + f"; chparam -set INTERNAL_MESH {internal_mesh} {WRAPPER}"
             + f"; hierarchy -check -top {WRAPPER}; proc; check; write_json "
             + str(netlist),
         ],
@@ -132,6 +141,9 @@ def test_exact_transport_wrapper_structural_composition(tmp_path: Path) -> None:
     cells = list(design["modules"][WRAPPER]["cells"].values())
     assert sum("exact_encoder" in cell["type"] for cell in cells) == 15
     assert sum("exact_sram_packet_adapter" in cell["type"] for cell in cells) == 15
-    assert sum("noc_segmented_mesh4x4" in cell["type"] for cell in cells) == 1
+    assert (
+        sum("noc_segmented_mesh4x4" in cell["type"] for cell in cells)
+        == expected_meshes
+    )
     assert sum("shared_root_global_tree_composition" in cell["type"] for cell in cells) == 1
     assert sum("shared_root_group_admission" in cell["type"] for cell in cells) == 1

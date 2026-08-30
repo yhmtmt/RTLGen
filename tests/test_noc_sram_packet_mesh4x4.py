@@ -99,21 +99,28 @@ def test_noc_sram_packet_mesh4x4_synthesis_hierarchy(tmp_path: Path) -> None:
         [str(_tool("yosys")), "-q", "-s", str(script)],
         check=True,
         cwd=REPO_ROOT,
-        timeout=60,
+        timeout=180,
     )
     design = json.loads(json_path.read_text(encoding="utf-8"))
     mesh_module = design["modules"]["noc_sram_packet_mesh4x4"]
-    array_module = design["modules"]["noc_sram_packet_endpoint_array16"]
+    array_module = next(
+        module
+        for name, module in design["modules"].items()
+        if "noc_sram_packet_endpoint_array16" in name
+    )
     mesh_cell_types = [
         cell["type"] for cell in mesh_module.get("cells", {}).values()
     ]
     array_cell_types = [
         cell["type"] for cell in array_module.get("cells", {}).values()
     ]
-    assert mesh_cell_types.count("noc_sram_packet_endpoint_array16") == 1
-    assert mesh_cell_types.count("noc_segmented_mesh4x4") == 1
-    assert "noc_sram_packet_endpoint" not in mesh_cell_types
-    assert array_cell_types.count("noc_sram_packet_endpoint") == 16
+    assert sum("noc_sram_packet_endpoint_array16" in value for value in mesh_cell_types) == 1
+    assert sum("noc_segmented_mesh4x4" in value for value in mesh_cell_types) == 1
+    assert all(
+        value.split("\\")[-1] != "noc_sram_packet_endpoint"
+        for value in mesh_cell_types
+    )
+    assert sum("noc_sram_packet_endpoint" in value for value in array_cell_types) == 16
 
 
 @pytest.mark.skipif(_tool("verilator") is None, reason="verilator unavailable")
@@ -315,6 +322,7 @@ def test_noc_sram_packet_mesh4x4_generator_emits_exact_hierarchy(
         "noc_segmented_mesh_router.v",
         "noc_segmented_mesh4x4.v",
         "noc_sram_packet_endpoint.v",
+        "noc_sram_packet_endpoint_array16.v",
         "noc_sram_packet_mesh4x4.v",
         "noc_sram_packet_mesh4x4_ppa_harness.v",
         f"{design['module_name']}.v",

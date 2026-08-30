@@ -10,3 +10,13 @@
 - Embodied the two-source VC0/VC1 endpoint arbiter in RTL and proved its
   ready/valid behavior cycle-equivalent to both a standalone model and the
   shared-mesh injection trace.
+- Extracted the exact sixteen-node SRAM packet endpoint array from the legacy
+  endpoint-plus-mesh wrapper without changing its descriptor, SRAM, completion,
+  or protocol-error contracts.
+- Added optional external transport mode to both exact producers. Structural
+  synthesis proves that external mode contains zero private meshes, and RTL
+  replay proves that routing the exposed boundary through a separately
+  instantiated mesh preserves each producer's exact behavior.
+- Retained internal transport as the default compatibility mode, with exactly
+  one endpoint array and one private mesh for VC0 and exactly one private mesh
+  for VC1.

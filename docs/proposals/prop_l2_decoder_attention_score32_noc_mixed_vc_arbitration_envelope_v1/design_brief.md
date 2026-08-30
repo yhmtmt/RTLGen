@@ -17,5 +17,16 @@ blocked. Consequently the maximum queued flits are a required-buffer bound.
 Only rows with at most one queued flit per VC are directly compatible with the
 current one-register ready/valid source boundary.
 
-The two-source arbiter is now embodied and cycle-equivalent. Physical cost and
-integration into the currently separate VC0 and VC1 mesh owners remain open.
+The two-source arbiter is now embodied and cycle-equivalent. The VC0 attention
+context engine and VC1 exact reducer transport also expose their complete
+sixteen-endpoint ready/valid flit boundaries. Each producer has an
+`INTERNAL_MESH=0` elaboration with no private mesh, while the default private
+mesh elaboration preserves the existing exact workload behavior. The SRAM
+packet endpoints remain embodied on the VC0 side; the exact packet bridges,
+encoders, adapters, and shared-root composition remain embodied on the VC1
+side.
+
+The remaining transport abstraction is the composition above these boundaries:
+sixteen held-grant VC arbiters, one shared mesh, and a VC-aware ejection demux.
+That shared top must prove simultaneous backpressure-coupled execution before
+its physical cost or overlap replaces the measured dual-network baseline.

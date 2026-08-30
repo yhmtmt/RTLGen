@@ -1,7 +1,5 @@
 `timescale 1ns/1ps
 
-`include "npu/sim/rtl/noc_sram_packet_endpoint_array16.sv"
-
 // Exact composition boundary for sixteen SRAM packet endpoints and the
 // deterministic-XY 4x4 segmented mesh. SRAM arrays and descriptor scheduling
 // remain outside this module, but every transfer between them is explicit.

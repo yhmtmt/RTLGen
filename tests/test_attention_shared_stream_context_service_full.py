@@ -20,6 +20,7 @@ RTL_SOURCES = [
     RTL / "noc_segmented_mesh_router.sv",
     RTL / "noc_segmented_mesh4x4.sv",
     RTL / "noc_sram_packet_endpoint.sv",
+    RTL / "noc_sram_packet_endpoint_array16.sv",
     RTL / "noc_sram_packet_mesh4x4.sv",
     RTL / "attention_shared_stream_context_admission.sv",
     RTL / "attention_shared_stream_context_engine.sv",

@@ -88,7 +88,9 @@ def check(design_dir: Path) -> None:
         "total_packets": 7616,
         "total_flits": 60928,
         "virtual_channel": 0,
-        "mesh": "noc_sram_packet_mesh4x4",
+        "endpoint_array": "noc_sram_packet_endpoint_array16",
+        "mesh": "noc_segmented_mesh4x4",
+        "private_mesh_optional": True,
         "producer_addresses_are_external": True,
         "completion_releases_endpoint_ownership": True,
     }
@@ -109,7 +111,7 @@ def check(design_dir: Path) -> None:
         "attention_shared_stream_context_service",
         "attention_shared_stream_context_admission",
         "attention_shared_stream_context_engine",
-        "noc_sram_packet_mesh4x4",
+        "noc_sram_packet_endpoint_array16",
         "noc_sram_packet_endpoint",
         "noc_segmented_mesh4x4",
     )

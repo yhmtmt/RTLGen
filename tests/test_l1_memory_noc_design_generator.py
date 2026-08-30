@@ -49,6 +49,7 @@ CASES = (
             "noc_segmented_mesh_router.v",
             "noc_segmented_mesh4x4.v",
             "noc_sram_packet_endpoint.v",
+            "noc_sram_packet_endpoint_array16.v",
             "noc_sram_packet_mesh4x4.v",
             "noc_sram_packet_mesh4x4_ppa_harness.v",
         },

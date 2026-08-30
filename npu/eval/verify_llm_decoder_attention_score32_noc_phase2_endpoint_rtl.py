@@ -50,6 +50,7 @@ RTL_SOURCES = (
     Path("npu/sim/rtl/noc_segmented_mesh_router.sv"),
     Path("npu/sim/rtl/noc_segmented_mesh4x4.sv"),
     Path("npu/sim/rtl/noc_sram_packet_endpoint.sv"),
+    Path("npu/sim/rtl/noc_sram_packet_endpoint_array16.sv"),
     Path("npu/sim/rtl/noc_sram_packet_mesh4x4.sv"),
 )
 SCHEDULER_RTL_SOURCE = Path("npu/sim/rtl/noc_descriptor_pair_scheduler.sv")
