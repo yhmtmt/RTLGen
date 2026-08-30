@@ -682,6 +682,7 @@ def simulate_scheduled_flits(
     ]
     fifo_vc_occupancies = [[0] * vc_count for _ in range(ENDPOINTS)]
     endpoint_vc_rr = [0] * ENDPOINTS
+    endpoint_vc_held: list[int | None] = [None] * ENDPOINTS
     future = deque(ordered)
     states = [
         _RouterState(
@@ -717,6 +718,10 @@ def simulate_scheduled_flits(
             queue = release_queues[node]
             return (queue if queue else None), None
         queues = vc_release_queues[node]
+        held_vc = endpoint_vc_held[node]
+        if held_vc is not None:
+            queue = queues[held_vc]
+            return (queue if queue else None), held_vc
         for offset in range(vc_count):
             vc = (endpoint_vc_rr[node] + offset) % vc_count
             if queues[vc]:
@@ -864,10 +869,14 @@ def simulate_scheduled_flits(
                 selected_vc = selected_local_vcs[node]
                 if selected_vc is not None:
                     endpoint_vc_rr[node] = (selected_vc + 1) % vc_count
+                    endpoint_vc_held[node] = None
                 else:
                     fifo_vc_occupancies[node][injected.vc] -= 1
                 cycle_endpoint_stall.append(0)
             else:
+                selected_vc = selected_local_vcs[node]
+                if local_queue and selected_vc is not None:
+                    endpoint_vc_held[node] = selected_vc
                 if endpoint_injection_policy == "fifo":
                     has_queued = bool(release_queues[node])
                 else:

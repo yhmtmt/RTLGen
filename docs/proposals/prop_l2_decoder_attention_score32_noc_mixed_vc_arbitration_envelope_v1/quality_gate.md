@@ -6,4 +6,6 @@
 - Treat missing SRAM-residency and reducer release timing as a swept variable.
 - Treat any endpoint injection stall or per-VC source depth above one as
   diagnostic rather than directly replayable.
+- Require cycle equivalence from the shared-mesh round-robin injection trace
+  through the standalone arbiter model to the RTL implementation.
 - Do not infer a Llama7B precision change from a transport-only replay.

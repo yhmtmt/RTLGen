@@ -16,3 +16,6 @@ The isolated source traces continue producing while their shared queue is
 blocked. Consequently the maximum queued flits are a required-buffer bound.
 Only rows with at most one queued flit per VC are directly compatible with the
 current one-register ready/valid source boundary.
+
+The two-source arbiter is now embodied and cycle-equivalent. Physical cost and
+integration into the currently separate VC0 and VC1 mesh owners remain open.

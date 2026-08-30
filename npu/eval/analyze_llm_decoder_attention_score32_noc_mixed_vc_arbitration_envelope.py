@@ -46,11 +46,13 @@ def _source_hashes(repo_root: Path) -> JsonDict:
         Path("npu/eval/analyze_llm_decoder_attention_score32_noc_mixed_vc_arbitration_envelope.py"),
         Path("npu/eval/generate_llm_decoder_attention_score32_noc_exact_router_rtl_activity.py"),
         Path("npu/sim/perf/attention_exact_mixed_vc_router.py"),
+        Path("npu/sim/perf/noc_endpoint_vc_injection_arbiter.py"),
         Path("npu/sim/perf/attention_shared_stream_context_service.py"),
         Path("npu/sim/perf/stats_once_shared_root.py"),
         Path("npu/sim/perf/noc_sram_packet_mesh.py"),
         Path("npu/sim/perf/noc_segmented_mesh.py"),
         Path("npu/sim/rtl/noc_segmented_mesh_router.sv"),
+        Path("npu/sim/rtl/noc_endpoint_vc_injection_arbiter.sv"),
     )
     return {path.as_posix(): _sha256(repo_root / path) for path in paths}
 
@@ -317,8 +319,9 @@ def analyze(
             "backpressure; any point with an endpoint injection stall or more "
             "than one queued flit per VC needs a backpressure-coupled endpoint "
             "replay before promotion.",
-            "The shared local endpoint VC arbiter is modeled cycle-accurately "
-            "but is not yet embodied and equivalence-checked as RTL.",
+            "The shared local endpoint VC arbiter is embodied and cycle-equivalent "
+            "as RTL, but is not yet integrated into the two producer compositions "
+            "or physically measured.",
             "HBM/DRAM control and PHY remain external by design.",
         ],
     }
