@@ -5,7 +5,9 @@
 // The canonical reference uses max=0, exp_sum=1, and value=1 for every leaf;
 // the exact sixteen-leaf finalizer therefore emits 40'h0ffff on every lane,
 // matching the established tree reference.
-module local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper_tb;
+module local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper_tb #(
+  parameter integer EXTERNAL_MESH = 0
+);
   localparam integer SOURCE_COUNT = 15;
   localparam integer BEAT_W = 419;
   localparam integer DATA_W = 256;
@@ -63,8 +65,32 @@ module local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper_tb
   wire [31:0] mesh_contention_cycles;
   wire [31:0] mesh_input_stall_cycles;
   wire [31:0] mesh_output_stall_cycles;
+  wire [15:0] transport_endpoint_in_valid;
+  wire [15:0] transport_endpoint_in_ready;
+  wire [16*4-1:0] transport_endpoint_in_destination;
+  wire [16*4-1:0] transport_endpoint_in_source;
+  wire [16*8-1:0] transport_endpoint_in_tag;
+  wire [16*3-1:0] transport_endpoint_in_fragment;
+  wire [15:0] transport_endpoint_in_last;
+  wire [16*2-1:0] transport_endpoint_in_vc;
+  wire [16*DATA_W-1:0] transport_endpoint_in_data;
+  wire [15:0] transport_endpoint_out_valid;
+  wire [15:0] transport_endpoint_out_ready;
+  wire [16*4-1:0] transport_endpoint_out_destination;
+  wire [16*4-1:0] transport_endpoint_out_source;
+  wire [16*8-1:0] transport_endpoint_out_tag;
+  wire [16*3-1:0] transport_endpoint_out_fragment;
+  wire [15:0] transport_endpoint_out_last;
+  wire [16*2-1:0] transport_endpoint_out_vc;
+  wire [16*DATA_W-1:0] transport_endpoint_out_data;
+  wire [16*32-1:0] transport_router_accepted_flit_counts;
+  wire [16*32-1:0] transport_router_input_stall_counts;
+  wire [16*32-1:0] transport_router_output_stall_counts;
+  wire [16*32-1:0] transport_router_contention_counts;
 
-  local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper wrapper (
+  local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper #(
+    .INTERNAL_MESH(EXTERNAL_MESH == 0)
+  ) wrapper (
     .clk(clk),
     .rst_n(rst_n),
     .source_beat_valid(source_beat_valid),
@@ -110,8 +136,65 @@ module local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper_tb
     .mesh_accepted_flit_count(mesh_accepted_flit_count),
     .mesh_contention_cycles(mesh_contention_cycles),
     .mesh_input_stall_cycles(mesh_input_stall_cycles),
-    .mesh_output_stall_cycles(mesh_output_stall_cycles)
+    .mesh_output_stall_cycles(mesh_output_stall_cycles),
+    .transport_endpoint_in_valid(transport_endpoint_in_valid),
+    .transport_endpoint_in_ready(transport_endpoint_in_ready),
+    .transport_endpoint_in_destination(transport_endpoint_in_destination),
+    .transport_endpoint_in_source(transport_endpoint_in_source),
+    .transport_endpoint_in_tag(transport_endpoint_in_tag),
+    .transport_endpoint_in_fragment(transport_endpoint_in_fragment),
+    .transport_endpoint_in_last(transport_endpoint_in_last),
+    .transport_endpoint_in_vc(transport_endpoint_in_vc),
+    .transport_endpoint_in_data(transport_endpoint_in_data),
+    .transport_endpoint_out_valid(transport_endpoint_out_valid),
+    .transport_endpoint_out_ready(transport_endpoint_out_ready),
+    .transport_endpoint_out_destination(transport_endpoint_out_destination),
+    .transport_endpoint_out_source(transport_endpoint_out_source),
+    .transport_endpoint_out_tag(transport_endpoint_out_tag),
+    .transport_endpoint_out_fragment(transport_endpoint_out_fragment),
+    .transport_endpoint_out_last(transport_endpoint_out_last),
+    .transport_endpoint_out_vc(transport_endpoint_out_vc),
+    .transport_endpoint_out_data(transport_endpoint_out_data),
+    .transport_router_accepted_flit_counts(transport_router_accepted_flit_counts),
+    .transport_router_input_stall_counts(transport_router_input_stall_counts),
+    .transport_router_output_stall_counts(transport_router_output_stall_counts),
+    .transport_router_contention_counts(transport_router_contention_counts)
   );
+
+  generate
+    if (EXTERNAL_MESH) begin : gen_external_mesh
+  noc_segmented_mesh4x4 external_mesh (
+    .clk(clk),
+    .rst_n(rst_n),
+    .endpoint_in_valid(transport_endpoint_in_valid),
+    .endpoint_in_ready(transport_endpoint_in_ready),
+    .endpoint_in_dest(transport_endpoint_in_destination),
+    .endpoint_in_source(transport_endpoint_in_source),
+    .endpoint_in_tag(transport_endpoint_in_tag),
+    .endpoint_in_fragment(transport_endpoint_in_fragment),
+    .endpoint_in_last(transport_endpoint_in_last),
+    .endpoint_in_vc(transport_endpoint_in_vc),
+    .endpoint_in_data(transport_endpoint_in_data),
+    .endpoint_out_valid(transport_endpoint_out_valid),
+    .endpoint_out_ready(transport_endpoint_out_ready),
+    .endpoint_out_dest(transport_endpoint_out_destination),
+    .endpoint_out_source(transport_endpoint_out_source),
+    .endpoint_out_tag(transport_endpoint_out_tag),
+    .endpoint_out_fragment(transport_endpoint_out_fragment),
+    .endpoint_out_last(transport_endpoint_out_last),
+    .endpoint_out_vc(transport_endpoint_out_vc),
+    .endpoint_out_data(transport_endpoint_out_data),
+    .router_accepted_flit_count(transport_router_accepted_flit_counts),
+    .router_forwarded_flit_count(),
+    .router_input_stall_cycles(transport_router_input_stall_counts),
+    .router_output_stall_cycles(transport_router_output_stall_counts),
+    .router_contention_cycles(transport_router_contention_counts),
+    .router_current_input_occupancy(),
+    .router_max_input_occupancy(),
+    .router_route_flit_count()
+  );
+    end
+  endgenerate
 
   integer source_beat_index [0:SOURCE_COUNT-1];
   integer root_beat_index;

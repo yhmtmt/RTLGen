@@ -18,6 +18,7 @@ RTL_SOURCES = [
     REPO_ROOT / "npu/sim/rtl/noc_segmented_mesh_router.sv",
     REPO_ROOT / "npu/sim/rtl/noc_segmented_mesh4x4.sv",
     REPO_ROOT / "npu/sim/rtl/noc_sram_packet_endpoint.sv",
+    REPO_ROOT / "npu/sim/rtl/noc_sram_packet_endpoint_array16.sv",
     REPO_ROOT / "npu/sim/rtl/noc_sram_packet_mesh4x4.sv",
     REPO_ROOT / "npu/sim/rtl/attention_shared_stream_context_admission.sv",
     REPO_ROOT / "npu/sim/rtl/attention_shared_stream_context_engine.sv",

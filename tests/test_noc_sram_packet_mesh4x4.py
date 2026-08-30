@@ -23,6 +23,7 @@ RTL_SOURCES = [
     REPO_ROOT / "npu/sim/rtl/noc_segmented_mesh_router.sv",
     REPO_ROOT / "npu/sim/rtl/noc_segmented_mesh4x4.sv",
     REPO_ROOT / "npu/sim/rtl/noc_sram_packet_endpoint.sv",
+    REPO_ROOT / "npu/sim/rtl/noc_sram_packet_endpoint_array16.sv",
     REPO_ROOT / "npu/sim/rtl/noc_sram_packet_mesh4x4.sv",
 ]
 TB = REPO_ROOT / "tests/noc_sram_packet_mesh4x4_tb.sv"
@@ -81,6 +82,7 @@ def test_noc_sram_packet_mesh4x4_end_to_end(tmp_path: Path) -> None:
 @pytest.mark.skipif(_tool("yosys") is None, reason="yosys unavailable")
 def test_noc_sram_packet_mesh4x4_synthesis_hierarchy(tmp_path: Path) -> None:
     script = tmp_path / "mesh.ys"
+    json_path = tmp_path / "mesh.json"
     script.write_text(
         "\n".join(
             [
@@ -88,6 +90,7 @@ def test_noc_sram_packet_mesh4x4_synthesis_hierarchy(tmp_path: Path) -> None:
                 "hierarchy -check -top noc_sram_packet_mesh4x4",
                 "proc",
                 "check",
+                f"write_json {json_path}",
             ]
         ),
         encoding="utf-8",
@@ -96,8 +99,28 @@ def test_noc_sram_packet_mesh4x4_synthesis_hierarchy(tmp_path: Path) -> None:
         [str(_tool("yosys")), "-q", "-s", str(script)],
         check=True,
         cwd=REPO_ROOT,
-        timeout=60,
+        timeout=180,
     )
+    design = json.loads(json_path.read_text(encoding="utf-8"))
+    mesh_module = design["modules"]["noc_sram_packet_mesh4x4"]
+    array_module = next(
+        module
+        for name, module in design["modules"].items()
+        if "noc_sram_packet_endpoint_array16" in name
+    )
+    mesh_cell_types = [
+        cell["type"] for cell in mesh_module.get("cells", {}).values()
+    ]
+    array_cell_types = [
+        cell["type"] for cell in array_module.get("cells", {}).values()
+    ]
+    assert sum("noc_sram_packet_endpoint_array16" in value for value in mesh_cell_types) == 1
+    assert sum("noc_segmented_mesh4x4" in value for value in mesh_cell_types) == 1
+    assert all(
+        value.split("\\")[-1] != "noc_sram_packet_endpoint"
+        for value in mesh_cell_types
+    )
+    assert sum("noc_sram_packet_endpoint" in value for value in array_cell_types) == 16
 
 
 @pytest.mark.skipif(_tool("verilator") is None, reason="verilator unavailable")
@@ -299,6 +322,7 @@ def test_noc_sram_packet_mesh4x4_generator_emits_exact_hierarchy(
         "noc_segmented_mesh_router.v",
         "noc_segmented_mesh4x4.v",
         "noc_sram_packet_endpoint.v",
+        "noc_sram_packet_endpoint_array16.v",
         "noc_sram_packet_mesh4x4.v",
         "noc_sram_packet_mesh4x4_ppa_harness.v",
         f"{design['module_name']}.v",
@@ -325,3 +349,19 @@ def test_noc_sram_packet_mesh4x4_generator_emits_exact_hierarchy(
         text=True,
         timeout=30,
     )
+
+
+def test_noc_sram_packet_mesh4x4_source_structure() -> None:
+    mesh_text = (REPO_ROOT / "npu/sim/rtl/noc_sram_packet_mesh4x4.sv").read_text(
+        encoding="utf-8"
+    )
+    array_text = (
+        REPO_ROOT / "npu/sim/rtl/noc_sram_packet_endpoint_array16.sv"
+    ).read_text(encoding="utf-8")
+
+    assert mesh_text.count("noc_sram_packet_endpoint_array16 #(") == 1
+    assert mesh_text.count("noc_segmented_mesh4x4 #(") == 1
+    assert mesh_text.count("noc_sram_packet_endpoint #(") == 0
+    assert "localparam integer NODES = 16;" in array_text
+    assert "for (node_g = 0; node_g < NODES; node_g = node_g + 1)" in array_text
+    assert array_text.count("noc_sram_packet_endpoint #(") == 1

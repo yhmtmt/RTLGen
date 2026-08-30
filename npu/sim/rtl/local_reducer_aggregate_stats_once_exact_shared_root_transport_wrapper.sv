@@ -16,7 +16,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper #(
   parameter integer BEAT_W = 419,
   parameter integer ROOT_ENDPOINT_ID = 15,
   parameter integer PHYSICAL_BANKS = 15,
-  parameter integer USE_FAKERAM = 0
+  parameter integer USE_FAKERAM = 0,
+  parameter integer INTERNAL_MESH = 1
 ) (
   input wire clk,
   input wire rst_n,
@@ -74,7 +75,33 @@ module local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper #(
   output reg [31:0] mesh_accepted_flit_count,
   output reg [31:0] mesh_contention_cycles,
   output reg [31:0] mesh_input_stall_cycles,
-  output reg [31:0] mesh_output_stall_cycles
+  output reg [31:0] mesh_output_stall_cycles,
+
+  // External transport boundary. In INTERNAL_MESH mode the injection and
+  // ready ports remain observable, but the external return/counter inputs are
+  // ignored. Setting INTERNAL_MESH=0 removes the private mesh.
+  output wire [15:0] transport_endpoint_in_valid,
+  input wire [15:0] transport_endpoint_in_ready,
+  output wire [16*ENDPOINT_W-1:0] transport_endpoint_in_destination,
+  output wire [16*ENDPOINT_W-1:0] transport_endpoint_in_source,
+  output wire [16*TAG_W-1:0] transport_endpoint_in_tag,
+  output wire [16*FRAGMENT_W-1:0] transport_endpoint_in_fragment,
+  output wire [15:0] transport_endpoint_in_last,
+  output wire [16*VC_W-1:0] transport_endpoint_in_vc,
+  output wire [16*DATA_W-1:0] transport_endpoint_in_data,
+  input wire [15:0] transport_endpoint_out_valid,
+  output wire [15:0] transport_endpoint_out_ready,
+  input wire [16*ENDPOINT_W-1:0] transport_endpoint_out_destination,
+  input wire [16*ENDPOINT_W-1:0] transport_endpoint_out_source,
+  input wire [16*TAG_W-1:0] transport_endpoint_out_tag,
+  input wire [16*FRAGMENT_W-1:0] transport_endpoint_out_fragment,
+  input wire [15:0] transport_endpoint_out_last,
+  input wire [16*VC_W-1:0] transport_endpoint_out_vc,
+  input wire [16*DATA_W-1:0] transport_endpoint_out_data,
+  input wire [16*32-1:0] transport_router_accepted_flit_counts,
+  input wire [16*32-1:0] transport_router_input_stall_counts,
+  input wire [16*32-1:0] transport_router_output_stall_counts,
+  input wire [16*32-1:0] transport_router_contention_counts
 );
   localparam integer NODES = 16;
 
@@ -128,6 +155,19 @@ module local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper #(
   wire [16*32-1:0] mesh_router_input_stall_counts_w;
   wire [16*32-1:0] mesh_router_output_stall_counts_w;
   wire [16*32-1:0] mesh_router_contention_counts_w;
+  wire [15:0] internal_mesh_endpoint_in_ready_w;
+  wire [15:0] internal_mesh_endpoint_out_valid_w;
+  wire [16*ENDPOINT_W-1:0] internal_mesh_endpoint_out_destination_w;
+  wire [16*ENDPOINT_W-1:0] internal_mesh_endpoint_out_source_w;
+  wire [16*TAG_W-1:0] internal_mesh_endpoint_out_tag_w;
+  wire [16*FRAGMENT_W-1:0] internal_mesh_endpoint_out_fragment_w;
+  wire [15:0] internal_mesh_endpoint_out_last_w;
+  wire [16*VC_W-1:0] internal_mesh_endpoint_out_vc_w;
+  wire [16*DATA_W-1:0] internal_mesh_endpoint_out_data_w;
+  wire [16*32-1:0] internal_mesh_router_accepted_flit_counts_w;
+  wire [16*32-1:0] internal_mesh_router_input_stall_counts_w;
+  wire [16*32-1:0] internal_mesh_router_output_stall_counts_w;
+  wire [16*32-1:0] internal_mesh_router_contention_counts_w;
 
   local_reducer_aggregate_stats_once_exact_shared_root_group_admission admission (
     .clk(clk),
@@ -367,6 +407,34 @@ module local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper #(
   assign mesh_endpoint_in_data_w[SOURCE_COUNT*DATA_W-1:0] = source_mesh_in_data_w;
   assign mesh_endpoint_in_data_w[ROOT_ENDPOINT_ID*DATA_W +: DATA_W] = composition_mesh_in_data_w;
 
+  assign transport_endpoint_in_valid = mesh_endpoint_in_valid_w;
+  assign transport_endpoint_in_destination = mesh_endpoint_in_destination_w;
+  assign transport_endpoint_in_source = mesh_endpoint_in_source_w;
+  assign transport_endpoint_in_tag = mesh_endpoint_in_tag_w;
+  assign transport_endpoint_in_fragment = mesh_endpoint_in_fragment_w;
+  assign transport_endpoint_in_last = mesh_endpoint_in_last_w;
+  assign transport_endpoint_in_vc = mesh_endpoint_in_vc_w;
+  assign transport_endpoint_in_data = mesh_endpoint_in_data_w;
+
+  assign mesh_endpoint_in_ready_w = (INTERNAL_MESH != 0) ?
+    internal_mesh_endpoint_in_ready_w : transport_endpoint_in_ready;
+  assign mesh_endpoint_out_valid_w = (INTERNAL_MESH != 0) ?
+    internal_mesh_endpoint_out_valid_w : transport_endpoint_out_valid;
+  assign mesh_endpoint_out_destination_w = (INTERNAL_MESH != 0) ?
+    internal_mesh_endpoint_out_destination_w : transport_endpoint_out_destination;
+  assign mesh_endpoint_out_source_w = (INTERNAL_MESH != 0) ?
+    internal_mesh_endpoint_out_source_w : transport_endpoint_out_source;
+  assign mesh_endpoint_out_tag_w = (INTERNAL_MESH != 0) ?
+    internal_mesh_endpoint_out_tag_w : transport_endpoint_out_tag;
+  assign mesh_endpoint_out_fragment_w = (INTERNAL_MESH != 0) ?
+    internal_mesh_endpoint_out_fragment_w : transport_endpoint_out_fragment;
+  assign mesh_endpoint_out_last_w = (INTERNAL_MESH != 0) ?
+    internal_mesh_endpoint_out_last_w : transport_endpoint_out_last;
+  assign mesh_endpoint_out_vc_w = (INTERNAL_MESH != 0) ?
+    internal_mesh_endpoint_out_vc_w : transport_endpoint_out_vc;
+  assign mesh_endpoint_out_data_w = (INTERNAL_MESH != 0) ?
+    internal_mesh_endpoint_out_data_w : transport_endpoint_out_data;
+
   assign source_mesh_in_ready_w = mesh_endpoint_in_ready_w[SOURCE_COUNT-1:0];
   assign composition_mesh_in_ready_w = mesh_endpoint_in_ready_w[ROOT_ENDPOINT_ID];
 
@@ -388,42 +456,56 @@ module local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper #(
   assign composition_mesh_out_data_w = mesh_endpoint_out_data_w[ROOT_ENDPOINT_ID*DATA_W +: DATA_W];
   assign mesh_endpoint_out_ready_w[SOURCE_COUNT-1:0] = source_mesh_out_ready_w;
   assign mesh_endpoint_out_ready_w[ROOT_ENDPOINT_ID] = composition_mesh_out_ready_w;
+  assign transport_endpoint_out_ready = mesh_endpoint_out_ready_w;
 
-  noc_segmented_mesh4x4 #(
-    .DATA_W(DATA_W),
-    .TAG_W(TAG_W),
-    .FRAGMENT_W(FRAGMENT_W),
-    .VC_W(VC_W)
-  ) mesh (
-    .clk(clk),
-    .rst_n(rst_n),
-    .endpoint_in_valid(mesh_endpoint_in_valid_w),
-    .endpoint_in_ready(mesh_endpoint_in_ready_w),
-    .endpoint_in_dest(mesh_endpoint_in_destination_w),
-    .endpoint_in_source(mesh_endpoint_in_source_w),
-    .endpoint_in_tag(mesh_endpoint_in_tag_w),
-    .endpoint_in_fragment(mesh_endpoint_in_fragment_w),
-    .endpoint_in_last(mesh_endpoint_in_last_w),
-    .endpoint_in_vc(mesh_endpoint_in_vc_w),
-    .endpoint_in_data(mesh_endpoint_in_data_w),
-    .endpoint_out_valid(mesh_endpoint_out_valid_w),
-    .endpoint_out_ready(mesh_endpoint_out_ready_w),
-    .endpoint_out_dest(mesh_endpoint_out_destination_w),
-    .endpoint_out_source(mesh_endpoint_out_source_w),
-    .endpoint_out_tag(mesh_endpoint_out_tag_w),
-    .endpoint_out_fragment(mesh_endpoint_out_fragment_w),
-    .endpoint_out_last(mesh_endpoint_out_last_w),
-    .endpoint_out_vc(mesh_endpoint_out_vc_w),
-    .endpoint_out_data(mesh_endpoint_out_data_w),
-    .router_accepted_flit_count(mesh_router_accepted_flit_counts),
-    .router_forwarded_flit_count(),
-    .router_input_stall_cycles(mesh_router_input_stall_counts_w),
-    .router_output_stall_cycles(mesh_router_output_stall_counts_w),
-    .router_contention_cycles(mesh_router_contention_counts_w),
-    .router_current_input_occupancy(),
-    .router_max_input_occupancy(),
-    .router_route_flit_count()
-  );
+  assign mesh_router_accepted_flit_counts = (INTERNAL_MESH != 0) ?
+    internal_mesh_router_accepted_flit_counts_w : transport_router_accepted_flit_counts;
+  assign mesh_router_input_stall_counts_w = (INTERNAL_MESH != 0) ?
+    internal_mesh_router_input_stall_counts_w : transport_router_input_stall_counts;
+  assign mesh_router_output_stall_counts_w = (INTERNAL_MESH != 0) ?
+    internal_mesh_router_output_stall_counts_w : transport_router_output_stall_counts;
+  assign mesh_router_contention_counts_w = (INTERNAL_MESH != 0) ?
+    internal_mesh_router_contention_counts_w : transport_router_contention_counts;
+
+  generate
+    if (INTERNAL_MESH != 0) begin : gen_internal_mesh
+      noc_segmented_mesh4x4 #(
+        .DATA_W(DATA_W),
+        .TAG_W(TAG_W),
+        .FRAGMENT_W(FRAGMENT_W),
+        .VC_W(VC_W)
+      ) mesh (
+        .clk(clk),
+        .rst_n(rst_n),
+        .endpoint_in_valid(mesh_endpoint_in_valid_w),
+        .endpoint_in_ready(internal_mesh_endpoint_in_ready_w),
+        .endpoint_in_dest(mesh_endpoint_in_destination_w),
+        .endpoint_in_source(mesh_endpoint_in_source_w),
+        .endpoint_in_tag(mesh_endpoint_in_tag_w),
+        .endpoint_in_fragment(mesh_endpoint_in_fragment_w),
+        .endpoint_in_last(mesh_endpoint_in_last_w),
+        .endpoint_in_vc(mesh_endpoint_in_vc_w),
+        .endpoint_in_data(mesh_endpoint_in_data_w),
+        .endpoint_out_valid(internal_mesh_endpoint_out_valid_w),
+        .endpoint_out_ready(mesh_endpoint_out_ready_w),
+        .endpoint_out_dest(internal_mesh_endpoint_out_destination_w),
+        .endpoint_out_source(internal_mesh_endpoint_out_source_w),
+        .endpoint_out_tag(internal_mesh_endpoint_out_tag_w),
+        .endpoint_out_fragment(internal_mesh_endpoint_out_fragment_w),
+        .endpoint_out_last(internal_mesh_endpoint_out_last_w),
+        .endpoint_out_vc(internal_mesh_endpoint_out_vc_w),
+        .endpoint_out_data(internal_mesh_endpoint_out_data_w),
+        .router_accepted_flit_count(internal_mesh_router_accepted_flit_counts_w),
+        .router_forwarded_flit_count(),
+        .router_input_stall_cycles(internal_mesh_router_input_stall_counts_w),
+        .router_output_stall_cycles(internal_mesh_router_output_stall_counts_w),
+        .router_contention_cycles(internal_mesh_router_contention_counts_w),
+        .router_current_input_occupancy(),
+        .router_max_input_occupancy(),
+        .router_route_flit_count()
+      );
+    end
+  endgenerate
 
   integer sum_i;
   always @* begin
@@ -451,5 +533,14 @@ module local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper #(
   assign protocol_error = admission_protocol_error_w ||
     composition_protocol_error_w || (|encoder_protocol_error_w) ||
     (|adapter_protocol_error_w);
+
+`ifndef SYNTHESIS
+  initial begin
+    if (INTERNAL_MESH != 0 && INTERNAL_MESH != 1) begin
+      $error("INTERNAL_MESH must be 0 or 1");
+      $finish(1);
+    end
+  end
+`endif
 
 endmodule

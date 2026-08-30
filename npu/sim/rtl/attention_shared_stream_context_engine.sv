@@ -12,7 +12,8 @@ module attention_shared_stream_context_engine #(
   parameter integer MAX_PACKETS_PER_CONTEXT = 68,
   parameter integer PACKET_INDEX_W = 7,
   parameter integer TAG_W = 8,
-  parameter integer TX_DESC_DEPTH = 8
+  parameter integer TX_DESC_DEPTH = 8,
+  parameter integer INTERNAL_MESH = 1
 ) (
   input wire clk,
   input wire rst_n,
@@ -61,7 +62,26 @@ module attention_shared_stream_context_engine #(
   output wire [16*256-1:0] rx_mem_write_data,
 
   output wire [15:0] endpoint_protocol_error,
-  output wire protocol_error
+  output wire protocol_error,
+
+  output wire [15:0] transport_endpoint_in_valid,
+  input wire [15:0] transport_endpoint_in_ready,
+  output wire [16*4-1:0] transport_endpoint_in_destination,
+  output wire [16*4-1:0] transport_endpoint_in_source,
+  output wire [16*TAG_W-1:0] transport_endpoint_in_tag,
+  output wire [16*3-1:0] transport_endpoint_in_fragment,
+  output wire [15:0] transport_endpoint_in_last,
+  output wire [16*2-1:0] transport_endpoint_in_vc,
+  output wire [16*256-1:0] transport_endpoint_in_data,
+  input wire [15:0] transport_endpoint_out_valid,
+  output wire [15:0] transport_endpoint_out_ready,
+  input wire [16*4-1:0] transport_endpoint_out_destination,
+  input wire [16*4-1:0] transport_endpoint_out_source,
+  input wire [16*TAG_W-1:0] transport_endpoint_out_tag,
+  input wire [16*3-1:0] transport_endpoint_out_fragment,
+  input wire [15:0] transport_endpoint_out_last,
+  input wire [16*2-1:0] transport_endpoint_out_vc,
+  input wire [16*256-1:0] transport_endpoint_out_data
 );
   localparam integer NODES = 16;
   localparam integer FLITS_PER_PACKET = 8;
@@ -123,32 +143,66 @@ module attention_shared_stream_context_engine #(
      (!source_busy[context_source] && !destination_busy[context_destination]));
   assign protocol_error = transport_error;
 
-  // The engine uses the existing exact endpoint/mesh composition.  The
-  // endpoint parameters are widened only for the byte addresses; flit width,
-  // VC, tag, and packet-count contracts remain fixed.
+  // The endpoint array remains exact in both transport modes. The private
+  // mesh is optional so VC0 traffic can share an external routed fabric.
   wire [15:0] mesh_rx_completion_valid;
   wire [15:0] mesh_rx_completion_ready;
   wire [16*4-1:0] mesh_rx_completion_source;
   wire [16*2-1:0] mesh_rx_completion_vc;
   wire [16*8-1:0] mesh_rx_completion_tag;
+  wire [15:0] endpoint_mesh_in_ready;
+  wire [15:0] endpoint_mesh_out_valid;
+  wire [15:0] endpoint_mesh_out_ready;
+  wire [16*4-1:0] endpoint_mesh_out_destination;
+  wire [16*4-1:0] endpoint_mesh_out_source;
+  wire [16*TAG_W-1:0] endpoint_mesh_out_tag;
+  wire [16*3-1:0] endpoint_mesh_out_fragment;
+  wire [15:0] endpoint_mesh_out_last;
+  wire [16*2-1:0] endpoint_mesh_out_vc;
+  wire [16*256-1:0] endpoint_mesh_out_data;
+  wire [15:0] internal_mesh_in_ready;
+  wire [15:0] internal_mesh_out_valid;
+  wire [16*4-1:0] internal_mesh_out_destination;
+  wire [16*4-1:0] internal_mesh_out_source;
+  wire [16*TAG_W-1:0] internal_mesh_out_tag;
+  wire [16*3-1:0] internal_mesh_out_fragment;
+  wire [15:0] internal_mesh_out_last;
+  wire [16*2-1:0] internal_mesh_out_vc;
+  wire [16*256-1:0] internal_mesh_out_data;
 
   assign mesh_rx_completion_ready = 16'hffff;
 
-  noc_sram_packet_mesh4x4 #(
+  assign endpoint_mesh_in_ready = (INTERNAL_MESH != 0) ?
+    internal_mesh_in_ready : transport_endpoint_in_ready;
+  assign endpoint_mesh_out_valid = (INTERNAL_MESH != 0) ?
+    internal_mesh_out_valid : transport_endpoint_out_valid;
+  assign endpoint_mesh_out_destination = (INTERNAL_MESH != 0) ?
+    internal_mesh_out_destination : transport_endpoint_out_destination;
+  assign endpoint_mesh_out_source = (INTERNAL_MESH != 0) ?
+    internal_mesh_out_source : transport_endpoint_out_source;
+  assign endpoint_mesh_out_tag = (INTERNAL_MESH != 0) ?
+    internal_mesh_out_tag : transport_endpoint_out_tag;
+  assign endpoint_mesh_out_fragment = (INTERNAL_MESH != 0) ?
+    internal_mesh_out_fragment : transport_endpoint_out_fragment;
+  assign endpoint_mesh_out_last = (INTERNAL_MESH != 0) ?
+    internal_mesh_out_last : transport_endpoint_out_last;
+  assign endpoint_mesh_out_vc = (INTERNAL_MESH != 0) ?
+    internal_mesh_out_vc : transport_endpoint_out_vc;
+  assign endpoint_mesh_out_data = (INTERNAL_MESH != 0) ?
+    internal_mesh_out_data : transport_endpoint_out_data;
+
+  noc_sram_packet_endpoint_array16 #(
     .DATA_W(256),
     .ENDPOINT_W(4),
     .VC_W(2),
-    .VC_COUNT(4),
     .TAG_W(TAG_W),
     .FRAGMENT_W(3),
     .ADDR_W(ADDR_W),
     .FLIT_COUNT_W(4),
     .TX_DESC_DEPTH(TX_DESC_DEPTH),
     .TX_OUTSTANDING(8),
-    .RX_CONTEXTS(8),
-    .ROUTER_FIFO_DEPTH(4),
-    .COUNTER_W(32)
-  ) transport_mesh (
+    .RX_CONTEXTS(8)
+  ) transport_endpoints (
     .clk(clk), .rst_n(rst_n),
     .tx_desc_valid(tx_desc_valid), .tx_desc_ready(tx_desc_ready),
     .tx_desc_destination(tx_desc_destination), .tx_desc_vc(tx_desc_vc),
@@ -157,10 +211,28 @@ module attention_shared_stream_context_engine #(
     .tx_mem_req_valid(tx_mem_req_valid), .tx_mem_req_ready(tx_mem_req_ready),
     .tx_mem_req_addr(tx_mem_req_addr), .tx_mem_rsp_valid(tx_mem_rsp_valid),
     .tx_mem_rsp_ready(tx_mem_rsp_ready), .tx_mem_rsp_data(tx_mem_rsp_data),
+    .mesh_in_valid(transport_endpoint_in_valid),
+    .mesh_in_ready(endpoint_mesh_in_ready),
+    .mesh_in_destination(transport_endpoint_in_destination),
+    .mesh_in_source(transport_endpoint_in_source),
+    .mesh_in_tag(transport_endpoint_in_tag),
+    .mesh_in_fragment(transport_endpoint_in_fragment),
+    .mesh_in_last(transport_endpoint_in_last),
+    .mesh_in_vc(transport_endpoint_in_vc),
+    .mesh_in_data(transport_endpoint_in_data),
     .rx_desc_valid(rx_desc_valid), .rx_desc_ready(rx_desc_ready),
     .rx_desc_source(rx_desc_source), .rx_desc_vc(rx_desc_vc),
     .rx_desc_tag(rx_desc_tag), .rx_desc_base_addr(rx_desc_base_addr),
     .rx_desc_flit_count(rx_desc_flit_count),
+    .mesh_out_valid(endpoint_mesh_out_valid),
+    .mesh_out_ready(endpoint_mesh_out_ready),
+    .mesh_out_destination(endpoint_mesh_out_destination),
+    .mesh_out_source(endpoint_mesh_out_source),
+    .mesh_out_tag(endpoint_mesh_out_tag),
+    .mesh_out_fragment(endpoint_mesh_out_fragment),
+    .mesh_out_last(endpoint_mesh_out_last),
+    .mesh_out_vc(endpoint_mesh_out_vc),
+    .mesh_out_data(endpoint_mesh_out_data),
     .rx_mem_write_valid(rx_mem_write_valid),
     .rx_mem_write_ready(rx_mem_write_ready),
     .rx_mem_write_addr(rx_mem_write_addr),
@@ -170,12 +242,48 @@ module attention_shared_stream_context_engine #(
     .rx_completion_source(mesh_rx_completion_source),
     .rx_completion_vc(mesh_rx_completion_vc),
     .rx_completion_tag(mesh_rx_completion_tag),
-    .endpoint_protocol_error(endpoint_protocol_error),
-    .router_accepted_flit_count(), .router_forwarded_flit_count(),
-    .router_input_stall_cycles(), .router_output_stall_cycles(),
-    .router_contention_cycles(), .router_current_input_occupancy(),
-    .router_max_input_occupancy(), .router_route_flit_count()
+    .endpoint_protocol_error(endpoint_protocol_error)
   );
+
+  assign transport_endpoint_out_ready = endpoint_mesh_out_ready;
+
+  generate
+    if (INTERNAL_MESH != 0) begin : gen_internal_mesh
+      noc_segmented_mesh4x4 #(
+        .DATA_W(256),
+        .TAG_W(TAG_W),
+        .FRAGMENT_W(3),
+        .VC_W(2),
+        .VC_COUNT(4),
+        .FIFO_DEPTH(4),
+        .COUNTER_W(32)
+      ) mesh (
+        .clk(clk), .rst_n(rst_n),
+        .endpoint_in_valid(transport_endpoint_in_valid),
+        .endpoint_in_ready(internal_mesh_in_ready),
+        .endpoint_in_dest(transport_endpoint_in_destination),
+        .endpoint_in_source(transport_endpoint_in_source),
+        .endpoint_in_tag(transport_endpoint_in_tag),
+        .endpoint_in_fragment(transport_endpoint_in_fragment),
+        .endpoint_in_last(transport_endpoint_in_last),
+        .endpoint_in_vc(transport_endpoint_in_vc),
+        .endpoint_in_data(transport_endpoint_in_data),
+        .endpoint_out_valid(internal_mesh_out_valid),
+        .endpoint_out_ready(endpoint_mesh_out_ready),
+        .endpoint_out_dest(internal_mesh_out_destination),
+        .endpoint_out_source(internal_mesh_out_source),
+        .endpoint_out_tag(internal_mesh_out_tag),
+        .endpoint_out_fragment(internal_mesh_out_fragment),
+        .endpoint_out_last(internal_mesh_out_last),
+        .endpoint_out_vc(internal_mesh_out_vc),
+        .endpoint_out_data(internal_mesh_out_data),
+        .router_accepted_flit_count(), .router_forwarded_flit_count(),
+        .router_input_stall_cycles(), .router_output_stall_cycles(),
+        .router_contention_cycles(), .router_current_input_occupancy(),
+        .router_max_input_occupancy(), .router_route_flit_count()
+      );
+    end
+  endgenerate
 
   // Reservations make source and destination endpoints unique per active
   // context.  Therefore every eligible context can issue one descriptor in
@@ -382,6 +490,8 @@ module attention_shared_stream_context_engine #(
       $error("attention_shared_stream_context_engine PACKET_INDEX_W cannot represent packet indices");
     if (TAG_W != 8)
       $error("attention_shared_stream_context_engine requires an 8-bit packet tag");
+    if (INTERNAL_MESH != 0 && INTERNAL_MESH != 1)
+      $error("attention_shared_stream_context_engine INTERNAL_MESH must be 0 or 1");
   end
 `endif
 endmodule
