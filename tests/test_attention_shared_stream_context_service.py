@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -39,8 +40,9 @@ def _tool(name: str) -> str | None:
     _tool("iverilog") is None or _tool("vvp") is None,
     reason="iverilog/vvp unavailable",
 )
+@pytest.mark.parametrize("external_mesh", [False, True])
 def test_shared_stream_context_service_preserves_contexts_addresses_and_payloads(
-    tmp_path: Path,
+    tmp_path: Path, external_mesh: bool,
 ) -> None:
     sim = tmp_path / "shared-stream-service.vvp"
     subprocess.run(
@@ -49,6 +51,8 @@ def test_shared_stream_context_service_preserves_contexts_addresses_and_payloads
             "-g2012",
             "-s",
             "attention_shared_stream_context_service_tb",
+            "-P",
+            f"attention_shared_stream_context_service_tb.EXTERNAL_MESH={int(external_mesh)}",
             "-o",
             str(sim),
             *[str(path) for path in RTL_SOURCES],
@@ -123,7 +127,11 @@ def test_shared_stream_context_service_preserves_contexts_addresses_and_payloads
 
 
 @pytest.mark.skipif(_tool("yosys") is None, reason="yosys unavailable")
-def test_shared_stream_context_service_yosys_import() -> None:
+@pytest.mark.parametrize(("internal_mesh", "expected_meshes"), [(1, 1), (0, 0)])
+def test_shared_stream_context_service_yosys_import(
+    tmp_path: Path, internal_mesh: int, expected_meshes: int
+) -> None:
+    netlist = tmp_path / f"service-{internal_mesh}.json"
     subprocess.run(
         [
             str(_tool("yosys")),
@@ -131,7 +139,10 @@ def test_shared_stream_context_service_yosys_import() -> None:
             "-p",
             "read_verilog -DSYNTHESIS -sv "
             + " ".join(str(path) for path in RTL_SOURCES)
-            + "; hierarchy -check -top attention_shared_stream_context_service; proc; check",
+            + f"; chparam -set INTERNAL_MESH {internal_mesh} "
+            + "attention_shared_stream_context_service"
+            + "; hierarchy -check -top attention_shared_stream_context_service"
+            + f"; proc; check; write_json {netlist}",
         ],
         cwd=REPO_ROOT,
         check=True,
@@ -139,3 +150,11 @@ def test_shared_stream_context_service_yosys_import() -> None:
         text=True,
         timeout=180,
     )
+    design = json.loads(netlist.read_text(encoding="utf-8"))
+    service_cells = list(
+        design["modules"]["attention_shared_stream_context_service"]["cells"].values()
+    )
+    engine_types = [cell["type"] for cell in service_cells if "context_engine" in cell["type"]]
+    assert len(engine_types) == 1
+    engine_cells = list(design["modules"][engine_types[0]]["cells"].values())
+    assert sum("noc_segmented_mesh4x4" in cell["type"] for cell in engine_cells) == expected_meshes

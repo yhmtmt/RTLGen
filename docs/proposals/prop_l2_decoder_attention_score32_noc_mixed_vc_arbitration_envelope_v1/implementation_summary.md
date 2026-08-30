@@ -20,3 +20,19 @@
 - Retained internal transport as the default compatibility mode, with exactly
   one endpoint array and one private mesh for VC0 and exactly one private mesh
   for VC1.
+- Added a shared dual-producer transport containing sixteen held-grant
+  endpoint arbiters, exactly one segmented mesh, a VC0/VC1 ejection demux, and
+  fail-closed sticky errors for invalid injection or ejection VC identities.
+- Forwarded the external transport boundary through the complete VC0
+  admission service and composed that service with the complete VC1 reducer,
+  packet adapters, root storage, decoder, and final tree on the shared fabric.
+- Exposed the shared router accounting vectors to the exact reducer accounting
+  path and made the VC1 TX-only ejection readiness deterministic.
+- Passed a bounded simultaneous composed-top replay: four VC0 contexts moved
+  64 payload-checked SRAM words while one exact VC1 group moved 315 packets
+  and 2,505 flits into 128 value-checked root rows. The replay observed both
+  producers accepting flits at overlapping endpoints, active arbitration,
+  nonzero mesh contention/stalls, and zero protocol errors.
+- Proved the composed hierarchy contains one VC0 service, one VC1 reducer, one
+  shared transport, exactly one mesh, and sixteen endpoint arbiters, with no
+  producer-private mesh remaining.

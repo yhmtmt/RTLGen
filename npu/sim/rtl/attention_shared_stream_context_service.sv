@@ -9,7 +9,8 @@ module attention_shared_stream_context_service #(
   parameter integer MAX_PACKETS_PER_CONTEXT = 68,
   parameter integer PACKET_INDEX_W = 7,
   parameter integer TAG_W = 8,
-  parameter integer TX_DESC_DEPTH = 8
+  parameter integer TX_DESC_DEPTH = 8,
+  parameter integer INTERNAL_MESH = 1
 ) (
   input wire clk,
   input wire rst_n,
@@ -53,7 +54,26 @@ module attention_shared_stream_context_service #(
   output wire [7:0] admitted_count,
   output reg [7:0] completed_count,
   output wire [15:0] endpoint_protocol_error,
-  output wire protocol_error
+  output wire protocol_error,
+
+  output wire [15:0] transport_endpoint_in_valid,
+  input wire [15:0] transport_endpoint_in_ready,
+  output wire [16*4-1:0] transport_endpoint_in_destination,
+  output wire [16*4-1:0] transport_endpoint_in_source,
+  output wire [16*TAG_W-1:0] transport_endpoint_in_tag,
+  output wire [16*3-1:0] transport_endpoint_in_fragment,
+  output wire [15:0] transport_endpoint_in_last,
+  output wire [16*2-1:0] transport_endpoint_in_vc,
+  output wire [16*256-1:0] transport_endpoint_in_data,
+  input wire [15:0] transport_endpoint_out_valid,
+  output wire [15:0] transport_endpoint_out_ready,
+  input wire [16*4-1:0] transport_endpoint_out_destination,
+  input wire [16*4-1:0] transport_endpoint_out_source,
+  input wire [16*TAG_W-1:0] transport_endpoint_out_tag,
+  input wire [16*3-1:0] transport_endpoint_out_fragment,
+  input wire [15:0] transport_endpoint_out_last,
+  input wire [16*2-1:0] transport_endpoint_out_vc,
+  input wire [16*256-1:0] transport_endpoint_out_data
 );
   wire layer_active_w;
   wire admission_error_w;
@@ -103,7 +123,8 @@ module attention_shared_stream_context_service #(
     .MAX_PACKETS_PER_CONTEXT(MAX_PACKETS_PER_CONTEXT),
     .PACKET_INDEX_W(PACKET_INDEX_W),
     .TAG_W(TAG_W),
-    .TX_DESC_DEPTH(TX_DESC_DEPTH)
+    .TX_DESC_DEPTH(TX_DESC_DEPTH),
+    .INTERNAL_MESH(INTERNAL_MESH)
   ) engine (
     .clk(clk), .rst_n(rst_n),
     .context_valid(context_valid), .context_ready(context_ready),
@@ -130,7 +151,25 @@ module attention_shared_stream_context_service #(
     .rx_mem_write_valid(rx_mem_write_valid),
     .rx_mem_write_ready(rx_mem_write_ready),
     .rx_mem_write_addr(rx_mem_write_addr), .rx_mem_write_data(rx_mem_write_data),
-    .endpoint_protocol_error(endpoint_protocol_error), .protocol_error(engine_error_w)
+    .endpoint_protocol_error(endpoint_protocol_error), .protocol_error(engine_error_w),
+    .transport_endpoint_in_valid(transport_endpoint_in_valid),
+    .transport_endpoint_in_ready(transport_endpoint_in_ready),
+    .transport_endpoint_in_destination(transport_endpoint_in_destination),
+    .transport_endpoint_in_source(transport_endpoint_in_source),
+    .transport_endpoint_in_tag(transport_endpoint_in_tag),
+    .transport_endpoint_in_fragment(transport_endpoint_in_fragment),
+    .transport_endpoint_in_last(transport_endpoint_in_last),
+    .transport_endpoint_in_vc(transport_endpoint_in_vc),
+    .transport_endpoint_in_data(transport_endpoint_in_data),
+    .transport_endpoint_out_valid(transport_endpoint_out_valid),
+    .transport_endpoint_out_ready(transport_endpoint_out_ready),
+    .transport_endpoint_out_destination(transport_endpoint_out_destination),
+    .transport_endpoint_out_source(transport_endpoint_out_source),
+    .transport_endpoint_out_tag(transport_endpoint_out_tag),
+    .transport_endpoint_out_fragment(transport_endpoint_out_fragment),
+    .transport_endpoint_out_last(transport_endpoint_out_last),
+    .transport_endpoint_out_vc(transport_endpoint_out_vc),
+    .transport_endpoint_out_data(transport_endpoint_out_data)
   );
 
   assign protocol_error = admission_error_w | engine_error_w;

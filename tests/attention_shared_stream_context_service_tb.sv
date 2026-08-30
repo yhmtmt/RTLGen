@@ -1,6 +1,8 @@
 `timescale 1ns/1ps
 
-module attention_shared_stream_context_service_tb;
+module attention_shared_stream_context_service_tb #(
+  parameter integer EXTERNAL_MESH = 0
+);
   localparam integer ADDR_W = 32;
   localparam integer PACKETS = 3;
   localparam integer PACKET_INDEX_W = 2;
@@ -48,6 +50,24 @@ module attention_shared_stream_context_service_tb;
   wire [7:0] completed_count;
   wire [15:0] endpoint_protocol_error;
   wire protocol_error;
+  wire [15:0] transport_endpoint_in_valid;
+  wire [15:0] transport_endpoint_in_ready;
+  wire [16*4-1:0] transport_endpoint_in_destination;
+  wire [16*4-1:0] transport_endpoint_in_source;
+  wire [16*8-1:0] transport_endpoint_in_tag;
+  wire [16*3-1:0] transport_endpoint_in_fragment;
+  wire [15:0] transport_endpoint_in_last;
+  wire [16*2-1:0] transport_endpoint_in_vc;
+  wire [16*256-1:0] transport_endpoint_in_data;
+  wire [15:0] transport_endpoint_out_valid;
+  wire [15:0] transport_endpoint_out_ready;
+  wire [16*4-1:0] transport_endpoint_out_destination;
+  wire [16*4-1:0] transport_endpoint_out_source;
+  wire [16*8-1:0] transport_endpoint_out_tag;
+  wire [16*3-1:0] transport_endpoint_out_fragment;
+  wire [15:0] transport_endpoint_out_last;
+  wire [16*2-1:0] transport_endpoint_out_vc;
+  wire [16*256-1:0] transport_endpoint_out_data;
 
   reg rsp_pending [0:15];
   reg [255:0] rsp_data [0:15];
@@ -66,7 +86,8 @@ module attention_shared_stream_context_service_tb;
     .ADDR_W(ADDR_W),
     .MAX_PACKETS_PER_CONTEXT(PACKETS),
     .PACKET_INDEX_W(PACKET_INDEX_W),
-    .TX_DESC_DEPTH(2)
+    .TX_DESC_DEPTH(2),
+    .INTERNAL_MESH(EXTERNAL_MESH == 0)
   ) dut (
     .clk(clk), .rst_n(rst_n),
     .layer_start(layer_start), .layer_idle(layer_idle),
@@ -94,8 +115,56 @@ module attention_shared_stream_context_service_tb;
     .admission_complete(admission_complete),
     .transport_complete(transport_complete), .admitted_count(admitted_count),
     .completed_count(completed_count),
-    .endpoint_protocol_error(endpoint_protocol_error), .protocol_error(protocol_error)
+    .endpoint_protocol_error(endpoint_protocol_error), .protocol_error(protocol_error),
+    .transport_endpoint_in_valid(transport_endpoint_in_valid),
+    .transport_endpoint_in_ready(transport_endpoint_in_ready),
+    .transport_endpoint_in_destination(transport_endpoint_in_destination),
+    .transport_endpoint_in_source(transport_endpoint_in_source),
+    .transport_endpoint_in_tag(transport_endpoint_in_tag),
+    .transport_endpoint_in_fragment(transport_endpoint_in_fragment),
+    .transport_endpoint_in_last(transport_endpoint_in_last),
+    .transport_endpoint_in_vc(transport_endpoint_in_vc),
+    .transport_endpoint_in_data(transport_endpoint_in_data),
+    .transport_endpoint_out_valid(transport_endpoint_out_valid),
+    .transport_endpoint_out_ready(transport_endpoint_out_ready),
+    .transport_endpoint_out_destination(transport_endpoint_out_destination),
+    .transport_endpoint_out_source(transport_endpoint_out_source),
+    .transport_endpoint_out_tag(transport_endpoint_out_tag),
+    .transport_endpoint_out_fragment(transport_endpoint_out_fragment),
+    .transport_endpoint_out_last(transport_endpoint_out_last),
+    .transport_endpoint_out_vc(transport_endpoint_out_vc),
+    .transport_endpoint_out_data(transport_endpoint_out_data)
   );
+
+  generate
+    if (EXTERNAL_MESH) begin : gen_external_mesh
+      noc_segmented_mesh4x4 external_mesh (
+        .clk(clk), .rst_n(rst_n),
+        .endpoint_in_valid(transport_endpoint_in_valid),
+        .endpoint_in_ready(transport_endpoint_in_ready),
+        .endpoint_in_dest(transport_endpoint_in_destination),
+        .endpoint_in_source(transport_endpoint_in_source),
+        .endpoint_in_tag(transport_endpoint_in_tag),
+        .endpoint_in_fragment(transport_endpoint_in_fragment),
+        .endpoint_in_last(transport_endpoint_in_last),
+        .endpoint_in_vc(transport_endpoint_in_vc),
+        .endpoint_in_data(transport_endpoint_in_data),
+        .endpoint_out_valid(transport_endpoint_out_valid),
+        .endpoint_out_ready(transport_endpoint_out_ready),
+        .endpoint_out_dest(transport_endpoint_out_destination),
+        .endpoint_out_source(transport_endpoint_out_source),
+        .endpoint_out_tag(transport_endpoint_out_tag),
+        .endpoint_out_fragment(transport_endpoint_out_fragment),
+        .endpoint_out_last(transport_endpoint_out_last),
+        .endpoint_out_vc(transport_endpoint_out_vc),
+        .endpoint_out_data(transport_endpoint_out_data),
+        .router_accepted_flit_count(), .router_forwarded_flit_count(),
+        .router_input_stall_cycles(), .router_output_stall_cycles(),
+        .router_contention_cycles(), .router_current_input_occupancy(),
+        .router_max_input_occupancy(), .router_route_flit_count()
+      );
+    end
+  endgenerate
 
   always #1 clk = ~clk;
 

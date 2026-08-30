@@ -15,3 +15,6 @@ VC0 and VC1 flit and completion, reports no protocol error, and matches the
 cycle model's arbitration decisions. The resulting shared top must be
 physically measured before its area, energy, or timing replaces a measured
 dual-network component.
+
+A bounded simultaneous replay is an integration gate only. It cannot replace
+the full 70,948-flit replay or establish the Llama7B frontier point.
