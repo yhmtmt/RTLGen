@@ -33,6 +33,17 @@
   and 2,505 flits into 128 value-checked root rows. The replay observed both
   producers accepting flits at overlapping endpoints, active arbitration,
   nonzero mesh contention/stalls, and zero protocol errors.
+- Passed the promotion-scale simultaneous composed-top replay on the actual
+  shared-mesh RTL: all 112 VC0 contexts moved 7,616 packets and 60,928 flits,
+  while four sequential VC1 groups moved 1,260 packets and 10,020 flits into
+  512 value-checked root rows. The replay checked VC0 SRAM payloads, writes,
+  completions, VC1 metadata, values, descriptors, completions, and held output
+  behavior under stalls. It observed real overlapping endpoint arbitration and
+  nonzero contention with zero protocol errors.
+- The promotion-scale gate is reproducible with
+  `RTLGEN_RUN_SLOW_SHARED_MESH_FULL_REPLAY=1 python -m pytest -q
+  tests/test_attention_score32_exact_dual_producer_shared_mesh4x4_full.py`;
+  the verified run completed in 353.16 seconds.
 - Proved the composed hierarchy contains one VC0 service, one VC1 reducer, one
   shared transport, exactly one mesh, and sixteen endpoint arbiters, with no
   producer-private mesh remaining.
