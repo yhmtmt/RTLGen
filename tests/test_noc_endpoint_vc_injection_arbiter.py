@@ -44,11 +44,23 @@ def _build_schedule() -> tuple[
     list[tuple[ModelFlit | None, ModelFlit | None, bool]],
     list[EndpointVcArbiterCycle],
 ]:
-    vc0_queue = deque(_flit(index, vc=0) for index in range(12))
-    vc1_queue = deque(_flit(index + 16, vc=1) for index in range(9))
     model = EndpointVcInjectionArbiter()
     schedule: list[tuple[ModelFlit | None, ModelFlit | None, bool]] = []
     expected: list[EndpointVcArbiterCycle] = []
+
+    late_vc0 = _flit(15, vc=0)
+    held_vc1 = _flit(31, vc=1)
+    for vc0, vc1, out_ready in (
+        (None, held_vc1, False),
+        (late_vc0, held_vc1, False),
+        (late_vc0, held_vc1, True),
+        (late_vc0, None, True),
+    ):
+        schedule.append((vc0, vc1, out_ready))
+        expected.append(model.step(vc0=vc0, vc1=vc1, out_ready=out_ready))
+
+    vc0_queue = deque(_flit(index, vc=0) for index in range(12))
+    vc1_queue = deque(_flit(index + 16, vc=1) for index in range(9))
     for cycle in range(64):
         vc0 = vc0_queue[0] if vc0_queue else None
         vc1 = vc1_queue[0] if vc1_queue else None
@@ -85,6 +97,23 @@ def test_model_round_robin_holds_selection_through_stall() -> None:
     assert not stalled.vc0_ready and not stalled.vc1_ready
     assert accepted0.output == vc0 and accepted0.vc0_ready
     assert accepted1.output == vc1 and accepted1.vc1_ready
+
+
+def test_model_holds_vc1_when_preferred_vc0_arrives_during_stall() -> None:
+    model = EndpointVcInjectionArbiter()
+    vc0 = _flit(0, vc=0)
+    vc1 = _flit(16, vc=1)
+
+    selected1 = model.step(vc0=None, vc1=vc1, out_ready=False)
+    still1 = model.step(vc0=vc0, vc1=vc1, out_ready=False)
+    accepted1 = model.step(vc0=vc0, vc1=vc1, out_ready=True)
+    accepted0 = model.step(vc0=vc0, vc1=None, out_ready=True)
+
+    assert selected1.output == vc1
+    assert still1.output == vc1
+    assert not still1.vc0_ready and not still1.vc1_ready
+    assert accepted1.output == vc1 and accepted1.vc1_ready
+    assert accepted0.output == vc0 and accepted0.vc0_ready
 
 
 def test_model_drops_wrong_vc_identity_and_sets_sticky_error() -> None:

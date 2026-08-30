@@ -26,6 +26,7 @@ class EndpointVcInjectionArbiter:
     def __init__(self) -> None:
         self.cycle = 0
         self.preferred_vc = 0
+        self.held_vc: int | None = None
         self.protocol_error = False
 
     def step(
@@ -41,11 +42,19 @@ class EndpointVcInjectionArbiter:
             0: vc0 if vc0 is not None and not dropped_vc0 else None,
             1: vc1 if vc1 is not None and not dropped_vc1 else None,
         }
+        held_source_dropped = (
+            (self.held_vc == 0 and dropped_vc0)
+            or (self.held_vc == 1 and dropped_vc1)
+        )
         selected_vc: int | None = None
-        for candidate in (self.preferred_vc, 1 - self.preferred_vc):
-            if eligible[candidate] is not None:
-                selected_vc = candidate
-                break
+        if self.held_vc is not None:
+            if eligible[self.held_vc] is not None:
+                selected_vc = self.held_vc
+        else:
+            for candidate in (self.preferred_vc, 1 - self.preferred_vc):
+                if eligible[candidate] is not None:
+                    selected_vc = candidate
+                    break
         output = None if selected_vc is None else eligible[selected_vc]
         output_fire = output is not None and out_ready
         result = EndpointVcArbiterCycle(
@@ -61,8 +70,13 @@ class EndpointVcInjectionArbiter:
         )
         if dropped_vc0 or dropped_vc1:
             self.protocol_error = True
-        if output_fire:
+        if held_source_dropped:
+            self.held_vc = None
+        elif output_fire:
+            self.held_vc = None
             self.preferred_vc = 1 - int(selected_vc)
+        elif output is not None and not out_ready:
+            self.held_vc = selected_vc
         self.cycle += 1
         return result
 

@@ -1,8 +1,8 @@
 `timescale 1ns/1ps
 
 // Two-source endpoint injection arbiter for the shared VC0/VC1 mesh.
-// Each producer owns its ready/valid holding register. The arbiter adds only a
-// one-bit round-robin cursor and does not hide additional flit buffering.
+// Each producer owns its ready/valid holding register. The arbiter stores the
+// round-robin cursor and a stalled grant identity, but no flit payload.
 module noc_endpoint_vc_injection_arbiter #(
   parameter integer DATA_W = 256,
   parameter integer ENDPOINT_W = 4,
@@ -46,6 +46,8 @@ module noc_endpoint_vc_injection_arbiter #(
   output reg protocol_error
 );
   reg preferred_vc_q;
+  reg held_grant_valid_q;
+  reg held_grant_vc_q;
   reg grant_vc_r;
   reg grant_valid_r;
 
@@ -63,8 +65,16 @@ module noc_endpoint_vc_injection_arbiter #(
 
   always @(*) begin
     grant_valid_r = 1'b0;
-    grant_vc_r = preferred_vc_q;
-    if (!preferred_vc_q) begin
+    grant_vc_r = held_grant_valid_q ? held_grant_vc_q : preferred_vc_q;
+    if (held_grant_valid_q) begin
+      if (!held_grant_vc_q && vc0_eligible) begin
+        grant_valid_r = 1'b1;
+        grant_vc_r = 1'b0;
+      end else if (held_grant_vc_q && vc1_eligible) begin
+        grant_valid_r = 1'b1;
+        grant_vc_r = 1'b1;
+      end
+    end else if (!preferred_vc_q) begin
       if (vc0_eligible) begin
         grant_valid_r = 1'b1;
         grant_vc_r = 1'b0;
@@ -112,12 +122,23 @@ module noc_endpoint_vc_injection_arbiter #(
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       preferred_vc_q <= 1'b0;
+      held_grant_valid_q <= 1'b0;
+      held_grant_vc_q <= 1'b0;
       protocol_error <= 1'b0;
     end else begin
       if (vc0_drop || vc1_drop)
         protocol_error <= 1'b1;
-      if (out_fire)
+      if (held_grant_valid_q &&
+          ((!held_grant_vc_q && vc0_drop) ||
+           (held_grant_vc_q && vc1_drop))) begin
+        held_grant_valid_q <= 1'b0;
+      end else if (out_fire) begin
+        held_grant_valid_q <= 1'b0;
         preferred_vc_q <= !grant_vc_r;
+      end else if (grant_valid_r && !out_ready) begin
+        held_grant_valid_q <= 1'b1;
+        held_grant_vc_q <= grant_vc_r;
+      end
     end
   end
 
