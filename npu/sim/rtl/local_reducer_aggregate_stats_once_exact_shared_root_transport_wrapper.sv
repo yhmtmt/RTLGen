@@ -454,6 +454,10 @@ module local_reducer_aggregate_stats_once_exact_shared_root_transport_wrapper #(
   assign composition_mesh_out_vc_w = mesh_endpoint_out_vc_w[ROOT_ENDPOINT_ID*VC_W +: VC_W];
   assign source_mesh_out_data_w = mesh_endpoint_out_data_w[SOURCE_COUNT*DATA_W-1:0];
   assign composition_mesh_out_data_w = mesh_endpoint_out_data_w[ROOT_ENDPOINT_ID*DATA_W +: DATA_W];
+  // Endpoints 0..14 are TX-only in this composition. They have no receive
+  // consumer, so keep their ejection direction explicitly drainable instead
+  // of propagating undriven ready values into an external shared mesh.
+  assign source_mesh_out_ready_w = {SOURCE_COUNT{1'b1}};
   assign mesh_endpoint_out_ready_w[SOURCE_COUNT-1:0] = source_mesh_out_ready_w;
   assign mesh_endpoint_out_ready_w[ROOT_ENDPOINT_ID] = composition_mesh_out_ready_w;
   assign transport_endpoint_out_ready = mesh_endpoint_out_ready_w;
