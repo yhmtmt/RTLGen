@@ -1,0 +1,32 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_dual_producer_shared_mesh_ppa_activity_v1",
+  "source_commit": "TBD",
+  "source_commit_note": "Queue only after merge and pin source_requirement.required_sha to the merge commit containing the full replay, composed harness, generator, guard, config, sweep, proposal, and task-generator support.",
+  "requested_items": [
+    {
+      "item_id": "l1_attention_score32_exact_dual_producer_shared_mesh_synth_mode_diag_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure flat and hierarchy-preserving Yosys feasibility for the exact dual-producer shared-mesh composition.",
+      "evaluation_mode": "synth_prefilter",
+      "make_target": "1_2_yosys",
+      "abstraction_layer": "decoder_attention_exact_dual_producer_shared_transport",
+      "comparison_role": "composed_shared_mesh_synthesis_boundary",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_l1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_l1/sweeps/nangate45_synth_mode_diag_v1.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_l1/metrics.csv"
+      ],
+      "status": "pending_source_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "select_viable_physical_decomposition",
+        "reason": "The separate exact reducer previously approached a 17 GiB synthesis boundary, so composed physical work must be selected from measured synthesis evidence."
+      },
+      "acceptance_notes": "Preserve flat and hierarchical rows including resource failures. Verify 163 top pins, one shared mesh, sixteen arbiters, two external producer boundaries, exact traffic quantities, and 120 fakeram blackboxes. Do not interpret this synth-only item as PPA or a Llama7B frontier result."
+    }
+  ]
+}

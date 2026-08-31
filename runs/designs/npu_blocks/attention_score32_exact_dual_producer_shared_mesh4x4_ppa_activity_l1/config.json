@@ -1,0 +1,16 @@
+{
+  "top_name": "attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_l1",
+  "attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_harness": {
+    "physical_banks": 15,
+    "use_fakeram": 1,
+    "hierarchy_area_prefixes": [
+      "composition/vc0_activity/service/",
+      "composition/vc1_activity/exact_transport_wrapper/",
+      "composition/shared_transport/"
+    ]
+  },
+  "report_links": {
+    "proposal_id": "prop_l1_attention_score32_exact_dual_producer_shared_mesh_ppa_activity_v1",
+    "proposal_path": "docs/proposals/prop_l1_attention_score32_exact_dual_producer_shared_mesh_ppa_activity_v1/proposal.json"
+  }
+}

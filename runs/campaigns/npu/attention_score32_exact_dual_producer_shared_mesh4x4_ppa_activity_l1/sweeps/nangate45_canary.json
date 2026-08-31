@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "tag_prefix": "l1_exact_dual_producer_shared_mesh_canary",
+  "required_metrics": [
+    "critical_path_ns",
+    "instance_area_um2",
+    "hierarchical_instance_area_um2",
+    "total_power_mw"
+  ],
+  "hierarchy_area_prefixes": [
+    "composition/vc0_activity/service/",
+    "composition/vc1_activity/exact_transport_wrapper/",
+    "composition/shared_transport/"
+  ],
+  "flow_params": {
+    "CLOCK_PERIOD": [12.0, 16.0],
+    "DIE_AREA": ["0 0 5000 5000"],
+    "CORE_AREA": ["100 100 4900 4900"],
+    "PLACE_DENSITY": [0.30],
+    "SYNTH_HIERARCHICAL": [1],
+    "SYNTH_HIER_SEPARATOR": ["/"]
+  }
+}

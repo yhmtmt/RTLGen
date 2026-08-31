@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "tag_prefix": "l1_exact_dual_producer_shared_mesh_synth_diag_v1",
+  "flow_params": {
+    "CLOCK_PERIOD": [12],
+    "DIE_AREA": ["0 0 5000 5000"],
+    "CORE_AREA": ["100 100 4900 4900"],
+    "PLACE_DENSITY": [0.3],
+    "ADDITIONAL_LIBS": [""]
+  },
+  "mode_compare": {
+    "enabled": true,
+    "report_dir": "synth_mode_diag_v1",
+    "modes": [
+      {
+        "name": "flat_synth",
+        "use_macro": true,
+        "param_overrides": {
+          "FLOW_VARIANT": "synth_diag_v1_flat",
+          "SYNTH_HIERARCHICAL": 0,
+          "SYNTH_KEEP_MODULES": "",
+          "SYNTH_HIER_SEPARATOR": "/"
+        }
+      },
+      {
+        "name": "hierarchical_synth",
+        "use_macro": true,
+        "param_overrides": {
+          "FLOW_VARIANT": "synth_diag_v1_hierarchical",
+          "SYNTH_HIERARCHICAL": 1,
+          "SYNTH_KEEP_MODULES": "",
+          "SYNTH_HIER_SEPARATOR": "/"
+        }
+      }
+    ]
+  }
+}

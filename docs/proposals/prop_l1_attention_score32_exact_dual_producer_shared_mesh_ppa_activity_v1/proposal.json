@@ -1,0 +1,98 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_dual_producer_shared_mesh_ppa_activity_v1",
+  "created_utc": "2026-08-30T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Exact dual-producer shared-mesh physical calibration",
+  "abstraction_layer": "decoder_attention_exact_dual_producer_shared_transport",
+  "hypothesis": "A compact physical harness containing the complete 112-context VC0 service, complete four-group exact VC1 reduction path, one shared 4x4 mesh, sixteen held-grant VC arbiters, exact c16/r2/l8/b59 tree, and 120 SRAM macros can replace separately costed transport components with a hierarchy-matched Nangate45 anchor.",
+  "direct_comparison": {
+    "primary_question": "What timing, reusable-DUT area, and whole-harness power bounds result when the exact Llama7B VC0 and VC1 producer paths share one embodied mesh?",
+    "include": [
+      "112 VC0 contexts, 7616 packets, and 60928 flits",
+      "four sequential VC1 groups, 1260 packets, 10020 flits, and 512 exact root rows",
+      "one noc_segmented_mesh4x4 and sixteen noc_endpoint_vc_injection_arbiter instances",
+      "exact c16/r2/l8/b59 global reduction tree",
+      "exactly 120 fakeram45_64x32 root-storage macros",
+      "disjoint hierarchical area for the VC0 service, VC1 exact path, and shared transport"
+    ],
+    "exclude": [
+      "HBM/DRAM controller and off-chip service",
+      "claiming activity stimulus as reusable DUT area",
+      "claiming vectorless whole-harness power as token energy",
+      "changing Llama7B arithmetic precision or quality"
+    ],
+    "metrics": [
+      "synthesis_status",
+      "synthesis_elapsed_seconds",
+      "peak_memory_mb",
+      "critical_path_ns",
+      "instance_area_um2",
+      "hierarchical_instance_area_um2",
+      "total_power_mw",
+      "macro_count"
+    ]
+  },
+  "functional_evidence": {
+    "test": "tests/test_attention_score32_exact_dual_producer_shared_mesh4x4_full.py",
+    "vc0_contexts": 112,
+    "vc0_packets": 7616,
+    "vc0_flits": 60928,
+    "vc1_groups": 4,
+    "vc1_packets": 1260,
+    "vc1_flits": 10020,
+    "vc1_checked_rows": 512,
+    "total_flits": 70948,
+    "protocol_errors": 0,
+    "overlap_and_contention_observed": true
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l1_attention_score32_exact_dual_producer_shared_mesh_synth_mode_diag_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure flat and hierarchy-preserving Yosys feasibility before launching the composed OpenROAD canary.",
+      "status": "pending_source_merge",
+      "evaluation_mode": "synth_prefilter",
+      "make_target": "1_2_yosys",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_l1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_l1/sweeps/nangate45_synth_mode_diag_v1.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_l1/metrics.csv"
+      ],
+      "acceptance_notes": "Preserve both mode rows and all failures. This is resource/legality evidence, not PPA. Keep 120 fakeram instances as blackboxes and do not run physical postchecks."
+    },
+    {
+      "item_id": "l1_attention_score32_exact_dual_producer_shared_mesh_ppa_activity_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure composed shared-mesh timing, area, and power using the viable synthesis decomposition.",
+      "status": "blocked_on_synth_feasibility",
+      "evaluation_mode": "physical_calibration",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_l1/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_l1/sweeps/nangate45_canary.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_l1/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_l1/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_l1/hierarchy_reports/index.json"
+      ],
+      "acceptance_notes": "Launch only after the synth prefilter chooses a viable monolithic or hardened-RTL-macro decomposition. Require finite PPA, timing-path identity, exactly 120 SRAM macros, and the disjoint three-prefix area sum."
+    }
+  ],
+  "remaining_abstractions": [
+    "HBM/DRAM controller and off-chip service remain external by design.",
+    "Whole-harness vectorless power is an upper bound until workload activity is propagated into physical power analysis.",
+    "The composed point does not become a Llama7B frontier point until physical metrics are fed back into the architecture model."
+  ],
+  "source_refs": [
+    "npu/sim/rtl/attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_harness.sv",
+    "npu/rtlgen/gen_attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_harness.py",
+    "npu/eval/check_attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_guard.py",
+    "tests/test_attention_score32_exact_dual_producer_shared_mesh4x4_full.py"
+  ]
+}

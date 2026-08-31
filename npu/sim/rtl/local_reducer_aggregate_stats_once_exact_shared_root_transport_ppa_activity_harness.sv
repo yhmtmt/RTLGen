@@ -10,13 +10,36 @@ module local_reducer_aggregate_stats_once_exact_shared_root_transport_ppa_activi
   parameter integer GROUP_COUNT = 4,
   parameter integer MAX_CYCLES = 16'hfffe,
   parameter integer PHYSICAL_BANKS = 15,
-  parameter integer USE_FAKERAM = 0
+  parameter integer USE_FAKERAM = 0,
+  parameter integer INTERNAL_MESH = 1
 ) (
   input wire clk,
   input wire rst_n,
   input wire enable,
   input wire [31:0] control,
-  output wire [127:0] observable
+  output wire [127:0] observable,
+  output wire [15:0] transport_endpoint_in_valid,
+  input wire [15:0] transport_endpoint_in_ready,
+  output wire [16*4-1:0] transport_endpoint_in_destination,
+  output wire [16*4-1:0] transport_endpoint_in_source,
+  output wire [16*8-1:0] transport_endpoint_in_tag,
+  output wire [16*3-1:0] transport_endpoint_in_fragment,
+  output wire [15:0] transport_endpoint_in_last,
+  output wire [16*2-1:0] transport_endpoint_in_vc,
+  output wire [16*256-1:0] transport_endpoint_in_data,
+  input wire [15:0] transport_endpoint_out_valid,
+  output wire [15:0] transport_endpoint_out_ready,
+  input wire [16*4-1:0] transport_endpoint_out_destination,
+  input wire [16*4-1:0] transport_endpoint_out_source,
+  input wire [16*8-1:0] transport_endpoint_out_tag,
+  input wire [16*3-1:0] transport_endpoint_out_fragment,
+  input wire [15:0] transport_endpoint_out_last,
+  input wire [16*2-1:0] transport_endpoint_out_vc,
+  input wire [16*256-1:0] transport_endpoint_out_data,
+  input wire [16*32-1:0] transport_router_accepted_flit_counts,
+  input wire [16*32-1:0] transport_router_input_stall_counts,
+  input wire [16*32-1:0] transport_router_output_stall_counts,
+  input wire [16*32-1:0] transport_router_contention_counts
 );
   localparam integer SOURCE_COUNT = 15;
   localparam integer BEAT_W = 419;
@@ -193,7 +216,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_transport_ppa_activi
     .BEAT_W(BEAT_W),
     .ROOT_ENDPOINT_ID(15),
     .PHYSICAL_BANKS(PHYSICAL_BANKS),
-    .USE_FAKERAM(USE_FAKERAM)
+    .USE_FAKERAM(USE_FAKERAM),
+    .INTERNAL_MESH(INTERNAL_MESH)
   ) exact_transport_wrapper (
     .clk(clk),
     .rst_n(rst_n),
@@ -240,7 +264,29 @@ module local_reducer_aggregate_stats_once_exact_shared_root_transport_ppa_activi
     .mesh_accepted_flit_count(mesh_accepted_flit_count_w),
     .mesh_contention_cycles(mesh_contention_cycles_w),
     .mesh_input_stall_cycles(mesh_input_stall_cycles_w),
-    .mesh_output_stall_cycles(mesh_output_stall_cycles_w)
+    .mesh_output_stall_cycles(mesh_output_stall_cycles_w),
+    .transport_endpoint_in_valid(transport_endpoint_in_valid),
+    .transport_endpoint_in_ready(transport_endpoint_in_ready),
+    .transport_endpoint_in_destination(transport_endpoint_in_destination),
+    .transport_endpoint_in_source(transport_endpoint_in_source),
+    .transport_endpoint_in_tag(transport_endpoint_in_tag),
+    .transport_endpoint_in_fragment(transport_endpoint_in_fragment),
+    .transport_endpoint_in_last(transport_endpoint_in_last),
+    .transport_endpoint_in_vc(transport_endpoint_in_vc),
+    .transport_endpoint_in_data(transport_endpoint_in_data),
+    .transport_endpoint_out_valid(transport_endpoint_out_valid),
+    .transport_endpoint_out_ready(transport_endpoint_out_ready),
+    .transport_endpoint_out_destination(transport_endpoint_out_destination),
+    .transport_endpoint_out_source(transport_endpoint_out_source),
+    .transport_endpoint_out_tag(transport_endpoint_out_tag),
+    .transport_endpoint_out_fragment(transport_endpoint_out_fragment),
+    .transport_endpoint_out_last(transport_endpoint_out_last),
+    .transport_endpoint_out_vc(transport_endpoint_out_vc),
+    .transport_endpoint_out_data(transport_endpoint_out_data),
+    .transport_router_accepted_flit_counts(transport_router_accepted_flit_counts),
+    .transport_router_input_stall_counts(transport_router_input_stall_counts),
+    .transport_router_output_stall_counts(transport_router_output_stall_counts),
+    .transport_router_contention_counts(transport_router_contention_counts)
   );
 
   always @(posedge clk or negedge rst_n) begin
@@ -352,7 +398,8 @@ module local_reducer_aggregate_stats_once_exact_shared_root_transport_ppa_activi
 `ifndef SYNTHESIS
   initial begin
     if (GROUP_COUNT != 4 || SOURCE_COUNT != 15 || BEAT_W != 419 ||
-        PHYSICAL_BANKS < 1 || PHYSICAL_BANKS > 15)
+        PHYSICAL_BANKS < 1 || PHYSICAL_BANKS > 15 ||
+        (INTERNAL_MESH != 0 && INTERNAL_MESH != 1))
       $error("compact exact transport harness contract changed");
   end
 `endif
