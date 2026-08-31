@@ -191,7 +191,18 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
   integer temp_error_i;
   integer expected_source_i;
   integer expected_addr_i;
+  integer arb_trace_fd = 0;
+  integer arb_trace_cycle = 0;
+  integer trace_endpoint_i;
+  string arb_trace_path;
   reg [255:0] expected_data_q;
+  reg [15:0] arb_trace_producer0_valid_mask;
+  reg [15:0] arb_trace_producer1_valid_mask;
+  reg [15:0] arb_trace_mesh_ready_mask;
+  reg [15:0] arb_trace_producer0_ready_mask;
+  reg [15:0] arb_trace_producer1_ready_mask;
+  reg [15:0] arb_trace_out_valid_mask;
+  reg [31:0] arb_trace_out_vc_pack;
 
   attention_score32_exact_dual_producer_shared_mesh4x4 dut (
     .clk(clk),
@@ -609,6 +620,48 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
+      arb_trace_cycle <= 0;
+    end else if (arb_trace_fd != 0) begin
+      arb_trace_producer0_valid_mask = 16'b0;
+      arb_trace_producer1_valid_mask = 16'b0;
+      arb_trace_mesh_ready_mask = 16'b0;
+      arb_trace_producer0_ready_mask = 16'b0;
+      arb_trace_producer1_ready_mask = 16'b0;
+      arb_trace_out_valid_mask = 16'b0;
+      arb_trace_out_vc_pack = 32'b0;
+      for (trace_endpoint_i = 0; trace_endpoint_i < 16; trace_endpoint_i = trace_endpoint_i + 1) begin
+        arb_trace_producer0_valid_mask[trace_endpoint_i] =
+          dut.vc0_transport_in_valid_w[trace_endpoint_i];
+        arb_trace_producer1_valid_mask[trace_endpoint_i] =
+          dut.vc1_transport_in_valid_w[trace_endpoint_i];
+        arb_trace_mesh_ready_mask[trace_endpoint_i] =
+          dut.shared_transport.mesh_endpoint_in_ready_w[trace_endpoint_i];
+        arb_trace_producer0_ready_mask[trace_endpoint_i] =
+          dut.vc0_transport_in_ready_w[trace_endpoint_i];
+        arb_trace_producer1_ready_mask[trace_endpoint_i] =
+          dut.vc1_transport_in_ready_w[trace_endpoint_i];
+        arb_trace_out_valid_mask[trace_endpoint_i] =
+          dut.shared_transport.mesh_endpoint_in_valid_w[trace_endpoint_i];
+        arb_trace_out_vc_pack[(trace_endpoint_i * 2) +: 2] =
+          dut.shared_transport.mesh_endpoint_in_valid_w[trace_endpoint_i] ?
+            dut.shared_transport.mesh_endpoint_in_vc_w[(trace_endpoint_i * 2) +: 2] :
+            2'b0;
+      end
+      $fdisplay(arb_trace_fd, "ARB %0d %04h %04h %04h %04h %04h %04h %08h",
+        arb_trace_cycle,
+        arb_trace_producer0_valid_mask,
+        arb_trace_producer1_valid_mask,
+        arb_trace_mesh_ready_mask,
+        arb_trace_producer0_ready_mask,
+        arb_trace_producer1_ready_mask,
+        arb_trace_out_valid_mask,
+        arb_trace_out_vc_pack);
+      arb_trace_cycle <= arb_trace_cycle + 1;
+    end
+  end
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
       vc0_context_count <= 0;
       vc0_completion_count <= 0;
       vc0_write_count <= 0;
@@ -958,15 +1011,21 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
         $finish;
       end
 
-      if (cycle > 300000)
+      if (cycle > 300000) begin
         $fatal(1, "full shared-mesh timeout cycle=%0d vc0_contexts=%0d vc0_completions=%0d vc0_writes=%0d vc1_groups=%0d vc1_rows=%0d vc1_packets=%0d vc1_done=%0d",
           cycle, vc0_context_count, vc0_completion_count, vc0_write_count,
           vc1_group_count_seen, vc1_root_count, vc1_source_tx_descriptor_count,
           vc1_done);
+      end
     end
   end
 
   initial begin
+    if ($value$plusargs("ARB_TRACE=%s", arb_trace_path)) begin
+      arb_trace_fd = $fopen(arb_trace_path, "w");
+      if (arb_trace_fd == 0)
+        $fatal(1, "failed to open ARB_TRACE=%0s", arb_trace_path);
+    end
     vc1_remote_group_ready = {VC1_SOURCE_COUNT{1'b1}};
     vc1_root_local_group_ready = 1'b1;
     for (reset_source_i = 0; reset_source_i < VC1_SOURCE_COUNT; reset_source_i = reset_source_i + 1) begin

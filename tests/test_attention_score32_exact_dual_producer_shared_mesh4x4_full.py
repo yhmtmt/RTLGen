@@ -10,6 +10,10 @@ import time
 import pytest
 
 from npu.rtlgen.gen_attention_score32_exact_banked_finalized_tree import generate
+from npu.sim.perf.noc_endpoint_vc_injection_arbiter import (
+    EndpointVcInjectionArbiter,
+    ModelFlit,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -52,6 +56,17 @@ PASS_RE = re.compile(
     r"overlap_arb=(?P<overlap_arb>\d+) "
     r"contention=(?P<contention>\d+)"
 )
+ARB_TRACE_RE = re.compile(
+    r"^ARB "
+    r"(?P<cycle>\d+) "
+    r"(?P<producer0_valid>[0-9a-fA-F]+) "
+    r"(?P<producer1_valid>[0-9a-fA-F]+) "
+    r"(?P<mesh_ready>[0-9a-fA-F]+) "
+    r"(?P<producer0_ready>[0-9a-fA-F]+) "
+    r"(?P<producer1_ready>[0-9a-fA-F]+) "
+    r"(?P<out_valid>[0-9a-fA-F]+) "
+    r"(?P<out_vc_pack>[0-9a-fA-F]+)$"
+)
 
 
 def _tool(name: str) -> str | None:
@@ -83,6 +98,107 @@ def _generate_tree(tmp_path: Path) -> Path:
 RUN_ENV = "RTLGEN_RUN_SLOW_SHARED_MESH_FULL_REPLAY"
 
 
+def _mask_bit(mask: int, bit: int) -> bool:
+    return bool((mask >> bit) & 1)
+
+
+def _packed_vc(word: int, endpoint: int) -> int:
+    return (word >> (endpoint * 2)) & 0x3
+
+
+def _placeholder_flit(endpoint: int, *, vc: int) -> ModelFlit:
+    return ModelFlit(
+        source=endpoint,
+        destination=endpoint,
+        tag=endpoint,
+        fragment=0,
+        last=True,
+        vc=vc,
+        data=endpoint | (vc << 8),
+        label=f"ep{endpoint}_vc{vc}",
+    )
+
+
+def _load_arb_trace(path: Path) -> list[dict[str, int]]:
+    rows: list[dict[str, int]] = []
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        match = ARB_TRACE_RE.match(line)
+        assert match is not None, f"unexpected arb trace row: {line}"
+        rows.append(
+            {
+                "cycle": int(match.group("cycle")),
+                "producer0_valid": int(match.group("producer0_valid"), 16),
+                "producer1_valid": int(match.group("producer1_valid"), 16),
+                "mesh_ready": int(match.group("mesh_ready"), 16),
+                "producer0_ready": int(match.group("producer0_ready"), 16),
+                "producer1_ready": int(match.group("producer1_ready"), 16),
+                "out_valid": int(match.group("out_valid"), 16),
+                "out_vc_pack": int(match.group("out_vc_pack"), 16),
+            }
+        )
+    return rows
+
+
+def _assert_arbiter_trace_matches_model(path: Path) -> int:
+    rows = _load_arb_trace(path)
+    assert rows, "arbiter trace is empty"
+
+    models = [EndpointVcInjectionArbiter() for _ in range(16)]
+    decision_count = 0
+    for expected_cycle, row in enumerate(rows):
+        assert row["cycle"] == expected_cycle, (
+            f"arb trace cycle mismatch: expected {expected_cycle}, "
+            f"got {row['cycle']}"
+        )
+        for endpoint, model in enumerate(models):
+            vc0_valid = _mask_bit(row["producer0_valid"], endpoint)
+            vc1_valid = _mask_bit(row["producer1_valid"], endpoint)
+            out_ready = _mask_bit(row["mesh_ready"], endpoint)
+            observed_vc0_ready = _mask_bit(row["producer0_ready"], endpoint)
+            observed_vc1_ready = _mask_bit(row["producer1_ready"], endpoint)
+            observed_out_valid = _mask_bit(row["out_valid"], endpoint)
+            observed_out_vc = _packed_vc(row["out_vc_pack"], endpoint)
+
+            result = model.step(
+                vc0=_placeholder_flit(endpoint, vc=0) if vc0_valid else None,
+                vc1=_placeholder_flit(endpoint, vc=1) if vc1_valid else None,
+                out_ready=out_ready,
+            )
+            assert result.protocol_error is False
+            assert result.vc0_ready == observed_vc0_ready, (
+                f"endpoint {endpoint} cycle {expected_cycle}: "
+                f"vc0_ready expected {int(result.vc0_ready)} "
+                f"observed {int(observed_vc0_ready)}"
+            )
+            assert result.vc1_ready == observed_vc1_ready, (
+                f"endpoint {endpoint} cycle {expected_cycle}: "
+                f"vc1_ready expected {int(result.vc1_ready)} "
+                f"observed {int(observed_vc1_ready)}"
+            )
+            assert (result.output is not None) == observed_out_valid, (
+                f"endpoint {endpoint} cycle {expected_cycle}: "
+                f"out_valid expected {int(result.output is not None)} "
+                f"observed {int(observed_out_valid)}"
+            )
+            if result.output is not None:
+                decision_count += 1
+                assert result.output.vc == observed_out_vc, (
+                    f"endpoint {endpoint} cycle {expected_cycle}: "
+                    f"out_vc expected {result.output.vc} observed {observed_out_vc}"
+                )
+            else:
+                assert observed_out_vc == 0, (
+                    f"endpoint {endpoint} cycle {expected_cycle}: "
+                    f"out_vc should be zero when out_valid=0, observed {observed_out_vc}"
+                )
+
+    assert decision_count > 0, "arbiter replay did not observe any decisions"
+    return decision_count
+
+
 @pytest.mark.skipif(
     os.environ.get(RUN_ENV) != "1",
     reason=f"set {RUN_ENV}=1 to run the promotion-scale shared-mesh RTL replay",
@@ -94,6 +210,7 @@ RUN_ENV = "RTLGEN_RUN_SLOW_SHARED_MESH_FULL_REPLAY"
 def test_exact_dual_producer_shared_mesh_full_replay(tmp_path: Path) -> None:
     tree_dir = _generate_tree(tmp_path)
     simv = tmp_path / "attention_score32_exact_dual_producer_shared_mesh4x4_full.vvp"
+    arb_trace = tmp_path / "attention_score32_exact_dual_producer_shared_mesh4x4_full_arb.trace"
 
     compile_start = time.monotonic()
     subprocess.run(
@@ -118,14 +235,21 @@ def test_exact_dual_producer_shared_mesh_full_replay(tmp_path: Path) -> None:
     compile_elapsed = time.monotonic() - compile_start
 
     run_start = time.monotonic()
-    run = subprocess.run(
-        [str(_tool("vvp")), str(simv)],
-        check=True,
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        timeout=1200,
-    )
+    try:
+        run = subprocess.run(
+            [str(_tool("vvp")), str(simv), f"+ARB_TRACE={arb_trace}"],
+            check=True,
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=1200,
+        )
+    except subprocess.CalledProcessError as exc:
+        pytest.fail(
+            "vvp failed\n"
+            f"stdout:\n{exc.stdout}\n"
+            f"stderr:\n{exc.stderr}"
+        )
     run_elapsed = time.monotonic() - run_start
 
     match = PASS_RE.search(run.stdout)
@@ -142,8 +266,11 @@ def test_exact_dual_producer_shared_mesh_full_replay(tmp_path: Path) -> None:
     assert observed["overlap_valid"] > 0
     assert observed["overlap_arb"] > 0
     assert observed["contention"] > 0
+    arb_decisions = _assert_arbiter_trace_matches_model(arb_trace)
+    arb_trace.unlink(missing_ok=True)
 
     print(
         "PASS promotion-scale shared-mesh replay "
-        f"compile_s={compile_elapsed:.2f} run_s={run_elapsed:.2f}"
+        f"compile_s={compile_elapsed:.2f} run_s={run_elapsed:.2f} "
+        f"arb_decisions={arb_decisions}"
     )

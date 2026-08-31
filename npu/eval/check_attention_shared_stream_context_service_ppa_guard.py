@@ -124,7 +124,8 @@ def check(design_dir: Path) -> None:
         "input wire enable",
         "input wire [31:0] control",
         "output wire [127:0] observable",
-        "attention_shared_stream_context_service service (",
+        "attention_shared_stream_context_service #(",
+        ".INTERNAL_MESH(INTERNAL_MESH)",
         "layer_expected_remote_contexts(8'd112)",
         "event_packet_count_w",
     ):

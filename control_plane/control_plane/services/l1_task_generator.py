@@ -2175,6 +2175,76 @@ def _read_config_target(
         )
     elif (
         "top_name" in cfg
+        and "attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_harness" in cfg
+    ):
+        top_name = str(cfg["top_name"]).strip()
+        if not top_name:
+            raise Layer1TaskGenerationError(f"top_name must not be empty in {config_path}")
+        try:
+            design_dir = str(config_path.parent.resolve().relative_to(repo_root.resolve()))
+        except ValueError as exc:
+            raise Layer1TaskGenerationError(
+                "exact dual-producer shared-mesh activity config must live under "
+                f"repo_root/runs/designs/...: {config_path}"
+            ) from exc
+        design_name = config_path.parent.name
+        command_slug = "attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_harness"
+        return Layer1ConfigTarget(
+            design_kind="block",
+            design_name=design_name,
+            expected_metrics_path=block_metrics_path(design_name),
+            expected_report_paths=[
+                f"{design_dir}/timing_debug_report.md",
+                f"{design_dir}/hierarchy_reports/index.json",
+            ],
+            commands=[
+                {
+                    "name": f"generate_{command_slug}_rtl",
+                    "run": _with_oss_cad_path(
+                        "python3 npu/rtlgen/"
+                        "gen_attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_harness.py "
+                        f"--config {config_rel} --out {design_dir}/verilog"
+                    ),
+                },
+                {
+                    "name": f"check_{command_slug}_guard",
+                    "run": (
+                        "python3 npu/eval/"
+                        "check_attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_guard.py "
+                        f"--design-dir {design_dir}"
+                    ),
+                },
+                {
+                    "name": "run_block_sweep",
+                    "run": _with_oss_cad_path(
+                        "python3 npu/synth/run_block_sweep.py "
+                        f"--design_dir {design_dir} --platform {{platform}} --top {top_name} "
+                        f"--sweep {{sweep_path}} --out_root {out_root} "
+                        f"--macro_manifest {design_dir}/verilog/macro_manifest.json "
+                        + (f"--make_target {make_target} " if make_target else "")
+                        + "--skip_existing"
+                    ),
+                },
+                {
+                    "name": f"attach_{command_slug}_hierarchical_area",
+                    "run": (
+                        "python3 npu/eval/"
+                        "check_attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_guard.py "
+                        f"--design-dir {design_dir} --post-sweep"
+                    ),
+                },
+                {
+                    "name": f"extract_{command_slug}_timing_paths",
+                    "run": (
+                        "python3 npu/eval/extract_openroad_timing_summary.py "
+                        f"--design-dir {design_dir} "
+                        f"--out {design_dir}/timing_debug_report.md --max-paths 8"
+                    ),
+                },
+            ],
+        )
+    elif (
+        "top_name" in cfg
         and "attention_score32_exact_shared_root_transport_ppa_activity_harness" in cfg
     ):
         top_name = str(cfg["top_name"]).strip()

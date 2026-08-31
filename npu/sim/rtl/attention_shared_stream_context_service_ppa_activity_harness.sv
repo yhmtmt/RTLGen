@@ -3,12 +3,32 @@
 // Compact-pin activity harness for the complete VC0 shared-SRAM service.
 // Producer/memory stimulus is intentionally outside the `service` hierarchy
 // so hierarchical reports can separate the reusable DUT from harness logic.
-module attention_shared_stream_context_service_ppa_activity_harness (
+module attention_shared_stream_context_service_ppa_activity_harness #(
+  parameter integer INTERNAL_MESH = 1
+) (
   input wire clk,
   input wire rst_n,
   input wire enable,
   input wire [31:0] control,
-  output wire [127:0] observable
+  output wire [127:0] observable,
+  output wire [15:0] transport_endpoint_in_valid,
+  input wire [15:0] transport_endpoint_in_ready,
+  output wire [16*4-1:0] transport_endpoint_in_destination,
+  output wire [16*4-1:0] transport_endpoint_in_source,
+  output wire [16*8-1:0] transport_endpoint_in_tag,
+  output wire [16*3-1:0] transport_endpoint_in_fragment,
+  output wire [15:0] transport_endpoint_in_last,
+  output wire [16*2-1:0] transport_endpoint_in_vc,
+  output wire [16*256-1:0] transport_endpoint_in_data,
+  input wire [15:0] transport_endpoint_out_valid,
+  output wire [15:0] transport_endpoint_out_ready,
+  input wire [16*4-1:0] transport_endpoint_out_destination,
+  input wire [16*4-1:0] transport_endpoint_out_source,
+  input wire [16*8-1:0] transport_endpoint_out_tag,
+  input wire [16*3-1:0] transport_endpoint_out_fragment,
+  input wire [15:0] transport_endpoint_out_last,
+  input wire [16*2-1:0] transport_endpoint_out_vc,
+  input wire [16*256-1:0] transport_endpoint_out_data
 );
   localparam integer ADDR_W = 32;
   localparam integer PACKET_INDEX_W = 7;
@@ -141,7 +161,9 @@ module attention_shared_stream_context_service_ppa_activity_harness (
   end
 
   (* keep_hierarchy = "yes" *)
-  attention_shared_stream_context_service service (
+  attention_shared_stream_context_service #(
+    .INTERNAL_MESH(INTERNAL_MESH)
+  ) service (
     .clk(clk), .rst_n(rst_n),
     .layer_start(layer_start_q), .layer_idle(1'b1),
     .layer_expected_remote_contexts(8'd112),
@@ -170,7 +192,25 @@ module attention_shared_stream_context_service_ppa_activity_harness (
     .transport_complete(transport_complete_w), .admitted_count(admitted_count_w),
     .completed_count(completed_count_w),
     .endpoint_protocol_error(endpoint_protocol_error_w),
-    .protocol_error(protocol_error_w)
+    .protocol_error(protocol_error_w),
+    .transport_endpoint_in_valid(transport_endpoint_in_valid),
+    .transport_endpoint_in_ready(transport_endpoint_in_ready),
+    .transport_endpoint_in_destination(transport_endpoint_in_destination),
+    .transport_endpoint_in_source(transport_endpoint_in_source),
+    .transport_endpoint_in_tag(transport_endpoint_in_tag),
+    .transport_endpoint_in_fragment(transport_endpoint_in_fragment),
+    .transport_endpoint_in_last(transport_endpoint_in_last),
+    .transport_endpoint_in_vc(transport_endpoint_in_vc),
+    .transport_endpoint_in_data(transport_endpoint_in_data),
+    .transport_endpoint_out_valid(transport_endpoint_out_valid),
+    .transport_endpoint_out_ready(transport_endpoint_out_ready),
+    .transport_endpoint_out_destination(transport_endpoint_out_destination),
+    .transport_endpoint_out_source(transport_endpoint_out_source),
+    .transport_endpoint_out_tag(transport_endpoint_out_tag),
+    .transport_endpoint_out_fragment(transport_endpoint_out_fragment),
+    .transport_endpoint_out_last(transport_endpoint_out_last),
+    .transport_endpoint_out_vc(transport_endpoint_out_vc),
+    .transport_endpoint_out_data(transport_endpoint_out_data)
   );
 
   always @(posedge clk or negedge rst_n) begin
@@ -236,4 +276,11 @@ module attention_shared_stream_context_service_ppa_activity_harness (
     completion_valid_w,
     ^{completion_wave_w, completion_destination_w}
   };
+
+`ifndef SYNTHESIS
+  initial begin
+    if (INTERNAL_MESH != 0 && INTERNAL_MESH != 1)
+      $error("service activity harness INTERNAL_MESH must be 0 or 1");
+  end
+`endif
 endmodule

@@ -44,6 +44,11 @@
   `RTLGEN_RUN_SLOW_SHARED_MESH_FULL_REPLAY=1 python -m pytest -q
   tests/test_attention_score32_exact_dual_producer_shared_mesh4x4_full.py`;
   the verified run completed in 353.16 seconds.
+- Extended that promotion-scale gate with a compact per-cycle trace of all
+  sixteen endpoint arbiters. Sixteen independent
+  `EndpointVcInjectionArbiter` models now compare both producer-ready signals,
+  output validity, and selected VC decision-by-decision for the full replay;
+  the trace-equivalent run passed in 274.24 seconds.
 - Proved the composed hierarchy contains one VC0 service, one VC1 reducer, one
   shared transport, exactly one mesh, and sixteen endpoint arbiters, with no
   producer-private mesh remaining.

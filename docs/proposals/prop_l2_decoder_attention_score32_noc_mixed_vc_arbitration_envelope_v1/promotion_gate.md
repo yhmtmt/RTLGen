@@ -18,8 +18,8 @@ dual-network component.
 
 The bounded simultaneous replay remains an integration gate only. The actual
 composed top has now also passed the full 70,948-flit replay, so exact workload
-integrity and simultaneous backpressure behavior are satisfied. Functional
-promotion remains blocked until the full arbitration trace is compared
-decision-by-decision with the cycle model. The point also cannot establish or
-replace the Llama7B frontier until its composed hierarchy has measured timing,
-area, and power evidence.
+integrity and simultaneous backpressure behavior are satisfied. The full
+sixteen-endpoint arbitration trace also matches independent cycle models
+decision-by-decision, satisfying functional policy promotion. The point still
+cannot establish or replace the Llama7B frontier until its composed hierarchy
+has measured timing, area, and power evidence.
