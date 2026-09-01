@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "model": "llm_decoder_attention_score32_exact_shared_mesh_service_envelope_v1",
+  "decision": "standalone_exact_shared_mesh_capacity_envelope_recorded",
+  "source_refs": [
+    {
+      "path": "tests/attention_score32_exact_dual_producer_shared_mesh4x4_full_tb.sv",
+      "sha256": "543085a6676d6fb16fbae028df7b8c6eb5cd011ca39b89299a8d058f3aaf9d7e"
+    },
+    {
+      "path": "tests/test_attention_score32_exact_dual_producer_shared_mesh4x4_full.py",
+      "sha256": "42254c9c727d83e72a8a92408cb86a519a079df0373e3c8c85ca6fbc9d046e75"
+    },
+    {
+      "path": "npu/sim/rtl/attention_score32_exact_dual_producer_shared_mesh4x4.sv",
+      "sha256": "4f5e78105e76a873b0796e271fdeda4f1660730a05f55e518bba81f5bcc520f5"
+    }
+  ],
+  "traffic": {
+    "vc0_contexts": 112,
+    "vc0_packets": 7616,
+    "vc0_flits": 60928,
+    "vc1_groups": 4,
+    "vc1_rows": 512,
+    "vc1_packets": 1260,
+    "vc1_flits": 10020,
+    "total_flits": 70948
+  },
+  "rtl_observation": {
+    "mode": "eager_producers_no_artificial_consumer_stalls",
+    "service_cycles": 15769,
+    "vc0_done_cycle": 15769,
+    "vc1_done_cycle": 10219,
+    "overlap_valid_cycles": 20624,
+    "overlap_arbitrated_cycles": 5764,
+    "contention_cycles": 100725,
+    "protocol_errors": 0,
+    "payload_check": "exact_all_vc0_flits_and_512_vc1_rows",
+    "sram_response_contract": "one outstanding read per endpoint with registered response"
+  },
+  "compute_comparison": {
+    "source_compute_layer_cycles": 8664,
+    "source_compute_clock_ns": 48.6509,
+    "source_compute_layer_time_ns": 421511.3976,
+    "maximum_composed_clock_ns_for_standalone_service_to_fit_compute_window": 26.73038224364259,
+    "capacity_gate_formula": "service_cycles * measured_composed_critical_path_ns <= source_compute_layer_time_ns"
+  },
+  "interpretation": {
+    "proves": [
+      "one embodied shared mesh can drain the full exact layer traffic without artificial sink stalls",
+      "VC0 and VC1 overlap, arbitrate, contend, and complete with exact payload integrity",
+      "the measured physical clock can be compared to a finite standalone capacity threshold"
+    ],
+    "does_not_prove": [
+      "producer-release-coupled layer completion or overlap with compute",
+      "workload-annotated physical power or token energy",
+      "vendor HBM timing or energy"
+    ]
+  },
+  "next_gate": "Replay the same embodied service with VC0 residency events and VC1 group releases timed by the actual compute/reducer valid-ready schedule; then compare its final completion to the compute layer window."
+}

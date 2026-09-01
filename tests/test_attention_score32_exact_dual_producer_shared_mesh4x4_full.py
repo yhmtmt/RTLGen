@@ -54,7 +54,11 @@ PASS_RE = re.compile(
     r"vc1_flits=(?P<vc1_flits>\d+) "
     r"overlap_valid=(?P<overlap_valid>\d+) "
     r"overlap_arb=(?P<overlap_arb>\d+) "
-    r"contention=(?P<contention>\d+)"
+    r"contention=(?P<contention>\d+) "
+    r"service_envelope=(?P<service_envelope>\d+) "
+    r"service_cycles=(?P<service_cycles>\d+) "
+    r"vc0_done_cycle=(?P<vc0_done_cycle>\d+) "
+    r"vc1_done_cycle=(?P<vc1_done_cycle>\d+)"
 )
 ARB_TRACE_RE = re.compile(
     r"^ARB "
@@ -96,6 +100,14 @@ def _generate_tree(tmp_path: Path) -> Path:
 
 
 RUN_ENV = "RTLGEN_RUN_SLOW_SHARED_MESH_FULL_REPLAY"
+EXPECTED_SERVICE_ENVELOPE = {
+    "service_cycles": 15769,
+    "vc0_done_cycle": 15769,
+    "vc1_done_cycle": 10219,
+    "overlap_valid": 20624,
+    "overlap_arb": 5764,
+    "contention": 100725,
+}
 
 
 def _mask_bit(mask: int, bit: int) -> bool:
@@ -266,11 +278,57 @@ def test_exact_dual_producer_shared_mesh_full_replay(tmp_path: Path) -> None:
     assert observed["overlap_valid"] > 0
     assert observed["overlap_arb"] > 0
     assert observed["contention"] > 0
+    assert observed["service_envelope"] == 0
+    assert observed["service_cycles"] == max(
+        observed["vc0_done_cycle"], observed["vc1_done_cycle"]
+    )
     arb_decisions = _assert_arbiter_trace_matches_model(arb_trace)
     arb_trace.unlink(missing_ok=True)
+
+    envelope_start = time.monotonic()
+    try:
+        envelope_run = subprocess.run(
+            [str(_tool("vvp")), str(simv), "+SERVICE_ENVELOPE"],
+            check=True,
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=1200,
+        )
+    except subprocess.CalledProcessError as exc:
+        pytest.fail(
+            "service-envelope vvp failed\n"
+            f"stdout:\n{exc.stdout}\n"
+            f"stderr:\n{exc.stderr}"
+        )
+    envelope_elapsed = time.monotonic() - envelope_start
+    envelope_match = PASS_RE.search(envelope_run.stdout)
+    assert envelope_match is not None, envelope_run.stdout
+    envelope = {name: int(value) for name, value in envelope_match.groupdict().items()}
+    for field in (
+        "vc0_contexts",
+        "vc0_packets",
+        "vc0_flits",
+        "vc1_groups",
+        "vc1_rows",
+        "vc1_packets",
+        "vc1_flits",
+    ):
+        assert envelope[field] == observed[field]
+    assert envelope["service_envelope"] == 1
+    assert envelope["service_cycles"] == max(
+        envelope["vc0_done_cycle"], envelope["vc1_done_cycle"]
+    )
+    assert envelope["service_cycles"] <= observed["service_cycles"]
+    assert envelope["overlap_valid"] > 0
+    assert envelope["overlap_arb"] > 0
+    assert envelope["contention"] > 0
+    for field, expected in EXPECTED_SERVICE_ENVELOPE.items():
+        assert envelope[field] == expected
 
     print(
         "PASS promotion-scale shared-mesh replay "
         f"compile_s={compile_elapsed:.2f} run_s={run_elapsed:.2f} "
-        f"arb_decisions={arb_decisions}"
+        f"arb_decisions={arb_decisions} envelope_s={envelope_elapsed:.2f} "
+        f"envelope_cycles={envelope['service_cycles']}"
     )

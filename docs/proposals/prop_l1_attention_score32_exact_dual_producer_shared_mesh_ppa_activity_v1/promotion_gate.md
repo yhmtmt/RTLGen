@@ -13,3 +13,7 @@ mesh and all producer datapaths are represented in the measured hierarchy.
 Architecture promotion additionally requires feeding those measurements into
 the Llama7B model and re-running the throughput, energy, area, and precision
 comparison against the current frontier.
+
+The 15,769-cycle eager-producer service envelope is a standalone capacity
+bound only. Throughput promotion requires a replay driven by actual VC0 SRAM
+residency events and VC1 reducer valid/ready group releases.
