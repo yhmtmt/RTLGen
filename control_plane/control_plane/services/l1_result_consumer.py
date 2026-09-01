@@ -29,6 +29,22 @@ class Layer1ResultConsumerError(RuntimeError):
     pass
 
 
+_PROMOTED_NUMERIC_METRIC_FIELDS = (
+    "critical_path_ns",
+    "die_area",
+    "instance_area_um2",
+    "hierarchical_instance_area_um2",
+    "hierarchical_instance_count",
+    "total_power_mw",
+)
+_PROMOTED_METRIC_REF_FIELDS = (
+    "hierarchy_area_prefix",
+    "hierarchy_area_prefixes",
+    "hierarchy_area_method",
+    "hierarchy_area_report",
+)
+
+
 @dataclass(frozen=True)
 class Layer1ConsumeRequest:
     repo_root: str
@@ -109,6 +125,28 @@ def _safe_float(value: str | None) -> float | None:
         return float(str(value).strip())
     except ValueError:
         return None
+
+
+def _safe_finite_float(value: str | None) -> float | None:
+    parsed = _safe_float(value)
+    if parsed is None or not math.isfinite(parsed):
+        return None
+    return parsed
+
+
+def _metric_ref_value(key: str, value: Any) -> Any:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    if key != "hierarchy_area_prefixes":
+        return text
+    try:
+        prefixes = json.loads(text)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return text
+    if isinstance(prefixes, list) and all(isinstance(prefix, str) for prefix in prefixes):
+        return prefixes
+    return text
 
 
 def _row_timing_assessment(row: dict[str, Any]) -> dict[str, Any]:
@@ -451,12 +489,11 @@ def _boundary_metrics_rows(
                 "config_hash",
                 "param_hash",
                 "tag",
-                "critical_path_ns",
-                "die_area",
-                "total_power_mw",
                 "result_path",
                 "work_result_json",
                 "params_json",
+                *_PROMOTED_NUMERIC_METRIC_FIELDS,
+                *_PROMOTED_METRIC_REF_FIELDS,
             ):
                 value = str(raw_row.get(key, "")).strip()
                 if value:
@@ -512,10 +549,14 @@ def _proposal_entry(*, metrics_csv: str, best_row: dict[str, Any], evaluation_re
         value = str(best_row.get(key, "")).strip()
         if value:
             proposal["metrics_ref"][key] = value
+    for key in _PROMOTED_METRIC_REF_FIELDS:
+        value = _metric_ref_value(key, best_row.get(key))
+        if value is not None:
+            proposal["metrics_ref"][key] = value
 
     summary: dict[str, Any] = {}
-    for key in ("critical_path_ns", "die_area", "total_power_mw"):
-        value = _safe_float(best_row.get(key))
+    for key in _PROMOTED_NUMERIC_METRIC_FIELDS:
+        value = _safe_finite_float(best_row.get(key))
         if value is not None:
             summary[key] = value
     if summary:
@@ -723,7 +764,8 @@ def _write_trial_table(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
         "run_key", "attempt", "trial_index", "seed", "status", "metrics_csv",
-        "critical_path_ns", "die_area", "total_power_mw",
+        *_PROMOTED_NUMERIC_METRIC_FIELDS,
+        *_PROMOTED_METRIC_REF_FIELDS,
         "failure_category", "failure_stage", "failure_signature",
     ]
     with path.open("w", encoding="utf-8", newline="") as handle:
@@ -879,7 +921,7 @@ def _trial_aggregate_payloads(
     )
     metrics_csvs: list[str] = []
     trial_rows: list[dict[str, Any]] = []
-    success_metric_values = {"critical_path_ns": [], "die_area": [], "total_power_mw": []}
+    success_metric_values = {key: [] for key in _PROMOTED_NUMERIC_METRIC_FIELDS}
     failure_category = Counter()
     failure_stage = Counter()
     success_count = 0
@@ -920,7 +962,7 @@ def _trial_aggregate_payloads(
                 failure_category[category] += 1
                 failure_stage[stage] += 1
             for key in success_metric_values:
-                value = _safe_float(best_row.get(key))
+                value = _safe_finite_float(best_row.get(key))
                 if value is not None:
                     success_metric_values[key].append(value)
         else:
@@ -928,20 +970,22 @@ def _trial_aggregate_payloads(
             stage = str(failure.get("stage", "") or run.failure_stage or "unknown").strip() or "unknown"
             failure_category[category] += 1
             failure_stage[stage] += 1
-        trial_rows.append({
+        trial_row = {
             "run_key": run.run_key,
             "attempt": run.attempt,
             "trial_index": trial.get("trial_index", run.trial_index or ""),
             "seed": trial.get("seed", run.seed or ""),
             "status": run.status.value,
             "metrics_csv": metrics_csv,
-            "critical_path_ns": _safe_float(best_row.get("critical_path_ns")) if best_row else "",
-            "die_area": _safe_float(best_row.get("die_area")) if best_row else "",
-            "total_power_mw": _safe_float(best_row.get("total_power_mw")) if best_row else "",
             "failure_category": str(failure.get("category", "") or run.failure_category or "").strip(),
             "failure_stage": str(failure.get("stage", "") or run.failure_stage or "").strip(),
             "failure_signature": str(failure.get("signature", "") or run.failure_signature or "").strip(),
-        })
+        }
+        for key in _PROMOTED_NUMERIC_METRIC_FIELDS:
+            trial_row[key] = _safe_finite_float(best_row.get(key)) if best_row else ""
+        for key in _PROMOTED_METRIC_REF_FIELDS:
+            trial_row[key] = str(best_row.get(key, "")).strip() if best_row else ""
+        trial_rows.append(trial_row)
 
     completed_trials = len(completed)
     failure_count = completed_trials - success_count
