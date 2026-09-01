@@ -223,7 +223,8 @@ def build_contract(
             "area": "measured composed hierarchy area must be finite, positive, and no greater than maximum_composed_hierarchy_area_um2",
             "throughput": (
                 "retain source throughput only if composed critical_path_ns does not exceed compute_clock_ns and "
-                "a workload-complete composed service-cycle artifact proves no longer critical layer schedule"
+                "the standalone service envelope fits the compute window and a producer-release-coupled replay "
+                "proves no longer critical layer schedule"
             ),
             "energy": (
                 "do not convert vectorless whole-harness power to token energy; require workload-annotated hierarchy power"
@@ -234,7 +235,7 @@ def build_contract(
         },
         "remaining_abstractions": [
             "composed synthesis decomposition and postroute hierarchy metrics are pending",
-            "workload-complete composed service cycles are not yet materialized as a recost input",
+            "standalone service capacity is measured, but producer-release-coupled completion timing is pending",
             "workload-annotated hierarchy power is pending",
             "vendor HBM current and off-chip energy remain external",
         ],

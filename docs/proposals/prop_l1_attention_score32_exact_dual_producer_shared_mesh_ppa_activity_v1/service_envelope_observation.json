@@ -1,0 +1,16 @@
+{
+  "vc0_contexts": 112,
+  "vc0_packets": 7616,
+  "vc0_flits": 60928,
+  "vc1_groups": 4,
+  "vc1_rows": 512,
+  "vc1_packets": 1260,
+  "vc1_flits": 10020,
+  "overlap_valid": 20624,
+  "overlap_arb": 5764,
+  "contention": 100725,
+  "service_envelope": 1,
+  "service_cycles": 15769,
+  "vc0_done_cycle": 15769,
+  "vc1_done_cycle": 10219
+}

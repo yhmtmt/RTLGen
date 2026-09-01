@@ -152,6 +152,7 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
   integer vc1_root_count = 0;
   reg vc1_stream_active = 1'b0;
   reg vc1_root_stall_observed = 1'b0;
+  reg service_envelope_mode = 1'b0;
   reg vc1_all_input_done;
   reg [15:0] stalled_root_command = 0;
   reg [4:0] stalled_root_head = 0;
@@ -174,6 +175,9 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
   integer req_delta = 0;
   integer write_delta = 0;
   integer wait_cycles = 0;
+  integer vc0_done_cycle = -1;
+  integer vc1_done_cycle = -1;
+  integer service_done_cycle = -1;
   integer comb_endpoint_i;
   integer comb_source_i;
   integer done_source_i;
@@ -522,13 +526,15 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
     for (comb_endpoint_i = 0; comb_endpoint_i < 16; comb_endpoint_i = comb_endpoint_i + 1) begin
       vc0_tx_mem_req_ready[comb_endpoint_i] =
         !vc0_rsp_pending_q[comb_endpoint_i] &&
-        (((cycle & 7) ^ (comb_endpoint_i & 7)) != 0);
-      vc0_rx_mem_write_ready[comb_endpoint_i] =
+        (service_envelope_mode || (((cycle & 7) ^ (comb_endpoint_i & 7)) != 0));
+      vc0_rx_mem_write_ready[comb_endpoint_i] = service_envelope_mode ||
         ((((cycle & 15) + comb_endpoint_i) & 15) != 0);
     end
-    vc0_completion_ready = vc0_completion_stall_seen &&
-      ((cycle % 17) != 5) && ((cycle % 23) != 7);
-    vc1_root_ready = ((cycle % 11) != 3) && ((cycle % 17) != 5);
+    vc0_completion_ready = service_envelope_mode ||
+      (vc0_completion_stall_seen &&
+       ((cycle % 17) != 5) && ((cycle % 23) != 7));
+    vc1_root_ready = service_envelope_mode ||
+      (((cycle % 11) != 3) && ((cycle % 17) != 5));
   end
 
   always @(*) begin
@@ -696,6 +702,9 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
       overlap_valid_cycles <= 0;
       overlap_arbitrated_cycles <= 0;
       wait_cycles <= 0;
+      vc0_done_cycle <= -1;
+      vc1_done_cycle <= -1;
+      service_done_cycle <= -1;
 
       for (reset_context_i = 0; reset_context_i < VC0_CONTEXTS; reset_context_i = reset_context_i + 1) begin
         vc0_request_seen[reset_context_i] <= 0;
@@ -935,6 +944,13 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
           vc0_endpoint_protocol_error, vc1_source_protocol_error,
           shared_injection_protocol_error, shared_ejection_protocol_error);
 
+      if (vc0_transport_complete && vc0_done_cycle < 0)
+        vc0_done_cycle <= cycle;
+      if (vc1_done && vc1_done_cycle < 0)
+        vc1_done_cycle <= cycle;
+      if (vc0_transport_complete && vc1_done && service_done_cycle < 0)
+        service_done_cycle <= cycle;
+
       if (vc0_transport_complete &&
           vc1_done &&
           vc1_root_count == VC1_TOTAL_ROWS &&
@@ -955,7 +971,7 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
             vc0_completion_seen !== {VC0_CONTEXTS{1'b1}} ||
             vc0_tx_request_count !== VC0_TOTAL_FLITS ||
             vc0_write_count !== VC0_TOTAL_FLITS ||
-            vc0_completion_hold_checks == 0)
+            (!service_envelope_mode && vc0_completion_hold_checks == 0))
           $fatal(1, "vc0 totals mismatch event=%0d admitted=%0d completed=%0d contexts=%0d completions=%0d requests=%0d writes=%0d holds=%0d",
             vc0_event_index_q, vc0_admitted_count, vc0_completed_count,
             vc0_context_count, vc0_completion_count, vc0_tx_request_count,
@@ -1003,11 +1019,13 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
             shared_contention_cycles, shared_input_stall_cycles,
             shared_output_stall_cycles);
 
-        $display("PASS exact_dual_producer_shared_mesh_full vc0_contexts=%0d vc0_packets=%0d vc0_flits=%0d vc1_groups=%0d vc1_rows=%0d vc1_packets=%0d vc1_flits=%0d overlap_valid=%0d overlap_arb=%0d contention=%0d",
+        $display("PASS exact_dual_producer_shared_mesh_full vc0_contexts=%0d vc0_packets=%0d vc0_flits=%0d vc1_groups=%0d vc1_rows=%0d vc1_packets=%0d vc1_flits=%0d overlap_valid=%0d overlap_arb=%0d contention=%0d service_envelope=%0d service_cycles=%0d vc0_done_cycle=%0d vc1_done_cycle=%0d",
           vc0_context_count, VC0_TOTAL_PACKETS, vc0_write_count,
           vc1_group_count_seen, vc1_root_count, vc1_source_tx_descriptor_count,
           vc1_root_accepted_flit_count, overlap_valid_cycles,
-          overlap_arbitrated_cycles, shared_contention_cycles);
+          overlap_arbitrated_cycles, shared_contention_cycles,
+          service_envelope_mode, service_done_cycle, vc0_done_cycle,
+          vc1_done_cycle);
         $finish;
       end
 
@@ -1021,6 +1039,7 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
   end
 
   initial begin
+    service_envelope_mode = $test$plusargs("SERVICE_ENVELOPE");
     if ($value$plusargs("ARB_TRACE=%s", arb_trace_path)) begin
       arb_trace_fd = $fopen(arb_trace_path, "w");
       if (arb_trace_fd == 0)
