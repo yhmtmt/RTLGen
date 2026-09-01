@@ -93,6 +93,8 @@
     "npu/sim/rtl/attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_harness.sv",
     "npu/rtlgen/gen_attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_harness.py",
     "npu/eval/check_attention_score32_exact_dual_producer_shared_mesh4x4_ppa_activity_guard.py",
+    "npu/eval/audit_llm_decoder_attention_score32_exact_shared_mesh_replacement.py",
+    "docs/proposals/prop_l1_attention_score32_exact_dual_producer_shared_mesh_ppa_activity_v1/replacement_contract.json",
     "tests/test_attention_score32_exact_dual_producer_shared_mesh4x4_full.py"
   ]
 }
