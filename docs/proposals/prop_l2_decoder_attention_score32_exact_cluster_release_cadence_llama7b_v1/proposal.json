@@ -1,0 +1,81 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1",
+  "created_utc": "2026-09-01T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "corrective_measurement",
+  "title": "Exact p54/p53 cluster release cadence for Llama7B shared-mesh coupling",
+  "abstraction_layer": "decoder_attention_score32_exact_cluster_release_cadence",
+  "hypothesis": "Replaying one complete p54 and p53 cluster wrapper with real producer, cluster SRAM endpoint, local 53/54-way exact reducer, and eight-wave temporal state will provide the exact per-row VC1 producer-valid cadence needed to replace eager shared-mesh injection and the superseded 986-cycle arithmetic schedule.",
+  "direct_comparison": {
+    "primary_question": "At what cycles do all 128 exact aggregate rows for each GQA8 group leave the two distinct embodied cluster structures?",
+    "include": [
+      "full head dimension 128",
+      "four GQA8 head groups and eight persistent waves per group",
+      "real p54 and p53 cluster wrappers",
+      "real double-buffered cluster SRAM endpoint valid-ready behavior",
+      "real local staged exact reduction and temporal accumulation",
+      "structured equality of every 328-bit aggregate row",
+      "all 128 accepted output cycles plus first/last cycle for every group"
+    ],
+    "exclude": [
+      "sixteen duplicate cluster replays",
+      "global NoC transport",
+      "global sixteen-cluster reduction/finalization",
+      "HBM/DRAM controller and PHY",
+      "physical PPA"
+    ]
+  },
+  "revision": {
+    "reason": "producer_release_timing_missing_from_fine_compositional_equivalence",
+    "preserves_item_ids": [
+      "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
+      "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3"
+    ],
+    "superseded_timing_inputs": {
+      "replica_recost_tile_service_cycles": 986,
+      "replica_recost_layer_cycles": 8664,
+      "reason": "The corrected 128D GQA8 cadence audit already proved the 986-cycle arithmetic schedule was not sustained, while the later fine-grained equivalence artifact used synthetic cycle zero between component replays."
+    }
+  },
+  "expected_benefit": [
+    "replace inferred VC1 release timing with every accepted RTL output cycle",
+    "retain the p54/p53 structural distinction without replaying sixteen duplicates",
+    "provide a source-pinned input for producer-release-coupled shared-mesh perf/RTL equivalence",
+    "prevent the current frontier from inheriting retracted timing"
+  ],
+  "risks": [
+    "cluster-wrapper elaboration may still exceed practical Icarus limits",
+    "Verilator hierarchical compilation may require evaluator memory throttling",
+    "external fill timing remains an explicit system boundary"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure exact four-group release cadence from representative p54 and p53 cluster wrappers.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_cluster_release_cadence",
+      "comparison_role": "corrective_producer_release_timing",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "status": "draft_pending_source_merge_and_evaluator_recovery"
+    }
+  ],
+  "baseline_refs": [
+    "npu/docs/generated/llama7b_score32_exact_hierarchy_cadence_audit_v3.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence__l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_llama7b_score32_exact_cluster_release_cadence.py",
+    "npu/eval/gqa8_compositional_exact.py",
+    "npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py",
+    "npu/sim/rtl/attention_score32_exact_dual_producer_shared_mesh4x4.sv"
+  ]
+}

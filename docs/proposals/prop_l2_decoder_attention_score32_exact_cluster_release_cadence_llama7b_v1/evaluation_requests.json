@@ -1,0 +1,46 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1",
+  "source_commit": "TBD",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure exact four-group release cadence from representative p54 and p53 cluster wrappers.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_cluster_release_cadence",
+      "comparison_role": "corrective_producer_release_timing",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/config.json"
+      ],
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_cluster_release_cadence__l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_cluster_release_cadence__l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1.md"
+      ],
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1_r8",
+        "l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1_r3"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "status": "draft_pending_source_merge_and_evaluator_recovery",
+      "command": [
+        "python3",
+        "npu/eval/probe_llama7b_score32_exact_cluster_release_cadence.py",
+        "--backend",
+        "verilator",
+        "--config",
+        "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/config.json",
+        "--out",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_cluster_release_cadence__l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1.json",
+        "--out-md",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_cluster_release_cadence__l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1.md"
+      ],
+      "expected_result": {
+        "direction": "replace_inferred_vc1_release_with_exact_cluster_output_cycles",
+        "reason": "The shared-mesh replay cannot support a throughput revision until both cluster structures provide exact full-128D group release timing."
+      },
+      "acceptance_notes": "Require p54 and p53 representative clusters, 32 wave commands each, four completed groups, 512 exact aggregate rows per cluster, structured row equality, zero errors, all 128 accepted output cycles plus finite first/last cycles for every group, and source hashes. Do not substitute 986, bulk-ready-at-last-row, or synthetic compositional cycle zero."
+    }
+  ]
+}
