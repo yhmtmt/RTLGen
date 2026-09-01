@@ -43,4 +43,5 @@ jobs:
           python -m pytest -q \
             npu/eval/tests/test_recost_llm_decoder_attention_score32_noc_phase2_finite_endpoint_composed.py \
             npu/eval/tests/test_audit_llm_decoder_attention_score32_finite_endpoint_final_frontier.py \
-            npu/eval/tests/test_audit_attention_score32_exact_shared_root_storage_physical_frontier.py
+            npu/eval/tests/test_audit_attention_score32_exact_shared_root_storage_physical_frontier.py \
+            npu/eval/tests/test_probe_llama7b_score32_exact_cluster_release_cadence.py
