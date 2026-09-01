@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "model": "llm_decoder_attention_score32_exact_shared_mesh_replacement_contract_v1",
+  "decision": "exact_shared_mesh_replacement_boundary_recorded",
+  "inputs": {
+    "exact_reduction_model": "llm_decoder_attention_score32_exact_reduction_recost_v1",
+    "frontier_model": "llm_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_v1",
+    "candidate_id": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+    "exact_reduction": {
+      "path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_recost__l2_decoder_attention_score32_exact_reduction_recost_llama7b_v1.json",
+      "sha256": "43d229c6eafa376b03e113a3529ee5d20d76e0fe87ace0823c9b58261f5850dc"
+    },
+    "frontier": {
+      "path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank__l2_decoder_attention_score32_exact_reduction_gqa8_full_equivalence_rerank_llama7b_v1.json",
+      "sha256": "9a1b1d1f51836b86d10e5a10cc96c091cfee59d54687dd572201fef18a1345ab"
+    }
+  },
+  "source_frontier": {
+    "latency_us": 13488.364723,
+    "token_throughput_per_s": 74.137971543343,
+    "compute_clock_ns": 48.6509,
+    "energy_mj_per_token_lower_bound": 467.191305313106,
+    "energy_mj_per_token_conservative_upper_bound": 484.704405630618,
+    "precision_status": "mixed_int8_generation_quality_pass",
+    "quality_backed": true
+  },
+  "area_ownership": {
+    "die_area_um2": 800000000.0,
+    "retained_components": [
+      {
+        "component": "dual_stream_compute_replicas",
+        "area_um2": 296797456.0
+      },
+      {
+        "component": "hbm_replay_controller",
+        "area_um2": 28910.2009
+      },
+      {
+        "component": "shared_kv_sram",
+        "area_um2": 240066036.89536
+      },
+      {
+        "component": "tile_local_sram",
+        "area_um2": 39803772.916944
+      },
+      {
+        "component": "reserved_die_area",
+        "area_um2": 80000000.0
+      }
+    ],
+    "retained_area_um2": 656696176.0132041,
+    "source_replaced_primitive_overhead": {
+      "components": [
+        {
+          "component": "noc_router",
+          "count": 16,
+          "area_um2_each": 3123.133225,
+          "area_um2_total": 49970.1316,
+          "vectorless_power_mw_each": 0.00176,
+          "vectorless_power_mw_total": 0.02816
+        },
+        {
+          "component": "noc_fifo",
+          "count": 16,
+          "area_um2_each": 11606.830225,
+          "area_um2_total": 185709.2836,
+          "vectorless_power_mw_each": 0.00862,
+          "vectorless_power_mw_total": 0.13792
+        },
+        {
+          "component": "onchip_endpoint",
+          "count": 16,
+          "area_um2_each": 15293.032225,
+          "area_um2_total": 244688.5156,
+          "vectorless_power_mw_each": 0.00983,
+          "vectorless_power_mw_total": 0.15728
+        }
+      ],
+      "area_um2": 480367.9308,
+      "vectorless_power_mw": 0.32336
+    },
+    "source_full_embodied_area_um2": 657176543.944004,
+    "source_ranked_compute_area_um2": 296826366.2009,
+    "source_ranked_area_omits_primitive_overhead": true,
+    "maximum_composed_hierarchy_area_um2": 143303823.9867959,
+    "recost_formula": "retained_area_um2 + measured_composed_hierarchy_area_um2",
+    "replacement_delta_formula": "measured_composed_hierarchy_area_um2 - source_replaced_primitive_overhead.area_um2"
+  },
+  "measured_replacement_contract": {
+    "required_hierarchy_prefixes": [
+      "composition/vc0_activity/service/",
+      "composition/vc1_activity/exact_transport_wrapper/",
+      "composition/shared_transport/"
+    ],
+    "required_hierarchy_area_method": "openroad_final_odb_leaf_master_area_v1",
+    "required_metric_summary_fields": [
+      "critical_path_ns",
+      "instance_area_um2",
+      "hierarchical_instance_area_um2",
+      "hierarchical_instance_count",
+      "total_power_mw"
+    ],
+    "area_use": "hierarchical_instance_area_um2",
+    "whole_harness_instance_area_use": "diagnostic_only",
+    "root_stats_storage_ownership": "dedicated exact-reducer state; additive to retained shared KV SRAM capacity",
+    "activity_stimulus_area": "excluded_by_hierarchy_prefix"
+  },
+  "post_measurement_gates": {
+    "area": "measured composed hierarchy area must be finite, positive, and no greater than maximum_composed_hierarchy_area_um2",
+    "throughput": "retain source throughput only if composed critical_path_ns does not exceed compute_clock_ns and a workload-complete composed service-cycle artifact proves no longer critical layer schedule",
+    "energy": "do not convert vectorless whole-harness power to token energy; require workload-annotated hierarchy power",
+    "precision": "inherit score32 quality only while full four-group exact RTL equivalence and zero protocol errors remain true"
+  },
+  "remaining_abstractions": [
+    "composed synthesis decomposition and postroute hierarchy metrics are pending",
+    "workload-complete composed service cycles are not yet materialized as a recost input",
+    "workload-annotated hierarchy power is pending",
+    "vendor HBM current and off-chip energy remain external"
+  ]
+}
