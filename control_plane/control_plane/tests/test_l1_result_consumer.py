@@ -37,7 +37,14 @@ def _write_metrics(path: Path, rows: list[dict[str, str]]) -> None:
         "tag",
         "critical_path_ns",
         "die_area",
+        "instance_area_um2",
+        "hierarchical_instance_area_um2",
+        "hierarchical_instance_count",
         "total_power_mw",
+        "hierarchy_area_prefix",
+        "hierarchy_area_prefixes",
+        "hierarchy_area_method",
+        "hierarchy_area_report",
         "params_json",
         "result_path",
     ]
@@ -1117,7 +1124,14 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
                 "tag": "trial_2",
                 "critical_path_ns": "11.0",
                 "die_area": "29000",
+                "instance_area_um2": "21000.5",
+                "hierarchical_instance_area_um2": "123.5",
+                "hierarchical_instance_count": "42",
                 "total_power_mw": "0.17",
+                "hierarchy_area_prefix": "composition/vc0_activity/service/;composition/shared_transport/",
+                "hierarchy_area_prefixes": '["composition/vc0_activity/service/","composition/shared_transport/"]',
+                "hierarchy_area_method": "openroad_final_odb_leaf_master_area_v1",
+                "hierarchy_area_report": "runs/trials/trial_002/hierarchy_reports/trial_2.json",
                 "result_path": "runs/trials/trial_002/result.json",
             }],
         )
@@ -1235,6 +1249,23 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
             assert payload["trial_summary"]["success_count"] == 2
             assert payload["trial_summary"]["failure_count"] == 1
             assert payload["trial_summary"]["metrics"]["critical_path_ns"]["best"] == 11.0
+            assert payload["trial_summary"]["metrics"]["instance_area_um2"]["best"] == 21000.5
+            assert payload["trial_summary"]["metrics"]["hierarchical_instance_area_um2"]["best"] == 123.5
+            assert payload["trial_summary"]["metrics"]["hierarchical_instance_count"]["best"] == 42.0
+            hierarchy_proposal = next(
+                proposal
+                for proposal in payload["proposals"]
+                if proposal["metrics_ref"]["param_hash"] == "trial2"
+            )
+            assert hierarchy_proposal["metric_summary"]["instance_area_um2"] == 21000.5
+            assert hierarchy_proposal["metric_summary"]["hierarchical_instance_area_um2"] == 123.5
+            assert hierarchy_proposal["metric_summary"]["hierarchical_instance_count"] == 42.0
+            assert hierarchy_proposal["metrics_ref"]["hierarchy_area_prefixes"] == [
+                "composition/vc0_activity/service/",
+                "composition/shared_transport/",
+            ]
+            assert hierarchy_proposal["metrics_ref"]["hierarchy_area_method"] == "openroad_final_odb_leaf_master_area_v1"
+            assert hierarchy_proposal["metrics_ref"]["hierarchy_area_report"].endswith("trial_2.json")
             assert payload["evaluation_record"]["abstraction_layer"] == "circuit_block"
             assert payload["source_refs"]["trial_metrics_csvs"] == [metrics_trial_1, metrics_trial_2]
             assert payload["source_refs"]["summary_stats_json"].endswith(f"/{work_item.item_id}/summary_stats.json")
@@ -1251,6 +1282,11 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
             assert "\r" not in trial_table
             assert "trial_index,seed,status" in trial_table
             assert "l1_test_trial_aggregate_run_3" in trial_table
+            trial_table_rows = list(csv.DictReader(trial_table.splitlines()))
+            trial_2_row = next(row for row in trial_table_rows if row["run_key"] == run_2.run_key)
+            assert trial_2_row["hierarchical_instance_area_um2"] == "123.5"
+            assert trial_2_row["hierarchical_instance_count"] == "42.0"
+            assert trial_2_row["hierarchy_area_report"].endswith("trial_2.json")
 
             artifact_kinds = {artifact.kind for artifact in session.query(Artifact).all()}
             assert {"promotion_proposal", "summary_stats", "failure_stats", "trial_table"} <= artifact_kinds
