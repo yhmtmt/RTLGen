@@ -604,9 +604,11 @@ run the already queued exp-LUT branch:
     as complete dataflow closure.
 21. Implement `prop_l1_attention_score32_exact_kv_ingress_assembler_v1` from
     the canonical K/V layout. Require a checked address decoder, partial-byte
-    validity, a two-flit 256-to-512-bit V row assembler, and a p53/p54
-    dual-stream K beat assembler. Prove every byte maps bijectively to the
-    existing cluster SRAM and producer interfaces under arbitrary
+    validity, a 1 KiB token-major-to-fill-row V transpose buffer, and a 2 KiB
+    paired-stream p53/p54 K transpose buffer. A sequential 256-bit V flit
+    contributes to four different fill rows, so payload-width equality cannot
+    substitute for this reorder logic. Prove every byte maps bijectively to
+    the existing cluster SRAM and producer interfaces under arbitrary
     backpressure.
 22. Compose the ingress block with capacity-driven resident descriptors,
     transient HBM-return source selection, shared-mesh routing, cluster

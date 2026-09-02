@@ -173,7 +173,10 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
         "port_gap": {
             "vc0_write_bits": 256,
             "cluster_fill_bits": 512,
-            "vc0_flits_per_value_fill_row": 2,
+            "payload_equivalent_vc0_flits_per_value_fill_row": 2,
+            "consecutive_flits_form_one_value_fill_row": False,
+            "value_transpose_extent_bytes": 1024,
+            "key_paired_stream_transpose_extent_bytes": 2048,
             "current_max_packets_per_context": 68,
             "current_max_context_bytes": HISTORICAL_CONTEXT_BYTES,
             "whole_kv_tile_packets_256B": BYTES_PER_KV_TILE // 256,
@@ -193,10 +196,19 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "stream=token//512; block_slot=(token%512)//8; "
                 "slice=dimension//8; byte=(token%8)*8+(dimension%8)"
             ),
+            "value_reorder_requirement": (
+                "one 1024-byte token-major block maps to sixteen 64-byte fill rows; "
+                "a sequential 256-bit flit contributes to four rows, so two consecutive "
+                "flits do not form one row"
+            ),
             "key_mapping": (
                 "block_slot=(token%512)//8; invert the corrected per-group p53/p54 slot bases; "
                 "for each dimension, the 128-bit beat packs eight stream-0 and eight "
                 "stream-1 token bytes"
+            ),
+            "key_reorder_requirement": (
+                "pair one 1024-byte block from each stream and transpose the 16 by 128 "
+                "byte matrix into 128 producer beats"
             ),
         },
         "required_rtl_ownership": [
@@ -205,8 +217,8 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "locality-aware tile-to-cluster scheduler preserving balanced waves",
             "on-chip packet routing for remote resident K/V bytes",
             "K/V tensor address decoder and partial-packet byte validity",
-            "two-flit 256-to-512-bit V row assembler",
-            "K producer-beat assembler and p53/p54 slot distributor",
+            "1KiB token-major-to-fill-row V transpose buffer and assembler",
+            "2KiB paired-stream K transpose buffer, producer-beat assembler, and p53/p54 slot distributor",
             "per-cluster fill target, double-buffer residency, and command release",
             "backpressure from cluster SRAM and producers through ingress and mesh",
         ],
@@ -221,7 +233,7 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
         },
         "next_gate": (
             "Implement and verify the canonical tensor-address decoder plus representative p54/p53 "
-            "K/V ingress assemblers before composing capacity-driven NoC/HBM source scheduling."
+            "K/V transpose assemblers before composing capacity-driven NoC/HBM source scheduling."
         ),
     }
 

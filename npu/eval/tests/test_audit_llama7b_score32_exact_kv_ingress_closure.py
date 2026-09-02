@@ -65,6 +65,33 @@ def test_value_fill_mapping_is_bijective_over_a_head_tile() -> None:
     assert len(seen) == 128 * 1024
 
 
+def test_value_fill_requires_token_major_to_row_major_transpose() -> None:
+    first_two_flit_rows = {
+        value_fill_location(token=0, dimension=dimension).flat_fill_row
+        for dimension in range(64)
+    }
+    assert first_two_flit_rows == set(range(8))
+
+    first_fill_row_addresses = [
+        encode_kv_byte_address(
+            tensor="v",
+            kv_head=0,
+            token=token,
+            dimension=dimension,
+        )
+        for token in range(8)
+        for dimension in range(8)
+    ]
+    assert all(
+        right - left == 1
+        for left, right in zip(first_fill_row_addresses, first_fill_row_addresses[1:])
+        if left % 128 != 7
+    )
+    assert [first_fill_row_addresses[token * 8] for token in range(8)] == [
+        first_fill_row_addresses[0] + token * 128 for token in range(8)
+    ]
+
+
 def test_key_mapping_covers_every_block_for_p53_and_p54() -> None:
     for producers in (53, 54):
         for kv_head in range(4):
@@ -119,5 +146,9 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     assert report["historical_phase2_vc0"]["remote_transport_bytes"] == 1_949_696
     assert report["historical_phase2_vc0"]["direct_cluster_fill_compatible"] is False
     assert report["port_gap"]["whole_kv_tile_packets_256B"] == 4096
+    assert report["port_gap"]["payload_equivalent_vc0_flits_per_value_fill_row"] == 2
+    assert report["port_gap"]["consecutive_flits_form_one_value_fill_row"] is False
+    assert report["port_gap"]["value_transpose_extent_bytes"] == 1024
+    assert report["port_gap"]["key_paired_stream_transpose_extent_bytes"] == 2048
     assert report["revision_effect"]["frontier_recost_allowed"] is False
     assert "cannot be wired directly" in render_markdown(report)

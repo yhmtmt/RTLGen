@@ -12,8 +12,8 @@
     "include": [
       "int8 GQA K and V byte addressing for four KV heads, 1024-token tiles, and head dimension 128",
       "complete 1 MiB K/V tile and 128 MiB per-layer byte conservation",
-      "bijection from V bytes to 2048 512-bit fill rows per head tile",
-      "mapping from K bytes to corrected p53/p54 producer slots and 128-bit dual-stream beats",
+      "bijection and transpose from token-major V bytes to 2048 512-bit fill rows per head tile",
+      "transpose from token-major K bytes to corrected p53/p54 producer slots and 128-bit dual-stream beats",
       "capacity-driven whole-token resident ranges",
       "resident-cache locality and transient HBM-return transport as separate traffic scopes",
       "explicit RTL ownership and backpressure obligations"
@@ -43,8 +43,8 @@
     "proposal_id": "prop_l1_attention_score32_exact_kv_ingress_assembler_v1",
     "stages": [
       "canonical K/V tensor-address decoder with partial-packet byte validity",
-      "two-flit 256-to-512-bit V row assembler",
-      "K dual-stream beat assembler with corrected p53/p54 slot distribution",
+      "1 KiB token-major-to-fill-row V transpose buffer and assembler",
+      "2 KiB paired-stream K transpose buffer and dual-stream beat assembler with corrected p53/p54 slot distribution",
       "capacity resident versus transient HBM-return source selection",
       "cluster fill/residency/release and end-to-end ready-valid backpressure",
       "shared-mesh composition followed by remote physical measurement"

@@ -16,11 +16,11 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 - locality-aware tile-to-cluster scheduler preserving balanced waves
 - on-chip packet routing for remote resident K/V bytes
 - K/V tensor address decoder and partial-packet byte validity
-- two-flit 256-to-512-bit V row assembler
-- K producer-beat assembler and p53/p54 slot distributor
+- 1KiB token-major-to-fill-row V transpose buffer and assembler
+- 2KiB paired-stream K transpose buffer, producer-beat assembler, and p53/p54 slot distributor
 - per-cluster fill target, double-buffer residency, and command release
 - backpressure from cluster SRAM and producers through ingress and mesh
 
 ## Next Gate
 
-Implement and verify the canonical tensor-address decoder plus representative p54/p53 K/V ingress assemblers before composing capacity-driven NoC/HBM source scheduling.
+Implement and verify the canonical tensor-address decoder plus representative p54/p53 K/V transpose assemblers before composing capacity-driven NoC/HBM source scheduling.
