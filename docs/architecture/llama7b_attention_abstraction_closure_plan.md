@@ -305,6 +305,16 @@ evidence gaps:
   contract. Any activity, composed-mesh, or frontier descendant must name this
   exact revision boundary; parameter-only recost of a retracted descendant is
   invalid.
+- The VC0 portion of that revision is exact only for the historical
+  fractional-smear traffic record, not for K/V tensor identity. Its aggregate
+  2,228,224 resident bytes per layer equal the 68 MiB shared-SRAM capacity
+  divided across 32 layers, but each context lacks K/V kind, head, tile,
+  token, dimension, and partial-byte metadata. It therefore remains a
+  resident-capacity transport bound and must not be connected directly to the
+  cluster fill interface or used for a frontier recost. The canonical exact
+  layer stream is 128 MiB: 64 MiB K and 64 MiB V. Locality-aware placement can
+  eliminate remote transport only for resident-cache hits; it does not remove
+  transient HBM-return traffic.
 - HBM/DRAM controller RTL and vendor current signoff remain outside the RTLGen
   chip boundary. They stay as source-backed service and energy envelopes, not
   as free components and not as claims of RTL closure.
@@ -585,9 +595,29 @@ run the already queued exp-LUT branch:
 19. Prove endpoint r4 setup-path identity or run an independently registered
     replacement, then create the new composed endpoint/mesh PPA and exact
     activity jobs. Only those measurements can replace vectorless/scaled NoC
-    and endpoint energy in the Llama7B frontier. Simultaneous VC0/VC1 shared-
-    mesh arbitration remains explicit until the composed replay exercises it
-    under the exact five-phase producer schedule.
+    and endpoint energy in the Llama7B frontier. The merged shared-mesh replay
+    now embodies simultaneous VC0/VC1 arbitration and cycle-checks every
+    endpoint decision, but its remote evaluator result is still pending.
+20. Run the exact p54/p53 release-cadence item and its dependent common-clock,
+    one-held-beat, stall-dilated shared-mesh replay on the remote evaluator.
+    Preserve separate VC0 and VC1 completion and do not interpret the result
+    as complete dataflow closure.
+21. Implement `prop_l1_attention_score32_exact_kv_ingress_assembler_v1` from
+    the canonical K/V layout. Require a checked address decoder, partial-byte
+    validity, a two-flit 256-to-512-bit V row assembler, and a p53/p54
+    dual-stream K beat assembler. Prove every byte maps bijectively to the
+    existing cluster SRAM and producer interfaces under arbitrary
+    backpressure.
+22. Compose the ingress block with capacity-driven resident descriptors,
+    transient HBM-return source selection, shared-mesh routing, cluster
+    double-buffer residency, and producer release. Measure representative
+    physical slices remotely; keep the external HBM controller/PHY and SRAM
+    bitcells as disclosed boundaries.
+23. Replace the historical VC0 capacity bound with the composed exact ingress
+    cycles and measured component PPA, then rerank the Llama7B candidates by
+    token throughput, energy, area, and precision. No candidate can be called
+    the confidence-bounded best architecture before this substitution passes
+    workload equivalence and evidence-category checks.
 
 All new evaluation jobs should run on the remote evaluator
 `eval-daemon-b7c2d9c80c1c`, not the devcontainer.

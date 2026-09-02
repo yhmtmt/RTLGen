@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exact_kv_ingress_revision_llama7b_v1",
+  "created_utc": "2026-09-02T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "revision",
+  "abstraction_layer": "decoder_attention_score32_exact_kv_ingress",
+  "title": "Replace fractional VC0 traffic with exact addressed K/V ingress",
+  "hypothesis": "The historical fractional-smear VC0 traffic can remain a resident-capacity bound, but it cannot close the exact score32 cluster data path because it lacks K/V tensor addresses, partial-byte validity, and mappings to the 512-bit V fill rows and 128-bit p53/p54 K beats.",
+  "direct_comparison": {
+    "primary_question": "What exact on-chip ingress contract is required to connect capacity-driven Llama7B K/V data to the embodied score32 cluster SRAM and producer interfaces?",
+    "include": [
+      "int8 GQA K and V byte addressing for four KV heads, 1024-token tiles, and head dimension 128",
+      "complete 1 MiB K/V tile and 128 MiB per-layer byte conservation",
+      "bijection from V bytes to 2048 512-bit fill rows per head tile",
+      "mapping from K bytes to corrected p53/p54 producer slots and 128-bit dual-stream beats",
+      "capacity-driven whole-token resident ranges",
+      "resident-cache locality and transient HBM-return transport as separate traffic scopes",
+      "explicit RTL ownership and backpressure obligations"
+    ],
+    "exclude": [
+      "HBM controller and PHY",
+      "vendor SRAM bitcells",
+      "new physical PPA",
+      "frontier throughput, energy, or area reranking before ingress RTL equivalence"
+    ]
+  },
+  "revision": {
+    "reason": "historical_fractional_vc0_has_no_exact_tensor_address_or_consumer_mapping",
+    "preserves": [
+      "the 15769-cycle shared-mesh result as a standalone historical-traffic capacity bound",
+      "the exact release-coupled VC1 reduction transport gate",
+      "the 68 MiB shared-SRAM capacity constraint"
+    ],
+    "withdraws": [
+      "direct use of historical VC0 writes as exact cluster fill evidence",
+      "full-dataflow closure claims based on aggregate VC0 byte equality",
+      "frontier recosting before exact ingress equivalence"
+    ]
+  },
+  "required_evaluations": [],
+  "required_rtl_follow_on": {
+    "proposal_id": "prop_l1_attention_score32_exact_kv_ingress_assembler_v1",
+    "stages": [
+      "canonical K/V tensor-address decoder with partial-packet byte validity",
+      "two-flit 256-to-512-bit V row assembler",
+      "K dual-stream beat assembler with corrected p53/p54 slot distribution",
+      "capacity resident versus transient HBM-return source selection",
+      "cluster fill/residency/release and end-to-end ready-valid backpressure",
+      "shared-mesh composition followed by remote physical measurement"
+    ]
+  },
+  "remaining_abstractions": [
+    "HBM controller and PHY remain outside the chip RTL boundary.",
+    "Transient HBM-return placement and routing are not represented by zero resident-cache remote bytes.",
+    "SRAM arrays remain inferred until a compatible macro integration is measured."
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+    "npu/docs/generated/llama7b_score32_exact_kv_ingress_closure_audit_v1.json",
+    "docs/proposals/prop_l2_decoder_attention_score32_exact_shared_mesh_release_replay_llama7b_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llama7b_score32_exact_kv_ingress_closure.py",
+    "npu/sim/perf/attention_kv_tile_layout.py",
+    "npu/eval/model_llama7b_shared_sram_residency.py",
+    "npu/sim/perf/attention_score32_exact_cluster_sram_service_gqa8.py"
+  ]
+}

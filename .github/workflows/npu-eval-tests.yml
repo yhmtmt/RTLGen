@@ -46,4 +46,5 @@ jobs:
             npu/eval/tests/test_audit_attention_score32_exact_shared_root_storage_physical_frontier.py \
             npu/eval/tests/test_probe_llama7b_score32_exact_cluster_release_cadence.py \
             npu/eval/tests/test_prepare_llama7b_score32_exact_shared_mesh_release_replay.py \
-            npu/eval/tests/test_run_llama7b_score32_exact_shared_mesh_release_replay.py
+            npu/eval/tests/test_run_llama7b_score32_exact_shared_mesh_release_replay.py \
+            npu/eval/tests/test_audit_llama7b_score32_exact_kv_ingress_closure.py

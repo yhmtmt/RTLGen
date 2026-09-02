@@ -1,0 +1,135 @@
+{
+  "canonical_layout": {
+    "key_mapping": "block_slot=(token%512)//8; invert the corrected per-group p53/p54 slot bases; for each dimension, the 128-bit beat packs eight stream-0 and eight stream-1 token bytes",
+    "tile_byte_order": "K[kv_head][token][dimension] then V[kv_head][token][dimension]",
+    "value_fill_mapping": "stream=token//512; block_slot=(token%512)//8; slice=dimension//8; byte=(token%8)*8+(dimension%8)"
+  },
+  "capacity_driven_residency": {
+    "placement_options": {
+      "locality_aware_owner_compute": {
+        "does_not_include": "transient HBM-return transport",
+        "local_resident_bytes_per_layer": 2228224,
+        "remote_transport_bytes_per_layer": 0,
+        "scheduler_requirement": "assign each cached independent attention tile to its home cluster"
+      },
+      "remote_balanced_contiguous": {
+        "local_resident_bytes_per_layer": 0,
+        "remote_transport_bytes_per_layer": 2228224
+      }
+    },
+    "recommended_onchip_baseline": "locality_aware_owner_compute",
+    "resident_bytes_per_layer": 2228224,
+    "resident_share_of_layer_kv": 0.0166015625,
+    "scope": "resident_cache_bytes_only; transient HBM-return routing is excluded and remains an on-chip ingress obligation",
+    "shared_capacity_bytes": 71303168,
+    "total_hbm_read_bytes_per_layer": 134217728,
+    "transient_refill_bytes_per_layer": 2228224,
+    "unresident_hbm_return_bytes_per_layer": 131989504,
+    "whole_context_payload_distribution_all_layers": [
+      {
+        "context_count": 32,
+        "payload_bytes": 131072
+      },
+      {
+        "context_count": 64,
+        "payload_bytes": 1048576
+      }
+    ]
+  },
+  "cluster_consumption": {
+    "clusters": 16,
+    "head_groups": 4,
+    "key_stream_bytes": 67108864,
+    "total_value_fill_bytes": 67108864,
+    "total_value_fill_rows": 1048576,
+    "value_bytes_per_command": 131072,
+    "value_fill_commands": 512,
+    "value_row_bytes": 64,
+    "value_rows_per_command": 2048,
+    "waves": 8
+  },
+  "decision": "historical_fractional_vc0_cannot_serve_as_exact_cluster_fill_contract",
+  "historical_phase2_vc0": {
+    "accounting_role": "resident-capacity traffic bound only",
+    "context_bytes": 17408,
+    "direct_cluster_fill_compatible": false,
+    "exact_tensor_address_metadata": false,
+    "local_contexts": 16,
+    "local_resident_bytes": 278528,
+    "policy": "fractional_smear",
+    "remote_contexts": 112,
+    "remote_transport_bytes": 1949696,
+    "represented_resident_bytes": 2228224
+  },
+  "llama7b_layer_shape": {
+    "head_dim": 128,
+    "kv_bits": 8,
+    "kv_heads": 4,
+    "kv_tile_bytes": 1048576,
+    "layer_k_bytes": 67108864,
+    "layer_kv_bytes": 134217728,
+    "layer_v_bytes": 67108864,
+    "sequence_length": 131072,
+    "tile_tokens": 1024,
+    "tiles": 128
+  },
+  "model": "llama7b_score32_exact_kv_ingress_closure_audit_v1",
+  "next_gate": "Implement and verify the canonical tensor-address decoder plus representative p54/p53 K/V ingress assemblers before composing capacity-driven NoC/HBM source scheduling.",
+  "port_gap": {
+    "cluster_fill_bits": 512,
+    "current_max_context_bytes": 17408,
+    "current_max_packets_per_context": 68,
+    "missing_metadata": [
+      "tensor_kind_k_or_v",
+      "kv_head",
+      "tile_index",
+      "token_in_tile",
+      "dimension",
+      "valid_payload_bytes_for_partial_context"
+    ],
+    "partial_128KiB_packets_256B": 512,
+    "vc0_flits_per_value_fill_row": 2,
+    "vc0_write_bits": 256,
+    "whole_kv_tile_packets_256B": 4096
+  },
+  "required_rtl_ownership": [
+    "external HBM-return ready/valid ingress boundary, excluding controller and PHY",
+    "capacity-driven resident-range descriptor and source selection",
+    "locality-aware tile-to-cluster scheduler preserving balanced waves",
+    "on-chip packet routing for remote resident K/V bytes",
+    "K/V tensor address decoder and partial-packet byte validity",
+    "two-flit 256-to-512-bit V row assembler",
+    "K producer-beat assembler and p53/p54 slot distributor",
+    "per-cluster fill target, double-buffer residency, and command release",
+    "backpressure from cluster SRAM and producers through ingress and mesh"
+  ],
+  "revision_effect": {
+    "frontier_recost_allowed": false,
+    "reason": "Neither historical fractional VC0 bytes nor the external synthetic fill plane proves the complete exact K/V data path consumed by the score32 clusters.",
+    "release_coupled_vc1_role": "exact_reduction_transport_timing_with_vc0_ingress_still_open",
+    "shared_mesh_15769_cycle_result_role": "standalone_historical_traffic_capacity_bound_only"
+  },
+  "source_refs": [
+    {
+      "path": "npu/eval/audit_llama7b_score32_exact_kv_ingress_closure.py",
+      "sha256": "7357b17f0353998d3b49aa0cfe268b35736c97d9cc1961cc066dc7624d35f5ce"
+    },
+    {
+      "path": "npu/sim/perf/attention_kv_tile_layout.py",
+      "sha256": "830a50e783c0ae5f43640540a67988add775e033a2fc81cc71cd39c5bd683c93"
+    },
+    {
+      "path": "npu/eval/model_llama7b_shared_sram_residency.py",
+      "sha256": "379e892682950be6f0cf6c24ea1797660dd64a043653efefa331ec96ff3ce13e"
+    },
+    {
+      "path": "npu/sim/perf/attention_score32_exact_cluster_sram_service_gqa8.py",
+      "sha256": "c322ad062673b88f9e581fa92f363b19664d334f0fb6edbb33b26afc1bc2113a"
+    },
+    {
+      "path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
+      "sha256": "7a6b139fa12c27823b2eff8101c42f40ea8c1461b0571652c9acfdf47ebeeaa3"
+    }
+  ],
+  "version": 1
+}

@@ -14,6 +14,10 @@ import sys
 import tempfile
 from typing import Any
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from npu.eval.prepare_llama7b_score32_exact_shared_mesh_release_replay import (
     REPLAY_MODEL,
     build_replay,
@@ -23,7 +27,6 @@ from npu.eval.prepare_llama7b_score32_exact_shared_mesh_release_replay import (
 
 
 JsonDict = dict[str, Any]
-REPO_ROOT = Path(__file__).resolve().parents[2]
 RESULT_MODEL = "llama7b_score32_exact_shared_mesh_release_coupled_rtl_v1"
 SUMMARY_RE = re.compile(
     r"PASS promotion-scale shared-mesh replay "
