@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 import re
@@ -9,6 +10,10 @@ import time
 
 import pytest
 
+from npu.eval.prepare_llama7b_score32_exact_shared_mesh_release_replay import (
+    StallDilatedReleasePlayer,
+    main as prepare_release_replay,
+)
 from npu.rtlgen.gen_attention_score32_exact_banked_finalized_tree import generate
 from npu.sim.perf.noc_endpoint_vc_injection_arbiter import (
     EndpointVcInjectionArbiter,
@@ -56,6 +61,7 @@ PASS_RE = re.compile(
     r"overlap_arb=(?P<overlap_arb>\d+) "
     r"contention=(?P<contention>\d+) "
     r"service_envelope=(?P<service_envelope>\d+) "
+    r"release_coupled=(?P<release_coupled>\d+) "
     r"service_cycles=(?P<service_cycles>\d+) "
     r"vc0_done_cycle=(?P<vc0_done_cycle>\d+) "
     r"vc1_done_cycle=(?P<vc1_done_cycle>\d+)"
@@ -70,6 +76,18 @@ ARB_TRACE_RE = re.compile(
     r"(?P<producer1_ready>[0-9a-fA-F]+) "
     r"(?P<out_valid>[0-9a-fA-F]+) "
     r"(?P<out_vc_pack>[0-9a-fA-F]+)$"
+)
+RELEASE_TRACE_RE = re.compile(
+    r"^REL "
+    r"(?P<cycle>\d+) "
+    r"(?P<admission>\d+) "
+    r"(?P<group>\d+) "
+    r"(?P<remote_group_ready>[0-9a-fA-F]+) "
+    r"(?P<root_group_ready>\d+) "
+    r"(?P<source_valid>[0-9a-fA-F]+) "
+    r"(?P<source_ready>[0-9a-fA-F]+) "
+    r"(?P<root_valid>\d+) "
+    r"(?P<root_ready>\d+)$"
 )
 
 
@@ -100,6 +118,7 @@ def _generate_tree(tmp_path: Path) -> Path:
 
 
 RUN_ENV = "RTLGEN_RUN_SLOW_SHARED_MESH_FULL_REPLAY"
+RELEASE_CADENCE_ENV = "RTLGEN_RELEASE_CADENCE_JSON"
 EXPECTED_SERVICE_ENVELOPE = {
     "service_cycles": 15769,
     "vc0_done_cycle": 15769,
@@ -211,6 +230,95 @@ def _assert_arbiter_trace_matches_model(path: Path) -> int:
     return decision_count
 
 
+def _assert_release_trace_matches_model(path: Path, replay: dict) -> int:
+    rows = []
+    for raw_line in path.read_text().splitlines():
+        match = RELEASE_TRACE_RE.match(raw_line.strip())
+        assert match is not None, f"unexpected release trace row: {raw_line}"
+        rows.append(
+            {
+                key: (
+                    int(value, 16)
+                    if key in {"remote_group_ready", "source_valid", "source_ready"}
+                    else int(value)
+                )
+                for key, value in match.groupdict().items()
+            }
+        )
+    assert rows, "release trace is empty"
+
+    p54 = tuple(int(cycle) for cycle in replay["p54_release_cycles"])
+    p53 = tuple(int(cycle) for cycle in replay["p53_release_cycles"])
+    sources = [
+        StallDilatedReleasePlayer(p54 if endpoint < 8 else p53)
+        for endpoint in range(15)
+    ]
+    root = StallDilatedReleasePlayer(p53)
+    active_group: int | None = None
+    activate_next: int | None = None
+    fire_count = 0
+    for expected_cycle, row in enumerate(rows):
+        assert row["cycle"] == expected_cycle
+        if activate_next is not None:
+            active_group = activate_next
+            activate_next = None
+        group_active = active_group is not None
+        index_limit = None if active_group is None else (active_group + 1) * 128
+        for endpoint, source in enumerate(sources):
+            expected_valid = source.valid(
+                cycle=expected_cycle,
+                group_active=group_active,
+                index_limit=index_limit,
+            )
+            assert expected_valid == _mask_bit(row["source_valid"], endpoint), (
+                f"source {endpoint} release-valid mismatch at cycle {expected_cycle}"
+            )
+            if source.step(
+                cycle=expected_cycle,
+                group_active=group_active,
+                ready=_mask_bit(row["source_ready"], endpoint),
+                index_limit=index_limit,
+            ):
+                fire_count += 1
+        expected_root_valid = root.valid(
+            cycle=expected_cycle,
+            group_active=group_active,
+            index_limit=index_limit,
+        )
+        assert expected_root_valid == bool(row["root_valid"]), (
+            f"root release-valid mismatch at cycle {expected_cycle}"
+        )
+        if root.step(
+            cycle=expected_cycle,
+            group_active=group_active,
+            ready=bool(row["root_ready"]),
+            index_limit=index_limit,
+        ):
+            fire_count += 1
+
+        if active_group is not None:
+            group_end = (active_group + 1) * 128
+            if all(source.index == group_end for source in sources) and root.index == group_end:
+                active_group = None
+        if row["admission"]:
+            admitted_group = row["group"]
+            assert active_group is None
+            assert admitted_group in range(4)
+            expected_start = admitted_group * 128
+            assert all(source.index == expected_start for source in sources)
+            assert root.index == expected_start
+            assert all(int(source.next_release_cycle) <= expected_cycle for source in sources)
+            assert int(root.next_release_cycle) <= expected_cycle
+            assert row["remote_group_ready"] == 0x7FFF
+            assert row["root_group_ready"] == 1
+            activate_next = admitted_group
+
+    assert all(source.index == 512 for source in sources)
+    assert root.index == 512
+    assert fire_count == 16 * 512
+    return fire_count
+
+
 @pytest.mark.skipif(
     os.environ.get(RUN_ENV) != "1",
     reason=f"set {RUN_ENV}=1 to run the promotion-scale shared-mesh RTL replay",
@@ -279,6 +387,7 @@ def test_exact_dual_producer_shared_mesh_full_replay(tmp_path: Path) -> None:
     assert observed["overlap_arb"] > 0
     assert observed["contention"] > 0
     assert observed["service_envelope"] == 0
+    assert observed["release_coupled"] == 0
     assert observed["service_cycles"] == max(
         observed["vc0_done_cycle"], observed["vc1_done_cycle"]
     )
@@ -316,6 +425,7 @@ def test_exact_dual_producer_shared_mesh_full_replay(tmp_path: Path) -> None:
     ):
         assert envelope[field] == observed[field]
     assert envelope["service_envelope"] == 1
+    assert envelope["release_coupled"] == 0
     assert envelope["service_cycles"] == max(
         envelope["vc0_done_cycle"], envelope["vc1_done_cycle"]
     )
@@ -326,9 +436,82 @@ def test_exact_dual_producer_shared_mesh_full_replay(tmp_path: Path) -> None:
     for field, expected in EXPECTED_SERVICE_ENVELOPE.items():
         assert envelope[field] == expected
 
+    release_summary = "release_coupled=not_requested"
+    cadence_name = os.environ.get(RELEASE_CADENCE_ENV)
+    if cadence_name:
+        cadence_path = Path(cadence_name).resolve()
+        assert cadence_path.is_file(), f"missing {RELEASE_CADENCE_ENV}: {cadence_path}"
+        replay_json = tmp_path / "release_replay.json"
+        p54_memh = tmp_path / "release_p54.memh"
+        p53_memh = tmp_path / "release_p53.memh"
+        assert prepare_release_replay(
+            [
+                "--cadence",
+                str(cadence_path),
+                "--out",
+                str(replay_json),
+                "--p54-memh",
+                str(p54_memh),
+                "--p53-memh",
+                str(p53_memh),
+            ]
+        ) == 0
+        replay = json.loads(replay_json.read_text(encoding="utf-8"))
+        assert replay["backpressure_contract"]["hidden_queue_depth"] == 0
+        release_trace = tmp_path / "release_coupled_arb.trace"
+        producer_release_trace = tmp_path / "release_coupled_source.trace"
+        release_run = subprocess.run(
+            [
+                str(_tool("vvp")),
+                str(simv),
+                "+RELEASE_CADENCE",
+                f"+RELEASE_P54={p54_memh}",
+                f"+RELEASE_P53={p53_memh}",
+                f"+ARB_TRACE={release_trace}",
+                f"+RELEASE_TRACE={producer_release_trace}",
+            ],
+            check=True,
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=1200,
+        )
+        release_match = PASS_RE.search(release_run.stdout)
+        assert release_match is not None, release_run.stdout
+        release = {name: int(value) for name, value in release_match.groupdict().items()}
+        for field in (
+            "vc0_contexts",
+            "vc0_packets",
+            "vc0_flits",
+            "vc1_groups",
+            "vc1_rows",
+            "vc1_packets",
+            "vc1_flits",
+        ):
+            assert release[field] == observed[field]
+        assert release["service_envelope"] == 0
+        assert release["release_coupled"] == 1
+        assert release["service_cycles"] == max(
+            release["vc0_done_cycle"], release["vc1_done_cycle"]
+        )
+        release_arb_decisions = _assert_arbiter_trace_matches_model(release_trace)
+        release_source_fires = _assert_release_trace_matches_model(
+            producer_release_trace,
+            replay,
+        )
+        release_trace.unlink(missing_ok=True)
+        producer_release_trace.unlink(missing_ok=True)
+        release_summary = (
+            f"release_coupled_cycles={release['service_cycles']} "
+            f"release_vc0_done_cycle={release['vc0_done_cycle']} "
+            f"release_vc1_done_cycle={release['vc1_done_cycle']} "
+            f"release_arb_decisions={release_arb_decisions} "
+            f"release_source_fires={release_source_fires}"
+        )
+
     print(
         "PASS promotion-scale shared-mesh replay "
         f"compile_s={compile_elapsed:.2f} run_s={run_elapsed:.2f} "
         f"arb_decisions={arb_decisions} envelope_s={envelope_elapsed:.2f} "
-        f"envelope_cycles={envelope['service_cycles']}"
+        f"envelope_cycles={envelope['service_cycles']} {release_summary}"
     )

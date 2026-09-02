@@ -1,0 +1,46 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exact_shared_mesh_release_replay_llama7b_v1",
+  "source_commit": "TBD",
+  "source_commit_note": "Queue only after merge and pin source_requirement.required_sha to the merge commit containing the strict cadence converter, causal replay testbench, runner, and tests.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_score32_exact_shared_mesh_release_replay_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Verify producer-release-coupled exact shared-mesh RTL and preserve split VC0/VC1 completion.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_shared_mesh_release_coupling",
+      "comparison_role": "corrective_release_coupled_transport_timing",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/config.json"
+      ],
+      "expected_outputs": [
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_shared_mesh_release_replay__l2_decoder_attention_score32_exact_shared_mesh_release_replay_llama7b_v1.json",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_shared_mesh_release_replay__l2_decoder_attention_score32_exact_shared_mesh_release_replay_llama7b_v1.md"
+      ],
+      "status": "draft_pending_source_merge_cadence_and_evaluator_recovery",
+      "command": [
+        "python3",
+        "npu/eval/run_llama7b_score32_exact_shared_mesh_release_replay.py",
+        "--cadence",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_cluster_release_cadence__l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1.json",
+        "--out",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_shared_mesh_release_replay__l2_decoder_attention_score32_exact_shared_mesh_release_replay_llama7b_v1.json",
+        "--out-md",
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_exact_shared_mesh_release_replay__l2_decoder_attention_score32_exact_shared_mesh_release_replay_llama7b_v1.md",
+        "--timeout-sec",
+        "3600"
+      ],
+      "expected_result": {
+        "direction": "replace_eager_vc1_timing_with_measured_causal_release",
+        "reason": "A throughput recost must use measured exact producer release and finite ready-valid backpressure rather than an eager source or inferred 986-cycle offset."
+      },
+      "acceptance_notes": "Require a passing cadence artifact, all 512 p54 and p53 cycles, common-clock identity mapping, one held beat and zero hidden queue, exact VC0/VC1 totals and payload checks, zero protocol errors, finite split completion cycles, and cycle-by-cycle endpoint arbiter equivalence. Do not promote this result as full dataflow closure until VC0 writes drive cluster fill residency."
+    }
+  ]
+}

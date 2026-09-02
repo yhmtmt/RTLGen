@@ -1,0 +1,65 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_score32_exact_shared_mesh_release_replay_llama7b_v1",
+  "created_utc": "2026-09-02T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "corrective_equivalence",
+  "title": "Causal exact producer release replay on the shared Llama7B mesh",
+  "abstraction_layer": "decoder_attention_score32_exact_shared_mesh_release_coupling",
+  "hypothesis": "Feeding every measured p54/p53 output cycle into the exact shared-mesh RTL with one held beat and stall-dilated future releases will replace eager VC1 injection without introducing an unbounded trace queue.",
+  "direct_comparison": {
+    "primary_question": "How long does the embodied shared mesh take when exact VC1 rows become valid at measured producer cycles and downstream stalls causally delay each source?",
+    "include": [
+      "all 512 measured rows from both p54 and p53 structural families",
+      "p54 mapping to endpoints 0-7 and p53 mapping to endpoints 8-15",
+      "one common synchronous clock matching the composed RTL",
+      "one held output beat per source with no hidden release queue",
+      "112 VC0 contexts, 7616 packets, and 60928 exact payload flits",
+      "four VC1 groups, 1260 packets, 10020 flits, and 512 exact root rows",
+      "cycle-by-cycle RTL versus Python endpoint VC arbitration"
+    ],
+    "exclude": [
+      "independent producer and mesh clocks without CDC RTL",
+      "wiring VC0 SRAM destination writes into the cluster fill plane",
+      "sixteen independently measured duplicate producer traces",
+      "HBM/DRAM controller and PHY",
+      "physical PPA"
+    ]
+  },
+  "corrective_contract": {
+    "supersedes": [
+      "eager VC1 source-valid timing as a throughput claim",
+      "986-cycle inferred reduction release timing",
+      "synthetic cycle-zero fine-composition timing"
+    ],
+    "does_not_supersede": [
+      "the eager 15769-cycle standalone service capacity bound",
+      "full structured arithmetic equivalence",
+      "the exact VC0 and stats-once VC1 traffic quantities"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_score32_exact_shared_mesh_release_replay_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Verify producer-release-coupled exact shared-mesh RTL and preserve split VC0/VC1 completion.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_score32_exact_shared_mesh_release_coupling",
+      "comparison_role": "corrective_release_coupled_transport_timing",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "run_physical": false,
+      "status": "draft_pending_source_merge_cadence_and_evaluator_recovery"
+    }
+  ],
+  "remaining_abstractions": [
+    "Representative p54/p53 traces are replicated across same-structure endpoints.",
+    "Measured no-stall inter-row deltas are conservatively dilated rather than closing direct producer backpressure.",
+    "VC0 transport completion does not yet drive cluster SRAM fill residency.",
+    "HBM/DRAM remains outside the chip RTL boundary."
+  ],
+  "next_gate": "Directly connect VC0 destination SRAM writes to the cluster fill interface and compose producer, reducer, and mesh valid-ready behavior without trace-derived VC1 sources."
+}

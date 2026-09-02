@@ -153,7 +153,13 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
   reg vc1_stream_active = 1'b0;
   reg vc1_root_stall_observed = 1'b0;
   reg service_envelope_mode = 1'b0;
+  reg release_cadence_mode = 1'b0;
   reg vc1_all_input_done;
+  reg vc1_release_group_available;
+  reg [31:0] vc1_p54_release_cycle [0:VC1_TOTAL_ROWS-1];
+  reg [31:0] vc1_p53_release_cycle [0:VC1_TOTAL_ROWS-1];
+  integer vc1_source_next_release_cycle [0:VC1_SOURCE_COUNT-1];
+  integer vc1_root_next_release_cycle = 0;
   reg [15:0] stalled_root_command = 0;
   reg [4:0] stalled_root_head = 0;
   reg [3:0] stalled_root_slice = 0;
@@ -197,8 +203,12 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
   integer expected_addr_i;
   integer arb_trace_fd = 0;
   integer arb_trace_cycle = 0;
+  integer release_trace_fd = 0;
   integer trace_endpoint_i;
   string arb_trace_path;
+  string release_trace_path;
+  string release_p54_path;
+  string release_p53_path;
   reg [255:0] expected_data_q;
   reg [15:0] arb_trace_producer0_valid_mask;
   reg [15:0] arb_trace_producer1_valid_mask;
@@ -430,6 +440,17 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
     end
   endfunction
 
+  function integer release_cycle_for_source;
+    input integer source;
+    input integer row;
+    begin
+      if (source < 8)
+        release_cycle_for_source = vc1_p54_release_cycle[row];
+      else
+        release_cycle_for_source = vc1_p53_release_cycle[row];
+    end
+  endfunction
+
   task decode_source_addr;
     input [VC0_ADDR_W-1:0] address;
     output integer wave;
@@ -545,11 +566,14 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
     if (vc1_stream_active) begin
       for (comb_source_i = 0; comb_source_i < VC1_SOURCE_COUNT; comb_source_i = comb_source_i + 1) begin
         vc1_source_beat_valid[comb_source_i] =
-          (vc1_source_beat_index[comb_source_i] < VC1_GROUP_BEATS);
+          (vc1_source_beat_index[comb_source_i] < VC1_GROUP_BEATS) &&
+          (!release_cadence_mode ||
+           cycle >= vc1_source_next_release_cycle[comb_source_i]);
         vc1_source_beat_data[comb_source_i*VC1_BEAT_W +: VC1_BEAT_W] =
           make_canonical_beat(vc1_active_group_id, vc1_source_beat_index[comb_source_i]);
       end
-      vc1_root_local_beat_valid = (vc1_root_beat_index < VC1_GROUP_BEATS);
+      vc1_root_local_beat_valid = (vc1_root_beat_index < VC1_GROUP_BEATS) &&
+        (!release_cadence_mode || cycle >= vc1_root_next_release_cycle);
       vc1_root_local_beat_data =
         make_canonical_beat(vc1_active_group_id, vc1_root_beat_index);
     end
@@ -560,6 +584,13 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
     for (done_source_i = 0; done_source_i < VC1_SOURCE_COUNT; done_source_i = done_source_i + 1)
       if (vc1_source_beat_index[done_source_i] < VC1_GROUP_BEATS)
         vc1_all_input_done = 1'b0;
+
+    vc1_release_group_available =
+      !release_cadence_mode || cycle >= vc1_root_next_release_cycle;
+    for (done_source_i = 0; done_source_i < VC1_SOURCE_COUNT; done_source_i = done_source_i + 1)
+      if (release_cadence_mode &&
+          cycle < vc1_source_next_release_cycle[done_source_i])
+        vc1_release_group_available = 1'b0;
   end
 
   always @(posedge clk or negedge rst_n) begin
@@ -622,6 +653,15 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
       end
       vc0_tx_request_count <= vc0_tx_request_count + req_delta;
     end
+  end
+
+  always @(posedge clk) begin
+    if (rst_n && release_trace_fd != 0)
+      $fdisplay(release_trace_fd, "REL %0d %0d %0d %04h %0d %04h %04h %0d %0d",
+        cycle, vc1_group_admission_pulse, vc1_group_index,
+        vc1_remote_group_ready, vc1_root_local_group_ready,
+        vc1_source_beat_valid, vc1_source_beat_ready,
+        vc1_root_local_beat_valid, vc1_root_local_beat_ready);
   end
 
   always @(posedge clk or negedge rst_n) begin
@@ -692,6 +732,7 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
       vc1_root_count <= 0;
       vc1_stream_active <= 1'b0;
       vc1_root_beat_index <= 0;
+      vc1_root_next_release_cycle <= vc1_p53_release_cycle[0];
       vc1_root_stall_observed <= 1'b0;
       stalled_root_command <= 0;
       stalled_root_head <= 0;
@@ -712,6 +753,8 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
       end
       for (reset_source_i = 0; reset_source_i < VC1_SOURCE_COUNT; reset_source_i = reset_source_i + 1) begin
         vc1_source_beat_index[reset_source_i] <= 0;
+        vc1_source_next_release_cycle[reset_source_i] <=
+          release_cycle_for_source(reset_source_i, 0);
         vc1_group_complete_count_by_source[reset_source_i] <= 0;
       end
     end else begin
@@ -739,16 +782,44 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
         for (mon_source_i = 0; mon_source_i < VC1_SOURCE_COUNT; mon_source_i = mon_source_i + 1)
           vc1_source_beat_index[mon_source_i] <= 0;
       end else begin
-        if (vc1_all_input_done && vc1_stream_active &&
-            vc1_group_count_seen < VC1_GROUPS) begin
+        if (((vc1_all_input_done && vc1_stream_active) ||
+             (!vc1_stream_active && vc1_group_count_seen == 0)) &&
+            vc1_group_count_seen < VC1_GROUPS &&
+            vc1_release_group_available) begin
           vc1_remote_group_ready <= {VC1_SOURCE_COUNT{1'b1}};
           vc1_root_local_group_ready <= 1'b1;
         end
-        if (vc1_root_local_beat_valid && vc1_root_local_beat_ready)
+        if (vc1_root_local_beat_valid && vc1_root_local_beat_ready) begin
+          if (release_cadence_mode &&
+              (vc1_active_group_id * VC1_GROUP_BEATS + vc1_root_beat_index + 1) <
+                VC1_TOTAL_ROWS)
+            vc1_root_next_release_cycle <= cycle +
+              vc1_p53_release_cycle[
+                vc1_active_group_id * VC1_GROUP_BEATS + vc1_root_beat_index + 1
+              ] -
+              vc1_p53_release_cycle[
+                vc1_active_group_id * VC1_GROUP_BEATS + vc1_root_beat_index
+              ];
           vc1_root_beat_index <= vc1_root_beat_index + 1;
+        end
         for (mon_source_i = 0; mon_source_i < VC1_SOURCE_COUNT; mon_source_i = mon_source_i + 1)
-          if (vc1_source_beat_valid[mon_source_i] && vc1_source_beat_ready[mon_source_i])
+          if (vc1_source_beat_valid[mon_source_i] && vc1_source_beat_ready[mon_source_i]) begin
+            if (release_cadence_mode &&
+                (vc1_active_group_id * VC1_GROUP_BEATS +
+                 vc1_source_beat_index[mon_source_i] + 1) < VC1_TOTAL_ROWS)
+              vc1_source_next_release_cycle[mon_source_i] <= cycle +
+                release_cycle_for_source(
+                  mon_source_i,
+                  vc1_active_group_id * VC1_GROUP_BEATS +
+                    vc1_source_beat_index[mon_source_i] + 1
+                ) -
+                release_cycle_for_source(
+                  mon_source_i,
+                  vc1_active_group_id * VC1_GROUP_BEATS +
+                    vc1_source_beat_index[mon_source_i]
+                );
             vc1_source_beat_index[mon_source_i] <= vc1_source_beat_index[mon_source_i] + 1;
+          end
       end
 
       for (mon_endpoint_i = 0; mon_endpoint_i < 16; mon_endpoint_i = mon_endpoint_i + 1) begin
@@ -1019,12 +1090,13 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
             shared_contention_cycles, shared_input_stall_cycles,
             shared_output_stall_cycles);
 
-        $display("PASS exact_dual_producer_shared_mesh_full vc0_contexts=%0d vc0_packets=%0d vc0_flits=%0d vc1_groups=%0d vc1_rows=%0d vc1_packets=%0d vc1_flits=%0d overlap_valid=%0d overlap_arb=%0d contention=%0d service_envelope=%0d service_cycles=%0d vc0_done_cycle=%0d vc1_done_cycle=%0d",
+        $display("PASS exact_dual_producer_shared_mesh_full vc0_contexts=%0d vc0_packets=%0d vc0_flits=%0d vc1_groups=%0d vc1_rows=%0d vc1_packets=%0d vc1_flits=%0d overlap_valid=%0d overlap_arb=%0d contention=%0d service_envelope=%0d release_coupled=%0d service_cycles=%0d vc0_done_cycle=%0d vc1_done_cycle=%0d",
           vc0_context_count, VC0_TOTAL_PACKETS, vc0_write_count,
           vc1_group_count_seen, vc1_root_count, vc1_source_tx_descriptor_count,
           vc1_root_accepted_flit_count, overlap_valid_cycles,
           overlap_arbitrated_cycles, shared_contention_cycles,
-          service_envelope_mode, service_done_cycle, vc0_done_cycle,
+          service_envelope_mode, release_cadence_mode,
+          service_done_cycle, vc0_done_cycle,
           vc1_done_cycle);
         $finish;
       end
@@ -1040,13 +1112,29 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
 
   initial begin
     service_envelope_mode = $test$plusargs("SERVICE_ENVELOPE");
+    release_cadence_mode = $test$plusargs("RELEASE_CADENCE");
+    if (service_envelope_mode && release_cadence_mode)
+      $fatal(1, "SERVICE_ENVELOPE and RELEASE_CADENCE are mutually exclusive");
+    if (release_cadence_mode) begin
+      if (!$value$plusargs("RELEASE_P54=%s", release_p54_path) ||
+          !$value$plusargs("RELEASE_P53=%s", release_p53_path))
+        $fatal(1, "RELEASE_CADENCE requires RELEASE_P54 and RELEASE_P53");
+      $readmemh(release_p54_path, vc1_p54_release_cycle);
+      $readmemh(release_p53_path, vc1_p53_release_cycle);
+    end
     if ($value$plusargs("ARB_TRACE=%s", arb_trace_path)) begin
       arb_trace_fd = $fopen(arb_trace_path, "w");
       if (arb_trace_fd == 0)
         $fatal(1, "failed to open ARB_TRACE=%0s", arb_trace_path);
     end
-    vc1_remote_group_ready = {VC1_SOURCE_COUNT{1'b1}};
-    vc1_root_local_group_ready = 1'b1;
+    if ($value$plusargs("RELEASE_TRACE=%s", release_trace_path)) begin
+      release_trace_fd = $fopen(release_trace_path, "w");
+      if (release_trace_fd == 0)
+        $fatal(1, "failed to open RELEASE_TRACE=%0s", release_trace_path);
+    end
+    vc1_remote_group_ready = release_cadence_mode ?
+      {VC1_SOURCE_COUNT{1'b0}} : {VC1_SOURCE_COUNT{1'b1}};
+    vc1_root_local_group_ready = !release_cadence_mode;
     for (reset_source_i = 0; reset_source_i < VC1_SOURCE_COUNT; reset_source_i = reset_source_i + 1) begin
       vc1_source_beat_index[reset_source_i] = 0;
       vc1_group_complete_count_by_source[reset_source_i] = 0;
