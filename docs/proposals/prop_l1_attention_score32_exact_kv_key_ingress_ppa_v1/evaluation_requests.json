@@ -1,0 +1,37 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_kv_key_ingress_ppa_v1",
+  "source_commit": "3cd4938ff722b6adffcd9f825c99c6365f620284",
+  "source_commit_note": "Pin the remote evaluation to merged PR #1844, which contains the K-only serial baseline, ping-pong candidate, harness generator, semantic guard, configs, sweep, proposal linkage, and task-generator support.",
+  "requested_items": [
+    {
+      "item_id": "l1_attention_score32_exact_kv_key_ingress_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure p53/p54 one-buffer serial and ping-pong wide exact K-ingress transpose PPA across the Nangate45 timing sweep.",
+      "evaluation_mode": "physical_calibration",
+      "abstraction_layer": "decoder_attention_exact_kv_key_ingress",
+      "comparison_role": "buffering_and_write_width_frontier",
+      "config_paths": [
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_onebuf_p53_g3/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_onebuf_p54_g2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_pingpong_p53_g3/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_pingpong_p54_g2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_kv_key_ingress_ppa_v1/sweeps/nangate45.json",
+      "out_root": "runs/designs/npu_blocks",
+      "expected_outputs": [
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_onebuf_p53_g3/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_onebuf_p53_g3/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_onebuf_p54_g2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_onebuf_p54_g2/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_pingpong_p53_g3/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_pingpong_p53_g3/timing_debug_report.md",
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_pingpong_p54_g2/metrics.csv",
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_pingpong_p54_g2/timing_debug_report.md"
+      ],
+      "status": "held_for_remote_evaluator_recovery",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "acceptance_notes": "Require 24 complete rows (four configs times six clock points), explicit flow status for every point, K-only serial baseline identity, generated/source hash guard success, and no claim that the 128 KiB K-stage macro or HBM cost is included. Do not assign or lease until #1819 artifact recovery and #1638 evaluator refresh are acknowledged."
+    }
+  ]
+}
