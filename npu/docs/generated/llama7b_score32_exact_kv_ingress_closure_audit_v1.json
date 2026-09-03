@@ -25,7 +25,7 @@
     "recommended_onchip_baseline": "locality_aware_owner_compute",
     "resident_bytes_per_layer": 2228224,
     "resident_share_of_layer_kv": 0.0166015625,
-    "scope": "resident_cache_bytes_only; transient HBM-return routing is excluded and remains an on-chip ingress obligation",
+    "scope": "transient resident cache; exact source descriptors are included, while HBM-return packetization and routing remain on-chip ingress obligations",
     "shared_capacity_bytes": 71303168,
     "tail_128_token_contiguous_segments": 8,
     "tail_segment_bytes": [
@@ -51,6 +51,53 @@
         "payload_bytes": 1048576
       }
     ]
+  },
+  "capacity_hbm_gather_scheduler": {
+    "consume_bytes_per_cluster": {
+      "0": 8388608,
+      "1": 8388608,
+      "2": 8388608,
+      "3": 8388608,
+      "4": 8388608,
+      "5": 8388608,
+      "6": 8388608,
+      "7": 8388608,
+      "8": 8388608,
+      "9": 8388608,
+      "10": 8388608,
+      "11": 8388608,
+      "12": 8388608,
+      "13": 8388608,
+      "14": 8388608,
+      "15": 8388608
+    },
+    "consume_descriptors_per_layer": 143,
+    "descriptor_granularity": "contiguous canonical byte span",
+    "descriptors_per_layer": 153,
+    "direct_hbm_consume_bytes_per_layer": 131989504,
+    "does_not_include": [
+      "HBM controller or PHY",
+      "span-to-packet expansion",
+      "shared-mesh transport",
+      "canonical K/V payload movement"
+    ],
+    "full_model_descriptors": 4896,
+    "hbm_source_endpoints": [
+      0,
+      3,
+      12,
+      15
+    ],
+    "owner_cluster_rule": "(layer*3+tile)%16",
+    "partial_tile_policy": "eight ordered planes, each consuming a 16KiB resident prefix followed by a 112KiB direct-HBM suffix",
+    "persistence_mode": "transient",
+    "python_rtl_descriptor_equivalence_verified": true,
+    "ready_valid_stall_stability_verified": true,
+    "refill_descriptors_per_layer": 10,
+    "resident_consume_bytes_per_layer": 2228224,
+    "resident_refill_bytes_per_layer": 2228224,
+    "total_canonical_consume_bytes_per_layer": 134217728,
+    "total_hbm_source_bytes_per_layer": 134217728
   },
   "cluster_consumption": {
     "clusters": 16,
@@ -85,10 +132,13 @@
       "per-lane p53/p54 producer pending-mask scheduler",
       "canonical K flit through producer-output composition",
       "automatic-target ping-pong K transpose with paired-dimension bank writes",
-      "canonical V flit through 16-bank double-buffer cluster-SRAM residency"
+      "canonical V flit through 16-bank double-buffer cluster-SRAM residency",
+      "capacity-driven transient-refill and direct-HBM gather descriptor scheduler",
+      "locality-aware balanced tile-to-cluster ownership",
+      "four-corner HBM source selection and exact canonical span addresses"
     ],
     "remaining_before_frontier_recost": [
-      "capacity-resident and transient-HBM gather descriptor scheduler",
+      "shared-mesh packetization and source-to-canonical-ingress routing",
       "V transpose ping-pong or proven fill-drain overlap",
       "characterized SRAM macro substitution"
     ],
@@ -97,6 +147,10 @@
       "canonical_v_input_flits_per_head": 4096,
       "cluster_sram_v_rows_per_head": 2048,
       "consecutive_pingpong_k_input_flits": 4096,
+      "gather_consume_bytes_per_cluster": 8388608,
+      "gather_descriptors_full_model": 4896,
+      "gather_descriptors_per_layer": 153,
+      "gather_hbm_source_bytes_per_layer": 134217728,
       "pingpong_k_head_cycles_without_stall": 4160,
       "producer_output_beats_per_head": 8192
     }
@@ -148,7 +202,7 @@
     "tiles": 128
   },
   "model": "llama7b_score32_exact_kv_ingress_closure_audit_v1",
-  "next_gate": "Implement the capacity-driven resident/HBM gather scheduler and shared-mesh source routing, then measure V buffering parallelism, K ingress control PPA, and characterized SRAM substitution.",
+  "next_gate": "Compose the exact gather descriptors through shared-mesh source routing into canonical K/V ingress and verify end-to-end backpressure; then measure V buffering parallelism and substitute characterized SRAM macros.",
   "one_buffer_transpose_reference": {
     "key": {
       "input_flits": 64,
@@ -189,11 +243,8 @@
   },
   "required_rtl_ownership": [
     "external HBM-return ready/valid ingress boundary, excluding controller and PHY",
-    "capacity-driven resident-range descriptor and source selection",
-    "planar gather descriptor generation for partial resident token ranges",
-    "locality-aware tile-to-cluster scheduler preserving balanced waves",
-    "on-chip packet routing for remote resident K/V bytes",
-    "capacity/HBM source descriptor to canonical K/V tensor-address ingress",
+    "span-to-packet expansion and on-chip routing for HBM-return K/V bytes",
+    "composition of capacity/HBM source descriptors with canonical K/V payload ingress",
     "backpressure from cluster SRAM and producers through ingress and mesh",
     "overlapped V transpose buffering selected from measured PPA",
     "physical cost of ping-pong K transpose and paired-dimension write control",
@@ -201,14 +252,14 @@
   ],
   "revision_effect": {
     "frontier_recost_allowed": false,
-    "reason": "Exact K and V endpoint paths are embodied separately, but capacity/HBM source descriptors, shared-mesh composition, overlap selection, and physical memory costs are not yet closed for the complete score32 cluster path.",
+    "reason": "Exact K and V endpoint paths and capacity/HBM source descriptors are embodied, but shared-mesh payload composition, overlap selection, and physical memory costs are not yet closed for the complete score32 cluster path.",
     "release_coupled_vc1_role": "exact_reduction_transport_timing_with_vc0_ingress_still_open",
     "shared_mesh_15769_cycle_result_role": "standalone_historical_traffic_capacity_bound_only"
   },
   "source_refs": [
     {
       "path": "npu/eval/audit_llama7b_score32_exact_kv_ingress_closure.py",
-      "sha256": "4f8fc3f489a067aa7193481b365620ea740e75c427d34727569297424d529e16"
+      "sha256": "c449d0bf3d7f9ad7cb6e7267f81ec7d1ac6ddf28d5ffbbda85338f55849a88ae"
     },
     {
       "path": "npu/sim/perf/attention_kv_tile_layout.py",
@@ -265,6 +316,30 @@
     {
       "path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_phase2_schedule__l2_decoder_attention_score32_noc_phase2_schedule_llama7b_v1_r1.json",
       "sha256": "7a6b139fa12c27823b2eff8101c42f40ea8c1461b0571652c9acfdf47ebeeaa3"
+    },
+    {
+      "path": "npu/sim/perf/attention_kv_capacity_gather_scheduler.py",
+      "sha256": "0a926d5a8b6445f773dadc22e53535467c4af5401cfe77b7bd01adf7f84121d3"
+    },
+    {
+      "path": "npu/sim/rtl/attention_kv_capacity_gather_scheduler.sv",
+      "sha256": "59a3493ec372e4a9c021aa6477737c3421c7ee8403f3375cb84b9512f17f9c06"
+    },
+    {
+      "path": "npu/eval/tests/test_attention_kv_capacity_gather_scheduler.py",
+      "sha256": "ea999cbec9dd634f34797ddc809012296cd9c6c95cf67182224e3636825827ee"
+    },
+    {
+      "path": "tests/test_attention_kv_capacity_gather_scheduler_rtl.py",
+      "sha256": "3087d7ddf609f7149bc6e064c166ef068ff7e7c0fe1f7d22c08b461a47c43f3f"
+    },
+    {
+      "path": "npu/docs/attention_kv_capacity_gather_scheduler_contract.md",
+      "sha256": "3fa764660105dcbfb52d4751cc1a0ef1df2d2ccc4e819377a4891f047681e8e6"
+    },
+    {
+      "path": "docs/proposals/prop_l1_attention_kv_capacity_gather_scheduler_v1/proposal.json",
+      "sha256": "3fdb074273e9423b58aba839184f806372af015dc0a861d25d1cc6ac73bfc837"
     }
   ],
   "version": 1

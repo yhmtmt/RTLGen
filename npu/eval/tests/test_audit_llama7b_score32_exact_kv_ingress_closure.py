@@ -161,6 +161,20 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     assert placements["locality_aware_owner_compute"]["does_not_include"] == (
         "transient HBM-return transport"
     )
+    gather = report["capacity_hbm_gather_scheduler"]
+    assert gather["persistence_mode"] == "transient"
+    assert gather["descriptors_per_layer"] == 153
+    assert gather["refill_descriptors_per_layer"] == 10
+    assert gather["consume_descriptors_per_layer"] == 143
+    assert gather["full_model_descriptors"] == 4896
+    assert gather["resident_refill_bytes_per_layer"] == 2_228_224
+    assert gather["resident_consume_bytes_per_layer"] == 2_228_224
+    assert gather["direct_hbm_consume_bytes_per_layer"] == 131_989_504
+    assert gather["total_hbm_source_bytes_per_layer"] == 128 * 1024 * 1024
+    assert gather["total_canonical_consume_bytes_per_layer"] == 128 * 1024 * 1024
+    assert set(gather["consume_bytes_per_cluster"].values()) == {8 * 1024 * 1024}
+    assert gather["hbm_source_endpoints"] == [0, 3, 12, 15]
+    assert gather["python_rtl_descriptor_equivalence_verified"] is True
     assert report["historical_phase2_vc0"]["remote_transport_bytes"] == 1_949_696
     assert report["historical_phase2_vc0"]["direct_cluster_fill_compatible"] is False
     assert report["port_gap"]["whole_kv_tile_packets_256B"] == 4096
@@ -200,13 +214,21 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
         "consecutive_pingpong_k_input_flits": 4096,
         "canonical_v_input_flits_per_head": 4096,
         "cluster_sram_v_rows_per_head": 2048,
+        "gather_descriptors_per_layer": 153,
+        "gather_descriptors_full_model": 4896,
+        "gather_hbm_source_bytes_per_layer": 128 * 1024 * 1024,
+        "gather_consume_bytes_per_cluster": 8 * 1024 * 1024,
     }
     ownership = "\n".join(report["required_rtl_ownership"])
     assert "future banked" not in ownership
     assert "banked producer-local K staging store" not in ownership
     assert "V transpose output" not in ownership
     assert "1KiB token-major-to-fill-row V transpose buffer" not in ownership
-    assert "capacity-driven resident/HBM gather scheduler" in report["next_gate"]
+    assert "capacity-driven resident-range descriptor" not in ownership
+    assert "locality-aware tile-to-cluster scheduler" not in ownership
+    assert "shared-mesh source routing" in report["next_gate"]
     assert report["revision_effect"]["frontier_recost_allowed"] is False
     assert "cannot be wired directly" in render_markdown(report)
     assert "p53/p54 parallel readout is verified" in render_markdown(report)
+    assert "4,896" not in render_markdown(report)
+    assert "`4896` over 32 layers" in render_markdown(report)
