@@ -15,6 +15,13 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 - paired-stream K block: `192` transfer cycles, target II `193`
 - K output writes the embodied 64-bank store; p53/p54 parallel readout is verified
 
+## K Ingress Architecture Frontier
+
+- one_buffer_serial: `12351` cycles/head, 1 buffer(s), 128-bit stage write, RTL verified `true`
+- pingpong_serial: `8256` cycles/head, 2 buffer(s), 128-bit stage write, RTL verified `false`
+- one_buffer_wide: `8255` cycles/head, 1 buffer(s), 256-bit stage write, RTL verified `false`
+- pingpong_wide_auto: `4160` cycles/head, 2 buffer(s), 256-bit stage write, RTL verified `true`
+
 ## Required RTL Ownership
 
 - external HBM-return ready/valid ingress boundary, excluding controller and PHY
@@ -24,9 +31,10 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 - on-chip packet routing for remote resident K/V bytes
 - capacity/HBM source descriptor to canonical K/V tensor-address ingress
 - backpressure from cluster SRAM and producers through ingress and mesh
-- overlapped or multi-lane K/V transpose buffering selected from measured PPA
+- overlapped V transpose buffering selected from measured PPA
+- physical cost of ping-pong K transpose and paired-dimension write control
 - characterized SRAM macro substitution for inferred K/Q and cluster stores
 
 ## Next Gate
 
-Implement the capacity-driven resident/HBM gather scheduler and shared-mesh source routing, then measure K/V buffering parallelism and characterized SRAM substitution.
+Implement the capacity-driven resident/HBM gather scheduler and shared-mesh source routing, then measure V buffering parallelism, K ingress control PPA, and characterized SRAM substitution.

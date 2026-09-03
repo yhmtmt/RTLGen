@@ -1,0 +1,53 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_kv_key_pingpong_v1",
+  "created_utc": "2026-09-03T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Close the canonical K ingress floor with ping-pong paired-dimension writes",
+  "hypothesis": "Two automatic-target transpose buffers and one 256-bit bank write can sustain the canonical 256-bit ingress rate while preserving exact p53/p54 producer behavior.",
+  "direct_comparison": {
+    "primary_question": "Which concrete buffering/write-width organization reaches the K ingress floor without changing score-cluster semantics?",
+    "include": [
+      "one-buffer serial analytical and RTL reference",
+      "ping-pong serial service bound",
+      "one-buffer paired-dimension service bound",
+      "two-buffer automatic-target paired-dimension RTL",
+      "4,096 consecutive canonical flits per K head",
+      "8,192 exact p53/p54 producer beats and independent stalls"
+    ],
+    "exclude": [
+      "characterized SRAM macros",
+      "capacity/HBM gather scheduling",
+      "shared-mesh source routing",
+      "external HBM controller and PHY"
+    ]
+  },
+  "service_contract": {
+    "canonical_ingress_floor_cycles": 4096,
+    "one_buffer_serial_cycles": 12351,
+    "pingpong_serial_cycles": 8256,
+    "one_buffer_wide_cycles": 8255,
+    "pingpong_wide_auto_cycles": 4160,
+    "stage_write_bits": 256,
+    "transpose_buffer_bytes": 4096
+  },
+  "required_evaluations": [],
+  "remaining_abstractions": [
+    "The inferred K/Q arrays require characterized 64-bank memory substitution.",
+    "Capacity-resident and transient-HBM gather scheduling remain external.",
+    "Shared-mesh source routing and the external HBM controller/PHY remain external."
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_attention_score32_exact_kv_key_stage_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_kv_key_pingpong_contract.md",
+    "npu/sim/perf/attention_kv_tile_layout.py",
+    "npu/sim/rtl/attention_score32_exact_kv_key_pingpong_transpose.sv",
+    "npu/sim/rtl/attention_score32_exact_kv_key_stage_wide.sv",
+    "npu/sim/rtl/attention_score32_exact_kv_key_pingpong_ingress.sv",
+    "tests/test_attention_score32_exact_kv_key_pingpong.py"
+  ]
+}

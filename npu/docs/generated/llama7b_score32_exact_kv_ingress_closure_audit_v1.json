@@ -84,18 +84,55 @@
       "1KiB shared Q group store and duplicate-stream broadcast",
       "per-lane p53/p54 producer pending-mask scheduler",
       "canonical K flit through producer-output composition",
+      "automatic-target ping-pong K transpose with paired-dimension bank writes",
       "canonical V flit through 16-bank double-buffer cluster-SRAM residency"
     ],
     "remaining_before_frontier_recost": [
       "capacity-resident and transient-HBM gather descriptor scheduler",
-      "multiple transpose buffers or proven fill-drain overlap",
+      "V transpose ping-pong or proven fill-drain overlap",
       "characterized SRAM macro substitution"
     ],
     "verified_counts": {
       "canonical_k_input_flits_per_head": 4096,
       "canonical_v_input_flits_per_head": 4096,
       "cluster_sram_v_rows_per_head": 2048,
+      "consecutive_pingpong_k_input_flits": 4096,
+      "pingpong_k_head_cycles_without_stall": 4160,
       "producer_output_beats_per_head": 8192
+    }
+  },
+  "key_ingress_architecture_frontier": {
+    "one_buffer_serial": {
+      "head_cycles_without_stall": 12351,
+      "ingress_floor_cycles": 4096,
+      "rtl_verified": true,
+      "stage_write_bits": 128,
+      "target_from_first_flit": false,
+      "transpose_buffers": 1
+    },
+    "one_buffer_wide": {
+      "head_cycles_without_stall": 8255,
+      "ingress_floor_cycles": 4096,
+      "rtl_verified": false,
+      "stage_write_bits": 256,
+      "target_from_first_flit": false,
+      "transpose_buffers": 1
+    },
+    "pingpong_serial": {
+      "head_cycles_without_stall": 8256,
+      "ingress_floor_cycles": 4096,
+      "rtl_verified": false,
+      "stage_write_bits": 128,
+      "target_from_first_flit": true,
+      "transpose_buffers": 2
+    },
+    "pingpong_wide_auto": {
+      "head_cycles_without_stall": 4160,
+      "ingress_floor_cycles": 4096,
+      "rtl_verified": true,
+      "stage_write_bits": 256,
+      "target_from_first_flit": true,
+      "transpose_buffers": 2
     }
   },
   "llama7b_layer_shape": {
@@ -111,7 +148,7 @@
     "tiles": 128
   },
   "model": "llama7b_score32_exact_kv_ingress_closure_audit_v1",
-  "next_gate": "Implement the capacity-driven resident/HBM gather scheduler and shared-mesh source routing, then measure K/V buffering parallelism and characterized SRAM substitution.",
+  "next_gate": "Implement the capacity-driven resident/HBM gather scheduler and shared-mesh source routing, then measure V buffering parallelism, K ingress control PPA, and characterized SRAM substitution.",
   "one_buffer_transpose_reference": {
     "key": {
       "input_flits": 64,
@@ -158,7 +195,8 @@
     "on-chip packet routing for remote resident K/V bytes",
     "capacity/HBM source descriptor to canonical K/V tensor-address ingress",
     "backpressure from cluster SRAM and producers through ingress and mesh",
-    "overlapped or multi-lane K/V transpose buffering selected from measured PPA",
+    "overlapped V transpose buffering selected from measured PPA",
+    "physical cost of ping-pong K transpose and paired-dimension write control",
     "characterized SRAM macro substitution for inferred K/Q and cluster stores"
   ],
   "revision_effect": {
@@ -170,11 +208,11 @@
   "source_refs": [
     {
       "path": "npu/eval/audit_llama7b_score32_exact_kv_ingress_closure.py",
-      "sha256": "f6ffd49f26e901fd6a0ee7e8bf37fcc0b24a45578ad4773ded14df8fc6814397"
+      "sha256": "4f8fc3f489a067aa7193481b365620ea740e75c427d34727569297424d529e16"
     },
     {
       "path": "npu/sim/perf/attention_kv_tile_layout.py",
-      "sha256": "2a66408f78e713454a0a3d172aac4beb7321359aa0a279b9a7f2b252cb19b3da"
+      "sha256": "1d46ab2b34789eab55687ef998e14bf016802d075c981b6304f8f3caf9dbdf38"
     },
     {
       "path": "npu/sim/rtl/attention_score32_exact_kv_ingress_transpose.sv",
@@ -193,12 +231,28 @@
       "sha256": "7cd541636ce18f12d55f0b18274f6462a50fd9daf8e7f1904b366aa553ec4ed7"
     },
     {
+      "path": "npu/sim/rtl/attention_score32_exact_kv_key_pingpong_transpose.sv",
+      "sha256": "6812eb6c296ef44a792e3ada614f796919205593e10a3d8c467763f36e655fb5"
+    },
+    {
+      "path": "npu/sim/rtl/attention_score32_exact_kv_key_stage_wide.sv",
+      "sha256": "ab0664cdb525773a6f04245599687dc07a9017d6583ae4c924450c37b852eafc"
+    },
+    {
+      "path": "npu/sim/rtl/attention_score32_exact_kv_key_pingpong_ingress.sv",
+      "sha256": "3ec7046ed160949ca4eedfadd70d8bc164be0f47800798a0cd1c105a7071e7dc"
+    },
+    {
       "path": "npu/rtlgen/gen_attention_score32_exact_cluster_sram_service_gqa8.py",
       "sha256": "c581e37b87cad04ba8b81ae6c874641fbcec02316f4d7ca82eeed480cc91d48d"
     },
     {
       "path": "tests/test_attention_score32_exact_kv_value_ingress.py",
       "sha256": "210229f25776e46d7ec968b612e217d9ae393a9b22fe811047a71198e9a1c9d2"
+    },
+    {
+      "path": "tests/test_attention_score32_exact_kv_key_pingpong.py",
+      "sha256": "a768fe64273fd49fe005e30f6f2fb519943306e9dfb8f4541d330fcc4851251c"
     },
     {
       "path": "npu/eval/model_llama7b_shared_sram_residency.py",
