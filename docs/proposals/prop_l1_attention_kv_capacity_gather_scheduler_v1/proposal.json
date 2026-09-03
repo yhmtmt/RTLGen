@@ -1,0 +1,58 @@
+{
+  "proposal_id": "prop_l1_attention_kv_capacity_gather_scheduler_v1",
+  "created_utc": "2026-09-03T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Embody exact transient-capacity and HBM K/V gather scheduling",
+  "hypothesis": "A bounded RTL scheduler can replace fractional traffic accounting with exact Llama7B K/V byte-span descriptors, balanced locality-aware cluster ownership, and explicit four-corner HBM sources.",
+  "direct_comparison": {
+    "primary_question": "Can the 68 MiB transient-residency policy enumerate every exact K/V byte once for cluster consumption while preserving complete HBM traffic and balanced cluster ownership?",
+    "include": [
+      "32 layers and 128 canonical 1 MiB K/V tiles per layer",
+      "two resident full tiles plus one 128-token planar tail per layer",
+      "transient resident refill and direct-HBM source descriptors",
+      "four explicit HBM corner endpoints",
+      "locality-aware one-tile-per-cluster wave ownership",
+      "all 4,896 Python/RTL-equivalent descriptors under backpressure"
+    ],
+    "exclude": [
+      "persistent-residency HBM savings",
+      "span-to-packet expansion",
+      "shared-mesh payload transport",
+      "canonical K/V payload movement",
+      "external HBM controller and PHY",
+      "characterized SRAM macros"
+    ]
+  },
+  "service_contract": {
+    "persistence_mode": "transient",
+    "descriptors_per_layer": 153,
+    "full_model_descriptors": 4896,
+    "resident_bytes_per_layer": 2228224,
+    "total_hbm_source_bytes_per_layer": 134217728,
+    "total_canonical_consume_bytes_per_layer": 134217728,
+    "consume_bytes_per_cluster_per_layer": 8388608,
+    "hbm_source_endpoints": [0, 3, 12, 15]
+  },
+  "required_evaluations": [],
+  "remaining_abstractions": [
+    "Span descriptors still require packetization and shared-mesh source routing.",
+    "Returned payload must be composed with canonical K/V ingress under end-to-end backpressure.",
+    "The external HBM controller and PHY remain outside the RTL boundary.",
+    "The transient SRAM and endpoint stores still require characterized memory macros."
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_attention_score32_exact_kv_value_ingress_v1/proposal.json",
+    "docs/proposals/prop_l1_attention_score32_exact_kv_key_pingpong_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_kv_capacity_gather_scheduler_contract.md",
+    "npu/eval/model_llama7b_shared_sram_residency.py",
+    "npu/sim/perf/attention_kv_capacity_gather_scheduler.py",
+    "npu/sim/rtl/attention_kv_capacity_gather_scheduler.sv",
+    "npu/eval/tests/test_attention_kv_capacity_gather_scheduler.py",
+    "tests/test_attention_kv_capacity_gather_scheduler_rtl.py"
+  ]
+}

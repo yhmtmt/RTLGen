@@ -22,14 +22,20 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 - one_buffer_wide: `8255` cycles/head, 1 buffer(s), 256-bit stage write, RTL verified `false`
 - pingpong_wide_auto: `4160` cycles/head, 2 buffer(s), 256-bit stage write, RTL verified `true`
 
+## Capacity/HBM Gather Scheduler
+
+- persistence: `transient`
+- descriptors: `153` per layer, `4896` over 32 layers
+- HBM source bytes per layer: `134217728`
+- canonical bytes delivered per layer: `134217728`
+- balanced delivery: `8388608` bytes per cluster
+- Python/RTL descriptors and ready-valid stall stability: verified
+
 ## Required RTL Ownership
 
 - external HBM-return ready/valid ingress boundary, excluding controller and PHY
-- capacity-driven resident-range descriptor and source selection
-- planar gather descriptor generation for partial resident token ranges
-- locality-aware tile-to-cluster scheduler preserving balanced waves
-- on-chip packet routing for remote resident K/V bytes
-- capacity/HBM source descriptor to canonical K/V tensor-address ingress
+- span-to-packet expansion and on-chip routing for HBM-return K/V bytes
+- composition of capacity/HBM source descriptors with canonical K/V payload ingress
 - backpressure from cluster SRAM and producers through ingress and mesh
 - overlapped V transpose buffering selected from measured PPA
 - physical cost of ping-pong K transpose and paired-dimension write control
@@ -37,4 +43,4 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 
 ## Next Gate
 
-Implement the capacity-driven resident/HBM gather scheduler and shared-mesh source routing, then measure V buffering parallelism, K ingress control PPA, and characterized SRAM substitution.
+Compose the exact gather descriptors through shared-mesh source routing into canonical K/V ingress and verify end-to-end backpressure; then measure V buffering parallelism and substitute characterized SRAM macros.

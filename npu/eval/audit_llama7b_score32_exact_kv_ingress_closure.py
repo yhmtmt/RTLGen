@@ -31,6 +31,15 @@ from npu.sim.perf.attention_kv_tile_layout import (
     kv_transpose_service,
     kv_token_range_segments,
 )
+from npu.sim.perf.attention_kv_capacity_gather_scheduler import (
+    CONSUME,
+    HBM,
+    HBM_CORNER_ENDPOINTS,
+    REFILL,
+    RESIDENT,
+    layer_descriptors,
+    llama7b_descriptors,
+)
 
 
 JsonDict = dict[str, Any]
@@ -103,6 +112,31 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "pingpong_wide_auto",
         )
     }
+    gather_layer = layer_descriptors(0)
+    gather_full = llama7b_descriptors()
+    refill_descriptors = [row for row in gather_layer if row.operation == REFILL]
+    consume_descriptors = [row for row in gather_layer if row.operation == CONSUME]
+    resident_consume = [row for row in consume_descriptors if row.source == RESIDENT]
+    direct_hbm_consume = [row for row in consume_descriptors if row.source == HBM]
+    hbm_source = [row for row in gather_layer if row.source == HBM]
+    consume_bytes_by_cluster = {
+        cluster: sum(
+            row.payload_bytes
+            for row in consume_descriptors
+            if row.destination_cluster == cluster
+        )
+        for cluster in range(CLUSTERS)
+    }
+    if sum(row.payload_bytes for row in refill_descriptors) != resident_per_layer:
+        raise AssertionError("gather refill bytes differ from transient resident capacity")
+    if sum(row.payload_bytes for row in resident_consume) != resident_per_layer:
+        raise AssertionError("resident consume bytes differ from resident capacity")
+    if sum(row.payload_bytes for row in direct_hbm_consume) != layer_kv_bytes - resident_per_layer:
+        raise AssertionError("direct HBM bytes differ from the unresident K/V range")
+    if sum(row.payload_bytes for row in hbm_source) != layer_kv_bytes:
+        raise AssertionError("transient refill plus direct HBM bytes must cover the layer")
+    if set(consume_bytes_by_cluster.values()) != {layer_kv_bytes // CLUSTERS}:
+        raise AssertionError("locality-aware tile ownership is not cluster balanced")
 
     whole_contexts = residency["residency"]["context_payload_distribution"]
     return {
@@ -136,8 +170,8 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
         },
         "capacity_driven_residency": {
             "scope": (
-                "resident_cache_bytes_only; transient HBM-return routing is excluded "
-                "and remains an on-chip ingress obligation"
+                "transient resident cache; exact source descriptors are included, while "
+                "HBM-return packetization and routing remain on-chip ingress obligations"
             ),
             "shared_capacity_bytes": SHARED_CAPACITY_BYTES,
             "resident_bytes_per_layer": resident_per_layer,
@@ -179,6 +213,44 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 },
             },
             "recommended_onchip_baseline": "locality_aware_owner_compute",
+        },
+        "capacity_hbm_gather_scheduler": {
+            "persistence_mode": "transient",
+            "descriptor_granularity": "contiguous canonical byte span",
+            "descriptors_per_layer": len(gather_layer),
+            "refill_descriptors_per_layer": len(refill_descriptors),
+            "consume_descriptors_per_layer": len(consume_descriptors),
+            "full_model_descriptors": len(gather_full),
+            "resident_refill_bytes_per_layer": sum(
+                row.payload_bytes for row in refill_descriptors
+            ),
+            "resident_consume_bytes_per_layer": sum(
+                row.payload_bytes for row in resident_consume
+            ),
+            "direct_hbm_consume_bytes_per_layer": sum(
+                row.payload_bytes for row in direct_hbm_consume
+            ),
+            "total_hbm_source_bytes_per_layer": sum(
+                row.payload_bytes for row in hbm_source
+            ),
+            "total_canonical_consume_bytes_per_layer": sum(
+                row.payload_bytes for row in consume_descriptors
+            ),
+            "consume_bytes_per_cluster": consume_bytes_by_cluster,
+            "hbm_source_endpoints": list(HBM_CORNER_ENDPOINTS),
+            "owner_cluster_rule": "(layer*3+tile)%16",
+            "partial_tile_policy": (
+                "eight ordered planes, each consuming a 16KiB resident prefix followed "
+                "by a 112KiB direct-HBM suffix"
+            ),
+            "ready_valid_stall_stability_verified": True,
+            "python_rtl_descriptor_equivalence_verified": True,
+            "does_not_include": [
+                "HBM controller or PHY",
+                "span-to-packet expansion",
+                "shared-mesh transport",
+                "canonical K/V payload movement",
+            ],
         },
         "historical_phase2_vc0": {
             "policy": "fractional_smear",
@@ -277,6 +349,9 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "canonical K flit through producer-output composition",
                 "automatic-target ping-pong K transpose with paired-dimension bank writes",
                 "canonical V flit through 16-bank double-buffer cluster-SRAM residency",
+                "capacity-driven transient-refill and direct-HBM gather descriptor scheduler",
+                "locality-aware balanced tile-to-cluster ownership",
+                "four-corner HBM source selection and exact canonical span addresses",
             ],
             "verified_counts": {
                 "canonical_k_input_flits_per_head": 4096,
@@ -285,20 +360,23 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "consecutive_pingpong_k_input_flits": 4096,
                 "canonical_v_input_flits_per_head": 4096,
                 "cluster_sram_v_rows_per_head": 2048,
+                "gather_descriptors_per_layer": len(gather_layer),
+                "gather_descriptors_full_model": len(gather_full),
+                "gather_hbm_source_bytes_per_layer": sum(
+                    row.payload_bytes for row in hbm_source
+                ),
+                "gather_consume_bytes_per_cluster": layer_kv_bytes // CLUSTERS,
             },
             "remaining_before_frontier_recost": [
-                "capacity-resident and transient-HBM gather descriptor scheduler",
+                "shared-mesh packetization and source-to-canonical-ingress routing",
                 "V transpose ping-pong or proven fill-drain overlap",
                 "characterized SRAM macro substitution",
             ],
         },
         "required_rtl_ownership": [
             "external HBM-return ready/valid ingress boundary, excluding controller and PHY",
-            "capacity-driven resident-range descriptor and source selection",
-            "planar gather descriptor generation for partial resident token ranges",
-            "locality-aware tile-to-cluster scheduler preserving balanced waves",
-            "on-chip packet routing for remote resident K/V bytes",
-            "capacity/HBM source descriptor to canonical K/V tensor-address ingress",
+            "span-to-packet expansion and on-chip routing for HBM-return K/V bytes",
+            "composition of capacity/HBM source descriptors with canonical K/V payload ingress",
             "backpressure from cluster SRAM and producers through ingress and mesh",
             "overlapped V transpose buffering selected from measured PPA",
             "physical cost of ping-pong K transpose and paired-dimension write control",
@@ -309,15 +387,15 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "release_coupled_vc1_role": "exact_reduction_transport_timing_with_vc0_ingress_still_open",
             "frontier_recost_allowed": False,
             "reason": (
-                "Exact K and V endpoint paths are embodied separately, but capacity/HBM source "
-                "descriptors, shared-mesh composition, overlap selection, and physical memory "
+                "Exact K and V endpoint paths and capacity/HBM source descriptors are embodied, "
+                "but shared-mesh payload composition, overlap selection, and physical memory "
                 "costs are not yet closed for the complete score32 cluster path."
             ),
         },
         "next_gate": (
-            "Implement the capacity-driven resident/HBM gather scheduler and shared-mesh source "
-            "routing, then measure V buffering parallelism, K ingress control PPA, and "
-            "characterized SRAM substitution."
+            "Compose the exact gather descriptors through shared-mesh source routing into "
+            "canonical K/V ingress and verify end-to-end backpressure; then measure V buffering "
+            "parallelism and substitute characterized SRAM macros."
         ),
     }
 
@@ -329,6 +407,7 @@ def render_markdown(report: JsonDict) -> str:
     cluster = report["cluster_consumption"]
     transpose = report["one_buffer_transpose_reference"]
     key_frontier = report["key_ingress_architecture_frontier"]
+    gather = report["capacity_hbm_gather_scheduler"]
     lines = [
         "# Llama7B Exact K/V Ingress Closure Audit",
         "",
@@ -358,6 +437,18 @@ def render_markdown(report: JsonDict) -> str:
             f"RTL verified `{str(row['rtl_verified']).lower()}`"
             for name, row in key_frontier.items()
         ],
+        "",
+        "## Capacity/HBM Gather Scheduler",
+        "",
+        f"- persistence: `{gather['persistence_mode']}`",
+        f"- descriptors: `{gather['descriptors_per_layer']}` per layer, "
+        f"`{gather['full_model_descriptors']}` over 32 layers",
+        f"- HBM source bytes per layer: `{gather['total_hbm_source_bytes_per_layer']}`",
+        f"- canonical bytes delivered per layer: "
+        f"`{gather['total_canonical_consume_bytes_per_layer']}`",
+        f"- balanced delivery: `{next(iter(gather['consume_bytes_per_cluster'].values()))}` "
+        "bytes per cluster",
+        "- Python/RTL descriptors and ready-valid stall stability: verified",
         "",
         "## Required RTL Ownership",
         "",
