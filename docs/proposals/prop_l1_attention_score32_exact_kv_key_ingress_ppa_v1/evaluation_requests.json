@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_attention_score32_exact_kv_key_ingress_ppa_v1",
-  "source_commit": "TBD",
-  "source_commit_note": "Two-stage bootstrap: merge this six-row request contract, then replace TBD with that merge commit and generate from an exact clean checkout of it with proposal-file updates disabled. The resulting source contains the K-only serial baseline, ping-pong candidate, harness generator, semantic guard, configs, sweep, proposal linkage, task-generator support, and this request contract.",
+  "source_commit": "fe1eb522ac9fad32c67097c4a960c3aef0797211",
+  "source_commit_note": "Generate only after #1819 and #1638 are acknowledged, from an exact clean checkout of this merge with proposal-file updates and auto-dispatch disabled. This source contains the K-only serial baseline, ping-pong candidate, harness generator, semantic and finite-metric guards, configs, six-point sweep, proposal linkage, task-generator support, and request contract.",
   "requested_items": [
     {
       "item_id": "l1_attention_score32_exact_kv_key_ingress_ppa_v1",
