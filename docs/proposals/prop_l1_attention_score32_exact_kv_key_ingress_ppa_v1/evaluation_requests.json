@@ -29,10 +29,10 @@
         "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_pingpong_p54_g2/metrics.csv",
         "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_pingpong_p54_g2/timing_debug_report.md"
       ],
-      "status": "held_for_remote_evaluator_recovery",
+      "status": "pending_generation_after_remote_evaluator_recovery",
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "acceptance_notes": "Require 24 complete rows (four configs times six clock points), explicit flow status for every point, K-only serial baseline identity, generated/source hash guard success, and no claim that the 128 KiB K-stage macro or HBM cost is included. Do not assign or lease until #1819 artifact recovery and #1638 evaluator refresh are acknowledged."
+      "acceptance_notes": "Require 24 complete rows (four configs times six clock points), explicit flow status for every point, finite positive critical_path_ns, stdcell_area_um2, and total_power_mw, K-only serial baseline identity, generated/source hash guard success, and no claim that the 128 KiB K-stage macro or HBM cost is included. Do not generate the DB item until #1819 artifact recovery and #1638 evaluator refresh are acknowledged. At generation use --no-auto-dispatch, inspect the resulting DISPATCH_PENDING item, then explicitly assign it to the recovered remote evaluator."
     }
   ]
 }

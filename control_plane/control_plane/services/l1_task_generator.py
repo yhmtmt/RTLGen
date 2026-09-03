@@ -2161,6 +2161,14 @@ def _read_config_target(
                     ),
                 },
                 {
+                    "name": "check_attention_score32_exact_kv_key_ingress_ppa_metrics",
+                    "run": (
+                        "python3 npu/eval/"
+                        "check_attention_score32_exact_kv_key_ingress_ppa_metrics.py "
+                        f"--metrics {design_dir}/metrics.csv --required-rows 6"
+                    ),
+                },
+                {
                     "name": f"extract_{command_slug}_timing_paths",
                     "run": (
                         "python3 npu/eval/extract_openroad_timing_summary.py "

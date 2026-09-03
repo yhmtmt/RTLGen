@@ -320,11 +320,13 @@ def test_read_config_target_builds_exact_k_ingress_commands(tmp_path: Path) -> N
         "generate_attention_score32_exact_kv_key_ingress_ppa_harness_rtl",
         "check_attention_score32_exact_kv_key_ingress_ppa_guard",
         "run_block_sweep",
+        "check_attention_score32_exact_kv_key_ingress_ppa_metrics",
         "extract_attention_score32_exact_kv_key_ingress_ppa_harness_timing_paths",
     ]
     assert "gen_attention_score32_exact_kv_key_ingress_ppa_harness.py" in target.commands[0]["run"]
     assert "check_attention_score32_exact_kv_key_ingress_ppa_guard.py" in target.commands[1]["run"]
     assert f"--top {design_dir.name}" in target.commands[2]["run"]
+    assert "--required-rows 6" in target.commands[3]["run"]
 
 
 def _write_example_repo(repo_root: Path) -> tuple[str, str]:
