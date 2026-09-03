@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_kv_key_ingress_ppa_v1",
+  "created_utc": "2026-09-03T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "abstraction_layer": "decoder_attention_exact_kv_key_ingress",
+  "title": "Exact K ingress buffering and write-width physical comparison",
+  "hypothesis": "The automatic-target ping-pong 256-bit transposer can reduce K-head service from 12,351 to 4,160 cycles at an acceptable control and 2 KiB extra transpose-storage cost.",
+  "direct_comparison": {
+    "primary_question": "Does the 2.97x functional K-ingress speedup remain Pareto-useful after routed area, timing, and vectorless power are measured?",
+    "baselines": [
+      "one-buffer serial p53 group 3",
+      "one-buffer serial p54 group 2"
+    ],
+    "candidates": [
+      "ping-pong paired-dimension p53 group 3",
+      "ping-pong paired-dimension p54 group 2"
+    ],
+    "include": [
+      "complete 64-block canonical K-head control sequence",
+      "16 Kibit versus 32 Kibit transpose storage",
+      "128-bit versus 256-bit transpose drain",
+      "all-bit LFSR activity and checksum folding",
+      "Nangate45 routed critical path, standard-cell area, and vectorless power"
+    ],
+    "exclude": [
+      "128 KiB 64-bank K-stage macro area and access energy",
+      "1 KiB Q-stage macro",
+      "shared mesh and HBM/DRAM",
+      "workload-annotated dynamic power"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "stdcell_area_um2",
+      "total_power_mw",
+      "flow_status"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l1_attention_score32_exact_kv_key_ingress_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure p53/p54 one-buffer and ping-pong exact K ingress transpose PPA across a broad Nangate45 timing sweep.",
+      "status": "pending_source_merge_and_remote_evaluator_recovery",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": [
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_onebuf_p53_g3/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_onebuf_p54_g2/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_pingpong_p53_g3/config.json",
+        "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_pingpong_p54_g2/config.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/attention_score32_exact_kv_key_ingress_ppa_v1/sweeps/nangate45.json",
+      "out_root": "runs/designs/npu_blocks"
+    }
+  ],
+  "remaining_abstractions": [
+    "The narrow-I/O LFSR/checksum harness overhead is included in each measured row.",
+    "The 128 KiB K-stage and 1 KiB Q-stage arrays require separate characterized SRAM composition.",
+    "Vectorless power is a screening metric until exact Llama7B activity is applied.",
+    "Capacity/HBM gather, shared mesh, and external HBM controller/PHY remain outside this comparison."
+  ],
+  "source_refs": [
+    "npu/docs/attention_score32_exact_kv_key_pingpong_contract.md",
+    "npu/sim/rtl/attention_score32_exact_kv_ingress_transpose.sv",
+    "npu/sim/rtl/attention_score32_exact_kv_key_pingpong_transpose.sv",
+    "npu/rtlgen/gen_attention_score32_exact_kv_key_ingress_ppa_harness.py",
+    "npu/eval/check_attention_score32_exact_kv_key_ingress_ppa_guard.py"
+  ]
+}

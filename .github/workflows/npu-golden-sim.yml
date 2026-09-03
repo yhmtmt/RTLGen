@@ -106,6 +106,7 @@ jobs:
             tests/test_attention_score32_exact_kv_key_stage.py \
             tests/test_attention_score32_exact_kv_value_ingress.py \
             tests/test_attention_score32_exact_kv_key_pingpong.py \
+            tests/test_attention_score32_exact_kv_key_ingress_ppa_harness.py \
             tests/test_llm_decoder_attention_score32_noc_phase2_endpoint_rtl.py \
             tests/test_llm_decoder_attention_score32_noc_phase2_schedule.py
 

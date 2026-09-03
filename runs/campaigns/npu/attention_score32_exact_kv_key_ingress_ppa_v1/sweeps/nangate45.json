@@ -1,0 +1,10 @@
+{
+  "tag_prefix": "attention_score32_exact_kv_key_ingress_ppa_v1",
+  "flow_params": {
+    "CLOCK_PERIOD": [2.0, 3.0, 4.0, 6.0, 8.0, 12.0],
+    "DIE_AREA": ["0 0 800 800"],
+    "CORE_AREA": ["50 50 750 750"],
+    "PLACE_DENSITY": [0.5],
+    "SYNTH_HIERARCHICAL": [1]
+  }
+}
