@@ -363,8 +363,9 @@ def test_exact_k_ingress_metrics_checker_is_scoped_to_request() -> None:
         "check_attention_score32_exact_kv_key_ingress_ppa_metrics_pingpong",
     ]
     assert "--required-rows 4" in scoped[1]["run"]
-    assert "onebuf/metrics.csv" in scoped[1]["run"]
-    assert "pingpong/metrics.csv" in scoped[3]["run"]
+    assert "--out_root runs/designs/npu_blocks" in scoped[1]["run"]
+    assert "--design-name onebuf" in scoped[1]["run"]
+    assert "--design-name pingpong" in scoped[3]["run"]
 
 
 def _write_example_repo(repo_root: Path) -> tuple[str, str]:

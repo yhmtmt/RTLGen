@@ -2950,7 +2950,8 @@ def _add_exact_k_ingress_metrics_checks(
             "run": (
                 "python3 npu/eval/"
                 "check_attention_score32_exact_kv_key_ingress_ppa_metrics.py "
-                f"--metrics {target.expected_metrics_path} --required-rows {required_rows}"
+                f"--out_root {Path(target.expected_metrics_path).parent.parent} "
+                f"--design-name {target.design_name} --required-rows {required_rows}"
             ),
         }
         for target in targets

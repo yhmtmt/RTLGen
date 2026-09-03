@@ -51,10 +51,11 @@ def check(metrics_path: Path, *, required_rows: int) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--metrics", type=Path, required=True)
+    parser.add_argument("--out_root", type=Path, required=True)
+    parser.add_argument("--design-name", required=True)
     parser.add_argument("--required-rows", type=int, default=6)
     args = parser.parse_args(argv)
-    check(args.metrics, required_rows=args.required_rows)
+    check(args.out_root / args.design_name / "metrics.csv", required_rows=args.required_rows)
     return 0
 
 
