@@ -2923,6 +2923,48 @@ def _command_manifest_for_targets(targets: list[Layer1ConfigTarget]) -> list[dic
     return commands
 
 
+def _add_exact_k_ingress_metrics_checks(
+    commands: list[dict[str, str]],
+    *,
+    targets: list[Layer1ConfigTarget],
+    proposal_id: str | None,
+    required_rows: int,
+) -> list[dict[str, str]]:
+    if (
+        proposal_id != "prop_l1_attention_score32_exact_kv_key_ingress_ppa_v1"
+        or required_rows <= 0
+    ):
+        return commands
+    multi_target = len(targets) > 1
+    checker_by_sweep_name = {
+        (
+            f"run_block_sweep_{target.design_name}"
+            if multi_target
+            else "run_block_sweep"
+        ): {
+            "name": (
+                f"check_attention_score32_exact_kv_key_ingress_ppa_metrics_{target.design_name}"
+                if multi_target
+                else "check_attention_score32_exact_kv_key_ingress_ppa_metrics"
+            ),
+            "run": (
+                "python3 npu/eval/"
+                "check_attention_score32_exact_kv_key_ingress_ppa_metrics.py "
+                f"--out_root {Path(target.expected_metrics_path).parent.parent} "
+                f"--design-name {target.design_name} --required-rows {required_rows}"
+            ),
+        }
+        for target in targets
+    }
+    result: list[dict[str, str]] = []
+    for command in commands:
+        result.append(command)
+        checker = checker_by_sweep_name.get(command.get("name", ""))
+        if checker is not None:
+            result.append(checker)
+    return result
+
+
 def _is_synth_only_make_target(make_target: str | None) -> bool:
     normalized = str(make_target or "").strip()
     return normalized in {
@@ -3369,6 +3411,12 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             sweep_path=sweep_path,
             config_paths=config_args,
         )
+    command_manifest = _add_exact_k_ingress_metrics_checks(
+        command_manifest,
+        targets=targets,
+        proposal_id=effective_proposal_id,
+        required_rows=required_complete_ppa_rows,
+    )
 
     if _is_multivalue_cluster_8ns_bridge_sweep(item_id=item_id, sweep_path=sweep_path) and targets:
         checker_command = {

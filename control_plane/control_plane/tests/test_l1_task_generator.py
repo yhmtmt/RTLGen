@@ -25,6 +25,7 @@ from control_plane.services.l1_task_generator import (
     Layer1ConfigTarget,
     Layer1SweepGenerateRequest,
     Layer1TaskGenerationError,
+    _add_exact_k_ingress_metrics_checks,
     _multivalue_cluster_binary_fsm_profile,
     _read_config_target,
     _resolve_required_complete_ppa_rows,
@@ -325,6 +326,46 @@ def test_read_config_target_builds_exact_k_ingress_commands(tmp_path: Path) -> N
     assert "gen_attention_score32_exact_kv_key_ingress_ppa_harness.py" in target.commands[0]["run"]
     assert "check_attention_score32_exact_kv_key_ingress_ppa_guard.py" in target.commands[1]["run"]
     assert f"--top {design_dir.name}" in target.commands[2]["run"]
+
+
+def test_exact_k_ingress_metrics_checker_is_scoped_to_request() -> None:
+    targets = [
+        Layer1ConfigTarget(
+            design_kind="block",
+            design_name=name,
+            expected_metrics_path=f"runs/designs/npu_blocks/{name}/metrics.csv",
+            commands=[],
+        )
+        for name in ("onebuf", "pingpong")
+    ]
+    commands = [
+        {"name": "run_block_sweep_onebuf", "run": "run onebuf"},
+        {"name": "run_block_sweep_pingpong", "run": "run pingpong"},
+    ]
+    unchanged = _add_exact_k_ingress_metrics_checks(
+        commands,
+        targets=targets,
+        proposal_id="another_proposal",
+        required_rows=6,
+    )
+    assert unchanged == commands
+
+    scoped = _add_exact_k_ingress_metrics_checks(
+        commands,
+        targets=targets,
+        proposal_id="prop_l1_attention_score32_exact_kv_key_ingress_ppa_v1",
+        required_rows=4,
+    )
+    assert [entry["name"] for entry in scoped] == [
+        "run_block_sweep_onebuf",
+        "check_attention_score32_exact_kv_key_ingress_ppa_metrics_onebuf",
+        "run_block_sweep_pingpong",
+        "check_attention_score32_exact_kv_key_ingress_ppa_metrics_pingpong",
+    ]
+    assert "--required-rows 4" in scoped[1]["run"]
+    assert "--out_root runs/designs/npu_blocks" in scoped[1]["run"]
+    assert "--design-name onebuf" in scoped[1]["run"]
+    assert "--design-name pingpong" in scoped[3]["run"]
 
 
 def _write_example_repo(repo_root: Path) -> tuple[str, str]:
