@@ -77,7 +77,7 @@
     "direct_hbm_consume_bytes_per_layer": 131989504,
     "does_not_include": [
       "HBM controller or PHY",
-      "span-to-packet expansion",
+      "multi-source packet dispatch",
       "shared-mesh transport",
       "canonical K/V payload movement"
     ],
@@ -89,6 +89,18 @@
       15
     ],
     "owner_cluster_rule": "(layer*3+tile)%16",
+    "packet_expansion": {
+      "canonical_consume_packet_count": 16777216,
+      "descriptor_count": 4896,
+      "flits_per_packet": 8,
+      "hbm_source_packet_count": 16777216,
+      "maximum_packets_per_span": 4096,
+      "maximum_span_terminal_index_verified": true,
+      "packet_bytes": 256,
+      "packet_count": 17055744,
+      "representative_rtl_packets_verified": 4608,
+      "resident_refill_packet_count": 278528
+    },
     "partial_tile_policy": "eight ordered planes, each consuming a 16KiB resident prefix followed by a 112KiB direct-HBM suffix",
     "persistence_mode": "transient",
     "python_rtl_descriptor_equivalence_verified": true,
@@ -135,10 +147,11 @@
       "canonical V flit through 16-bank double-buffer cluster-SRAM residency",
       "capacity-driven transient-refill and direct-HBM gather descriptor scheduler",
       "locality-aware balanced tile-to-cluster ownership",
-      "four-corner HBM source selection and exact canonical span addresses"
+      "four-corner HBM source selection and exact canonical span addresses",
+      "256-byte span packetization through the 4,096-packet full-tile boundary"
     ],
     "remaining_before_frontier_recost": [
-      "shared-mesh packetization and source-to-canonical-ingress routing",
+      "multi-source shared-mesh dispatch and canonical-ingress payload routing",
       "V transpose ping-pong or proven fill-drain overlap",
       "characterized SRAM macro substitution"
     ],
@@ -150,7 +163,9 @@
       "gather_consume_bytes_per_cluster": 8388608,
       "gather_descriptors_full_model": 4896,
       "gather_descriptors_per_layer": 153,
+      "gather_hbm_packets_full_model": 16777216,
       "gather_hbm_source_bytes_per_layer": 134217728,
+      "gather_packets_full_model": 17055744,
       "pingpong_k_head_cycles_without_stall": 4160,
       "producer_output_beats_per_head": 8192
     }
@@ -202,7 +217,7 @@
     "tiles": 128
   },
   "model": "llama7b_score32_exact_kv_ingress_closure_audit_v1",
-  "next_gate": "Compose the exact gather descriptors through shared-mesh source routing into canonical K/V ingress and verify end-to-end backpressure; then measure V buffering parallelism and substitute characterized SRAM macros.",
+  "next_gate": "Dispatch exact gather packets through shared-mesh source routing into canonical K/V ingress and verify end-to-end backpressure; then measure V buffering parallelism and substitute characterized SRAM macros.",
   "one_buffer_transpose_reference": {
     "key": {
       "input_flits": 64,
@@ -243,7 +258,7 @@
   },
   "required_rtl_ownership": [
     "external HBM-return ready/valid ingress boundary, excluding controller and PHY",
-    "span-to-packet expansion and on-chip routing for HBM-return K/V bytes",
+    "multi-source packet dispatch and on-chip routing for HBM-return K/V bytes",
     "composition of capacity/HBM source descriptors with canonical K/V payload ingress",
     "backpressure from cluster SRAM and producers through ingress and mesh",
     "overlapped V transpose buffering selected from measured PPA",
@@ -252,14 +267,14 @@
   ],
   "revision_effect": {
     "frontier_recost_allowed": false,
-    "reason": "Exact K and V endpoint paths and capacity/HBM source descriptors are embodied, but shared-mesh payload composition, overlap selection, and physical memory costs are not yet closed for the complete score32 cluster path.",
+    "reason": "Exact K/V endpoint paths, capacity/HBM source descriptors, and packetization are embodied, but shared-mesh payload composition, overlap selection, and physical memory costs are not yet closed for the complete score32 cluster path.",
     "release_coupled_vc1_role": "exact_reduction_transport_timing_with_vc0_ingress_still_open",
     "shared_mesh_15769_cycle_result_role": "standalone_historical_traffic_capacity_bound_only"
   },
   "source_refs": [
     {
       "path": "npu/eval/audit_llama7b_score32_exact_kv_ingress_closure.py",
-      "sha256": "c449d0bf3d7f9ad7cb6e7267f81ec7d1ac6ddf28d5ffbbda85338f55849a88ae"
+      "sha256": "be1241c49ebab123d4af5e6a3ec536f426640fdb2cec90241e10bbb0c68bafea"
     },
     {
       "path": "npu/sim/perf/attention_kv_tile_layout.py",
@@ -340,6 +355,30 @@
     {
       "path": "docs/proposals/prop_l1_attention_kv_capacity_gather_scheduler_v1/proposal.json",
       "sha256": "3fdb074273e9423b58aba839184f806372af015dc0a861d25d1cc6ac73bfc837"
+    },
+    {
+      "path": "npu/sim/perf/attention_kv_gather_packetizer.py",
+      "sha256": "ac12c8ac69b34ee5a51192a006b53ee4c14ac1e44b28b909471be40967241f17"
+    },
+    {
+      "path": "npu/sim/rtl/attention_kv_gather_span_packetizer.sv",
+      "sha256": "babf344c13eb771f5b85cca7972ce8ba4629db6de08307135ebcc087f9ec4b3a"
+    },
+    {
+      "path": "npu/eval/tests/test_attention_kv_gather_packetizer.py",
+      "sha256": "e79bc1d749aeeed2edcabb295553251e750918ed0b5af503888af0140676c557"
+    },
+    {
+      "path": "tests/test_attention_kv_gather_span_packetizer_rtl.py",
+      "sha256": "39813d87c7c517dab127620b94fc656e38cf0e42f4ea6091851982f1fc4a6e97"
+    },
+    {
+      "path": "npu/docs/attention_kv_gather_span_packetizer_contract.md",
+      "sha256": "2fc99e1faa73443b20f21ed953a74caec7121ef40eb431fc01320af7dfc0687d"
+    },
+    {
+      "path": "docs/proposals/prop_l1_attention_kv_gather_span_packetizer_v1/proposal.json",
+      "sha256": "fb2989272e3413bbaba7b7d253d23b95e10426aac0d679c12eaffb0cfa8fd51b"
     }
   ],
   "version": 1
