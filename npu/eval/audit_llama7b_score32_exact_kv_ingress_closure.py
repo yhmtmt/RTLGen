@@ -245,6 +245,25 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "key_output_role": "serial writes into a future banked producer-local K staging store",
             "not_a_cluster_throughput_claim": True,
         },
+        "implementation_status": {
+            "embodied_rtl": [
+                "canonical planar address and byte-valid K/V block transposer",
+                "64-bank 128KiB K staging store",
+                "1KiB shared Q group store and duplicate-stream broadcast",
+                "per-lane p53/p54 producer pending-mask scheduler",
+                "canonical K flit through producer-output composition",
+            ],
+            "verified_counts": {
+                "canonical_k_input_flits_per_head": 4096,
+                "producer_output_beats_per_head": 8192,
+            },
+            "remaining_before_frontier_recost": [
+                "V transpose to cluster fill and residency composition",
+                "capacity-resident and transient-HBM gather descriptor scheduler",
+                "multiple transpose buffers or proven fill-drain overlap",
+                "characterized SRAM macro substitution",
+            ],
+        },
         "required_rtl_ownership": [
             "external HBM-return ready/valid ingress boundary, excluding controller and PHY",
             "capacity-driven resident-range descriptor and source selection",

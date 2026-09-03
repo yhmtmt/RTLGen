@@ -181,5 +181,9 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
         "minimum_target_ii_cycles": 193,
     }
     assert report["one_buffer_transpose_reference"]["not_a_cluster_throughput_claim"] is True
+    assert report["implementation_status"]["verified_counts"] == {
+        "canonical_k_input_flits_per_head": 4096,
+        "producer_output_beats_per_head": 8192,
+    }
     assert report["revision_effect"]["frontier_recost_allowed"] is False
     assert "cannot be wired directly" in render_markdown(report)

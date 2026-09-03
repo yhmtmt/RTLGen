@@ -617,6 +617,10 @@ run the already queued exp-LUT branch:
     backpressure. Treat the one-buffer K output as a serial staging write, not
     as direct service of all producers; the next composition must add banked
     producer-local K storage and parallel p53/p54 readout.
+    The exact banked K/Q stage and canonical-flit composition now provide this
+    functional reference. Its single transpose buffer costs 12,351 cycles per
+    K head tile before the 256-cycle producer input phase; do not promote that
+    conservative serialization as the throughput frontier.
 22. Compose the ingress block with capacity-driven resident descriptors,
     transient HBM-return source selection, shared-mesh routing, cluster
     double-buffer residency, and producer release. Measure representative

@@ -77,6 +77,25 @@
     "remote_transport_bytes": 1949696,
     "represented_resident_bytes": 2228224
   },
+  "implementation_status": {
+    "embodied_rtl": [
+      "canonical planar address and byte-valid K/V block transposer",
+      "64-bank 128KiB K staging store",
+      "1KiB shared Q group store and duplicate-stream broadcast",
+      "per-lane p53/p54 producer pending-mask scheduler",
+      "canonical K flit through producer-output composition"
+    ],
+    "remaining_before_frontier_recost": [
+      "V transpose to cluster fill and residency composition",
+      "capacity-resident and transient-HBM gather descriptor scheduler",
+      "multiple transpose buffers or proven fill-drain overlap",
+      "characterized SRAM macro substitution"
+    ],
+    "verified_counts": {
+      "canonical_k_input_flits_per_head": 4096,
+      "producer_output_beats_per_head": 8192
+    }
+  },
   "llama7b_layer_shape": {
     "head_dim": 128,
     "kv_bits": 8,
@@ -151,15 +170,23 @@
   "source_refs": [
     {
       "path": "npu/eval/audit_llama7b_score32_exact_kv_ingress_closure.py",
-      "sha256": "29df7357a69765876d3ebd61a5f43b2c4732af9ae5154bcd7005936256d624ef"
+      "sha256": "88db39f64d5b83fc9e90698fe03d444c829eddc3e88c6cda41527accb4382ea2"
     },
     {
       "path": "npu/sim/perf/attention_kv_tile_layout.py",
-      "sha256": "9374e3b730d91a7bb7c2fb68f54ba8f4343c73bdaee9878d2e54fbb8b58c4234"
+      "sha256": "6d11ad0e57d413f3a4d38905f9b1201459ecf9711da17d31f34e93ba1a0d4337"
     },
     {
       "path": "npu/sim/rtl/attention_score32_exact_kv_ingress_transpose.sv",
       "sha256": "138ddd0b75ae1f0970c3d93b4e488e93f643817f8c73753891210b8afaec09e9"
+    },
+    {
+      "path": "npu/sim/rtl/attention_score32_exact_kv_key_stage.sv",
+      "sha256": "d5a21b8009650889a89121a07b7dae85344e66a1946cdfa891c67b170980dbb0"
+    },
+    {
+      "path": "npu/sim/rtl/attention_score32_exact_kv_key_ingress.sv",
+      "sha256": "bb96a14a2c33c928e0cc126d0d43b0923315e1eacdd6301245832513f9e3a971"
     },
     {
       "path": "npu/eval/model_llama7b_shared_sram_residency.py",
