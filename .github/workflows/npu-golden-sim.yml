@@ -102,6 +102,7 @@ jobs:
             tests/test_noc_descriptor_pair_scheduler.py \
             tests/test_noc_llama7b_phase2_command_generator.py \
             tests/test_noc_sram_packet_mesh_perf.py \
+            tests/test_attention_score32_exact_kv_ingress_transpose.py \
             tests/test_llm_decoder_attention_score32_noc_phase2_endpoint_rtl.py \
             tests/test_llm_decoder_attention_score32_noc_phase2_schedule.py
 

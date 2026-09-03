@@ -26,6 +26,13 @@ BYTES_PER_HEAD_TILE = TILE_TOKENS * HEAD_DIM * ELEMENT_BYTES
 BYTES_PER_KV_TILE = 2 * KV_HEADS * BYTES_PER_HEAD_TILE
 FILL_ROW_BYTES = TOKENS_PER_BLOCK * DIMENSIONS_PER_SLICE * ELEMENT_BYTES
 FILL_ROWS_PER_HEAD_TILE = BYTES_PER_HEAD_TILE // FILL_ROW_BYTES
+VALUE_BLOCK_BYTES = TOKENS_PER_BLOCK * HEAD_DIM
+KEY_PAIRED_BLOCK_BYTES = 2 * VALUE_BLOCK_BYTES
+INGRESS_FLIT_BYTES = 32
+VALUE_BLOCK_INPUT_FLITS = VALUE_BLOCK_BYTES // INGRESS_FLIT_BYTES
+KEY_BLOCK_PAIR_INPUT_FLITS = KEY_PAIRED_BLOCK_BYTES // INGRESS_FLIT_BYTES
+VALUE_BLOCK_OUTPUT_ROWS = VALUE_BLOCK_BYTES // FILL_ROW_BYTES
+KEY_BLOCK_PAIR_OUTPUT_BEATS = HEAD_DIM
 
 
 @dataclass(frozen=True)
@@ -59,6 +66,33 @@ class KeyProducerLocation:
 class KvRangeSegment:
     base_address: int
     payload_bytes: int
+
+
+@dataclass(frozen=True)
+class KvTransposeService:
+    input_flits: int
+    output_beats: int
+    transfer_cycles_without_stall: int
+    minimum_target_ii_cycles: int
+
+
+def kv_transpose_service(*, tensor: str) -> KvTransposeService:
+    """Return the one-buffer RTL service bound with no fill/drain overlap."""
+
+    if tensor == "v":
+        input_flits = VALUE_BLOCK_INPUT_FLITS
+        output_beats = VALUE_BLOCK_OUTPUT_ROWS
+    elif tensor == "k":
+        input_flits = KEY_BLOCK_PAIR_INPUT_FLITS
+        output_beats = KEY_BLOCK_PAIR_OUTPUT_BEATS
+    else:
+        raise ValueError("tensor must be 'k' or 'v'")
+    return KvTransposeService(
+        input_flits=input_flits,
+        output_beats=output_beats,
+        transfer_cycles_without_stall=input_flits + output_beats,
+        minimum_target_ii_cycles=input_flits + output_beats + 1,
+    )
 
 
 def _bounded(value: int, *, limit: int, label: str) -> int:
@@ -215,14 +249,22 @@ __all__ = [
     "HEAD_DIM",
     "KV_HEADS",
     "KeyProducerLocation",
+    "KEY_BLOCK_PAIR_INPUT_FLITS",
+    "KEY_BLOCK_PAIR_OUTPUT_BEATS",
+    "KEY_PAIRED_BLOCK_BYTES",
     "KvRangeSegment",
+    "KvTransposeService",
     "KvCoordinate",
     "TILE_TOKENS",
+    "VALUE_BLOCK_BYTES",
+    "VALUE_BLOCK_INPUT_FLITS",
+    "VALUE_BLOCK_OUTPUT_ROWS",
     "ValueFillLocation",
     "decode_kv_byte_address",
     "decode_value_fill_byte",
     "encode_kv_byte_address",
     "key_producer_location",
+    "kv_transpose_service",
     "kv_token_range_segments",
     "value_fill_location",
 ]
