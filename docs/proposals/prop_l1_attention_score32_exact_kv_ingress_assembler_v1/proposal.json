@@ -1,0 +1,75 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_kv_ingress_assembler_v1",
+  "created_utc": "2026-09-03T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Embody exact planar K/V ingress transposition",
+  "hypothesis": "A bounded block transposer can replace synthetic cluster K/V inputs with byte-exact addressed ingress while exposing the buffering, serialization, and backpressure costs that the historical fractional VC0 model omitted.",
+  "direct_comparison": {
+    "primary_question": "What functional and physical cost is required to transpose planar 256-bit Llama7B K/V flits into the existing score32 V-fill rows and p53/p54 K staging beats?",
+    "include": [
+      "20-bit canonical tile byte address decode",
+      "32-bit byte-valid mask and disjoint partial-line completion",
+      "one 1 KiB V transpose target",
+      "one 2 KiB paired-stream K transpose target",
+      "corrected group-specific p53 and p54 producer/block mapping",
+      "output ready-valid backpressure",
+      "cycle and payload equivalence against the canonical Python model"
+    ],
+    "exclude": [
+      "banked producer-local K staging SRAM and 53/54-way parallel readout",
+      "multiple transpose buffers or fill/drain overlap",
+      "capacity and HBM gather descriptor scheduler",
+      "shared-mesh composition",
+      "SRAM bitcells",
+      "HBM controller and PHY"
+    ]
+  },
+  "service_contract": {
+    "value_block": {
+      "input_flits": 32,
+      "output_rows": 16,
+      "transfer_cycles_without_stall": 48,
+      "minimum_target_ii_cycles": 49
+    },
+    "key_block_pair": {
+      "input_flits": 64,
+      "output_beats": 128,
+      "transfer_cycles_without_stall": 192,
+      "minimum_target_ii_cycles": 193
+    },
+    "key_output_role": "serial producer-addressed write into a future banked K staging store"
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l1_attention_score32_exact_kv_ingress_transpose_p53_p54_ppa_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA of the p53 and p54 one-buffer exact K/V transpose reference.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "exact_kv_ingress_transpose_physical_reference",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "status": "pending_physical_harness_and_source_merge"
+    }
+  ],
+  "remaining_abstractions": [
+    "The serial K output does not embody producer-local staging or simultaneous p53/p54 readout.",
+    "A single buffer does not overlap ingress and drain or establish cluster throughput.",
+    "Capacity-resident and transient-HBM gather scheduling remain external.",
+    "SRAM bitcells and the HBM controller/PHY remain external."
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_attention_score32_exact_kv_ingress_revision_llama7b_v1/proposal.json",
+    "npu/docs/generated/llama7b_score32_exact_kv_ingress_closure_audit_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_kv_ingress_transpose_contract.md",
+    "npu/sim/rtl/attention_score32_exact_kv_ingress_transpose.sv",
+    "npu/sim/perf/attention_kv_tile_layout.py",
+    "tests/test_attention_score32_exact_kv_ingress_transpose.py"
+  ]
+}

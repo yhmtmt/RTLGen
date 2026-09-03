@@ -27,6 +27,7 @@ from npu.sim.perf.attention_kv_tile_layout import (
     HEAD_DIM,
     KV_HEADS,
     TILE_TOKENS,
+    kv_transpose_service,
     kv_token_range_segments,
 )
 
@@ -90,6 +91,8 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
         raise AssertionError("historical fractional bytes must equal the capacity share per layer")
     full_tile_segments = kv_token_range_segments(token_start=0, token_count=TILE_TOKENS)
     tail_segments = kv_token_range_segments(token_start=0, token_count=128)
+    value_transpose = kv_transpose_service(tensor="v")
+    key_transpose = kv_transpose_service(tensor="k")
 
     whole_contexts = residency["residency"]["context_payload_distribution"]
     return {
@@ -225,6 +228,23 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "byte matrix into 128 producer beats"
             ),
         },
+        "one_buffer_transpose_reference": {
+            "overlap": False,
+            "value": {
+                "input_flits": value_transpose.input_flits,
+                "output_rows": value_transpose.output_beats,
+                "transfer_cycles_without_stall": value_transpose.transfer_cycles_without_stall,
+                "minimum_target_ii_cycles": value_transpose.minimum_target_ii_cycles,
+            },
+            "key": {
+                "input_flits": key_transpose.input_flits,
+                "output_beats": key_transpose.output_beats,
+                "transfer_cycles_without_stall": key_transpose.transfer_cycles_without_stall,
+                "minimum_target_ii_cycles": key_transpose.minimum_target_ii_cycles,
+            },
+            "key_output_role": "serial writes into a future banked producer-local K staging store",
+            "not_a_cluster_throughput_claim": True,
+        },
         "required_rtl_ownership": [
             "external HBM-return ready/valid ingress boundary, excluding controller and PHY",
             "capacity-driven resident-range descriptor and source selection",
@@ -234,6 +254,7 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "K/V tensor address decoder and partial-packet byte validity",
             "1KiB token-major-to-fill-row V transpose buffer and assembler",
             "2KiB paired-stream K transpose buffer, producer-beat assembler, and p53/p54 slot distributor",
+            "banked producer-local K staging store with parallel p53/p54 readout",
             "per-cluster fill target, double-buffer residency, and command release",
             "backpressure from cluster SRAM and producers through ingress and mesh",
         ],
@@ -258,6 +279,7 @@ def render_markdown(report: JsonDict) -> str:
     resident = report["capacity_driven_residency"]
     historical = report["historical_phase2_vc0"]
     cluster = report["cluster_consumption"]
+    transpose = report["one_buffer_transpose_reference"]
     lines = [
         "# Llama7B Exact K/V Ingress Closure Audit",
         "",
@@ -270,6 +292,14 @@ def render_markdown(report: JsonDict) -> str:
         "",
         "The historical VC0 quantity matches a capacity share in aggregate, but its fractional-smear "
         "contexts do not identify exact K/V tensor bytes and cannot be wired directly to cluster fill.",
+        "",
+        "## One-Buffer Transpose Reference",
+        "",
+        f"- V block: `{transpose['value']['transfer_cycles_without_stall']}` transfer cycles, "
+        f"target II `{transpose['value']['minimum_target_ii_cycles']}`",
+        f"- paired-stream K block: `{transpose['key']['transfer_cycles_without_stall']}` transfer cycles, "
+        f"target II `{transpose['key']['minimum_target_ii_cycles']}`",
+        "- K output is a serial staging write; banked p53/p54 parallel readout remains open",
         "",
         "## Required RTL Ownership",
         "",

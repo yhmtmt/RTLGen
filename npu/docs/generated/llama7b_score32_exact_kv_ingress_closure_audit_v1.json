@@ -91,6 +91,23 @@
   },
   "model": "llama7b_score32_exact_kv_ingress_closure_audit_v1",
   "next_gate": "Implement and verify the canonical tensor-address decoder plus representative p54/p53 K/V transpose assemblers before composing capacity-driven NoC/HBM source scheduling.",
+  "one_buffer_transpose_reference": {
+    "key": {
+      "input_flits": 64,
+      "minimum_target_ii_cycles": 193,
+      "output_beats": 128,
+      "transfer_cycles_without_stall": 192
+    },
+    "key_output_role": "serial writes into a future banked producer-local K staging store",
+    "not_a_cluster_throughput_claim": true,
+    "overlap": false,
+    "value": {
+      "input_flits": 32,
+      "minimum_target_ii_cycles": 49,
+      "output_rows": 16,
+      "transfer_cycles_without_stall": 48
+    }
+  },
   "port_gap": {
     "cluster_fill_bits": 512,
     "consecutive_flits_form_one_value_fill_row": false,
@@ -121,6 +138,7 @@
     "K/V tensor address decoder and partial-packet byte validity",
     "1KiB token-major-to-fill-row V transpose buffer and assembler",
     "2KiB paired-stream K transpose buffer, producer-beat assembler, and p53/p54 slot distributor",
+    "banked producer-local K staging store with parallel p53/p54 readout",
     "per-cluster fill target, double-buffer residency, and command release",
     "backpressure from cluster SRAM and producers through ingress and mesh"
   ],
@@ -133,11 +151,15 @@
   "source_refs": [
     {
       "path": "npu/eval/audit_llama7b_score32_exact_kv_ingress_closure.py",
-      "sha256": "543f78aa669fd04c7d9c7acbeb4101da57985e59e88ac45df2410a0071ad4097"
+      "sha256": "29df7357a69765876d3ebd61a5f43b2c4732af9ae5154bcd7005936256d624ef"
     },
     {
       "path": "npu/sim/perf/attention_kv_tile_layout.py",
-      "sha256": "05f491d4daf156ac9a8f001b6b191577479c7091c673c844d842f09719962cf5"
+      "sha256": "9374e3b730d91a7bb7c2fb68f54ba8f4343c73bdaee9878d2e54fbb8b58c4234"
+    },
+    {
+      "path": "npu/sim/rtl/attention_score32_exact_kv_ingress_transpose.sv",
+      "sha256": "138ddd0b75ae1f0970c3d93b4e488e93f643817f8c73753891210b8afaec09e9"
     },
     {
       "path": "npu/eval/model_llama7b_shared_sram_residency.py",

@@ -614,7 +614,9 @@ run the already queued exp-LUT branch:
     contributes to four different fill rows, so payload-width equality cannot
     substitute for this reorder logic. Prove every byte maps bijectively to
     the existing cluster SRAM and producer interfaces under arbitrary
-    backpressure.
+    backpressure. Treat the one-buffer K output as a serial staging write, not
+    as direct service of all producers; the next composition must add banked
+    producer-local K storage and parallel p53/p54 readout.
 22. Compose the ingress block with capacity-driven resident descriptors,
     transient HBM-return source selection, shared-mesh routing, cluster
     double-buffer residency, and producer release. Measure representative

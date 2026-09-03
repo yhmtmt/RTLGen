@@ -168,5 +168,18 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     assert report["port_gap"]["consecutive_flits_form_one_value_fill_row"] is False
     assert report["port_gap"]["value_transpose_extent_bytes"] == 1024
     assert report["port_gap"]["key_paired_stream_transpose_extent_bytes"] == 2048
+    assert report["one_buffer_transpose_reference"]["value"] == {
+        "input_flits": 32,
+        "output_rows": 16,
+        "transfer_cycles_without_stall": 48,
+        "minimum_target_ii_cycles": 49,
+    }
+    assert report["one_buffer_transpose_reference"]["key"] == {
+        "input_flits": 64,
+        "output_beats": 128,
+        "transfer_cycles_without_stall": 192,
+        "minimum_target_ii_cycles": 193,
+    }
+    assert report["one_buffer_transpose_reference"]["not_a_cluster_throughput_claim"] is True
     assert report["revision_effect"]["frontier_recost_allowed"] is False
     assert "cannot be wired directly" in render_markdown(report)

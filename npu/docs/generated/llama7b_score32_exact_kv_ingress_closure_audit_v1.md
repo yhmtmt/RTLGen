@@ -9,6 +9,12 @@
 
 The historical VC0 quantity matches a capacity share in aggregate, but its fractional-smear contexts do not identify exact K/V tensor bytes and cannot be wired directly to cluster fill.
 
+## One-Buffer Transpose Reference
+
+- V block: `48` transfer cycles, target II `49`
+- paired-stream K block: `192` transfer cycles, target II `193`
+- K output is a serial staging write; banked p53/p54 parallel readout remains open
+
 ## Required RTL Ownership
 
 - external HBM-return ready/valid ingress boundary, excluding controller and PHY
@@ -19,6 +25,7 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 - K/V tensor address decoder and partial-packet byte validity
 - 1KiB token-major-to-fill-row V transpose buffer and assembler
 - 2KiB paired-stream K transpose buffer, producer-beat assembler, and p53/p54 slot distributor
+- banked producer-local K staging store with parallel p53/p54 readout
 - per-cluster fill target, double-buffer residency, and command release
 - backpressure from cluster SRAM and producers through ingress and mesh
 
