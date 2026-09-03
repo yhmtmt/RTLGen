@@ -627,6 +627,12 @@ run the already queued exp-LUT branch:
     one-buffer no-stall bound is 6,271 cycles. This closes the synthetic V-fill
     plane functionally but not the capacity/HBM descriptor source or optimal
     fill/drain overlap.
+    The non-dominated K ingress candidate uses two automatic-target transpose
+    buffers and 256-bit paired-dimension bank writes. RTL equivalence sustains
+    all 4,096 canonical flits without a target bubble and completes after a
+    64-cycle final drain, for 4,160 cycles per K head. One-buffer-wide and
+    ping-pong-serial references both remain near 8,256 cycles; widths above
+    256 bits cannot improve the current 256-bit ingress floor.
 22. Compose the ingress block with capacity-driven resident descriptors,
     transient HBM-return source selection, shared-mesh routing, cluster
     double-buffer residency, and producer release. Measure representative

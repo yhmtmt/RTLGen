@@ -90,6 +90,16 @@ class KvTransposeService:
     minimum_target_ii_cycles: int
 
 
+@dataclass(frozen=True)
+class KeyIngressArchitectureService:
+    architecture: str
+    transpose_buffers: int
+    stage_write_bits: int
+    target_from_first_flit: bool
+    head_cycles_without_stall: int
+    ingress_floor_cycles: int
+
+
 def kv_transpose_service(*, tensor: str) -> KvTransposeService:
     """Return the one-buffer RTL service bound with no fill/drain overlap."""
 
@@ -106,6 +116,48 @@ def kv_transpose_service(*, tensor: str) -> KvTransposeService:
         output_beats=output_beats,
         transfer_cycles_without_stall=input_flits + output_beats,
         minimum_target_ii_cycles=input_flits + output_beats + 1,
+    )
+
+
+def key_ingress_architecture_service(*, architecture: str) -> KeyIngressArchitectureService:
+    """Return exact full-head service bounds for concrete K ingress organizations."""
+
+    ingress_floor = KEY_BLOCK_PAIRS_PER_HEAD_TILE * KEY_BLOCK_PAIR_INPUT_FLITS
+    rows = {
+        "one_buffer_serial": (1, 128, False, KEY_HEAD_TILE_ONE_BUFFER_FILL_CYCLES),
+        "pingpong_serial": (
+            2,
+            128,
+            True,
+            KEY_BLOCK_PAIR_INPUT_FLITS
+            + KEY_BLOCK_PAIRS_PER_HEAD_TILE * KEY_BLOCK_PAIR_OUTPUT_BEATS,
+        ),
+        "one_buffer_wide": (
+            1,
+            256,
+            False,
+            KEY_BLOCK_PAIRS_PER_HEAD_TILE
+            * (KEY_BLOCK_PAIR_INPUT_FLITS + KEY_BLOCK_PAIR_OUTPUT_BEATS // 2)
+            + KEY_BLOCK_PAIRS_PER_HEAD_TILE
+            - 1,
+        ),
+        "pingpong_wide_auto": (
+            2,
+            256,
+            True,
+            ingress_floor + KEY_BLOCK_PAIR_OUTPUT_BEATS // 2,
+        ),
+    }
+    if architecture not in rows:
+        raise ValueError(f"unknown K ingress architecture: {architecture}")
+    buffers, write_bits, auto_target, cycles = rows[architecture]
+    return KeyIngressArchitectureService(
+        architecture=architecture,
+        transpose_buffers=buffers,
+        stage_write_bits=write_bits,
+        target_from_first_flit=auto_target,
+        head_cycles_without_stall=cycles,
+        ingress_floor_cycles=ingress_floor,
     )
 
 
@@ -267,6 +319,7 @@ __all__ = [
     "KEY_BLOCK_PAIR_OUTPUT_BEATS",
     "KEY_BLOCK_PAIRS_PER_HEAD_TILE",
     "KEY_HEAD_TILE_ONE_BUFFER_FILL_CYCLES",
+    "KeyIngressArchitectureService",
     "KEY_PAIRED_BLOCK_BYTES",
     "KEY_STAGE_COMMAND_INPUT_CYCLES",
     "KvRangeSegment",
@@ -283,6 +336,7 @@ __all__ = [
     "decode_value_fill_byte",
     "encode_kv_byte_address",
     "key_producer_location",
+    "key_ingress_architecture_service",
     "kv_transpose_service",
     "kv_token_range_segments",
     "value_fill_location",

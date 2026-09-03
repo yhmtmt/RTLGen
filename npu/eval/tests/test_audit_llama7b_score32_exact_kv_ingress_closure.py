@@ -182,9 +182,22 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     }
     assert report["one_buffer_transpose_reference"]["not_a_cluster_throughput_claim"] is True
     assert "embodied 64-bank" in report["one_buffer_transpose_reference"]["key_output_role"]
+    key_frontier = report["key_ingress_architecture_frontier"]
+    assert {
+        name: row["head_cycles_without_stall"] for name, row in key_frontier.items()
+    } == {
+        "one_buffer_serial": 12_351,
+        "pingpong_serial": 8_256,
+        "one_buffer_wide": 8_255,
+        "pingpong_wide_auto": 4_160,
+    }
+    assert key_frontier["pingpong_wide_auto"]["rtl_verified"] is True
+    assert key_frontier["pingpong_wide_auto"]["ingress_floor_cycles"] == 4_096
     assert report["implementation_status"]["verified_counts"] == {
         "canonical_k_input_flits_per_head": 4096,
         "producer_output_beats_per_head": 8192,
+        "pingpong_k_head_cycles_without_stall": 4160,
+        "consecutive_pingpong_k_input_flits": 4096,
         "canonical_v_input_flits_per_head": 4096,
         "cluster_sram_v_rows_per_head": 2048,
     }

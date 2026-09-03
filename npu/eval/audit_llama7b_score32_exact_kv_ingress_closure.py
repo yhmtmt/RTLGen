@@ -27,6 +27,7 @@ from npu.sim.perf.attention_kv_tile_layout import (
     HEAD_DIM,
     KV_HEADS,
     TILE_TOKENS,
+    key_ingress_architecture_service,
     kv_transpose_service,
     kv_token_range_segments,
 )
@@ -93,6 +94,15 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
     tail_segments = kv_token_range_segments(token_start=0, token_count=128)
     value_transpose = kv_transpose_service(tensor="v")
     key_transpose = kv_transpose_service(tensor="k")
+    key_architectures = {
+        name: key_ingress_architecture_service(architecture=name)
+        for name in (
+            "one_buffer_serial",
+            "pingpong_serial",
+            "one_buffer_wide",
+            "pingpong_wide_auto",
+        )
+    }
 
     whole_contexts = residency["residency"]["context_payload_distribution"]
     return {
@@ -247,6 +257,17 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             ),
             "not_a_cluster_throughput_claim": True,
         },
+        "key_ingress_architecture_frontier": {
+            name: {
+                "transpose_buffers": service.transpose_buffers,
+                "stage_write_bits": service.stage_write_bits,
+                "target_from_first_flit": service.target_from_first_flit,
+                "head_cycles_without_stall": service.head_cycles_without_stall,
+                "ingress_floor_cycles": service.ingress_floor_cycles,
+                "rtl_verified": name in {"one_buffer_serial", "pingpong_wide_auto"},
+            }
+            for name, service in key_architectures.items()
+        },
         "implementation_status": {
             "embodied_rtl": [
                 "canonical planar address and byte-valid K/V block transposer",
@@ -254,17 +275,20 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "1KiB shared Q group store and duplicate-stream broadcast",
                 "per-lane p53/p54 producer pending-mask scheduler",
                 "canonical K flit through producer-output composition",
+                "automatic-target ping-pong K transpose with paired-dimension bank writes",
                 "canonical V flit through 16-bank double-buffer cluster-SRAM residency",
             ],
             "verified_counts": {
                 "canonical_k_input_flits_per_head": 4096,
                 "producer_output_beats_per_head": 8192,
+                "pingpong_k_head_cycles_without_stall": 4160,
+                "consecutive_pingpong_k_input_flits": 4096,
                 "canonical_v_input_flits_per_head": 4096,
                 "cluster_sram_v_rows_per_head": 2048,
             },
             "remaining_before_frontier_recost": [
                 "capacity-resident and transient-HBM gather descriptor scheduler",
-                "multiple transpose buffers or proven fill-drain overlap",
+                "V transpose ping-pong or proven fill-drain overlap",
                 "characterized SRAM macro substitution",
             ],
         },
@@ -276,7 +300,8 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "on-chip packet routing for remote resident K/V bytes",
             "capacity/HBM source descriptor to canonical K/V tensor-address ingress",
             "backpressure from cluster SRAM and producers through ingress and mesh",
-            "overlapped or multi-lane K/V transpose buffering selected from measured PPA",
+            "overlapped V transpose buffering selected from measured PPA",
+            "physical cost of ping-pong K transpose and paired-dimension write control",
             "characterized SRAM macro substitution for inferred K/Q and cluster stores",
         ],
         "revision_effect": {
@@ -291,7 +316,8 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
         },
         "next_gate": (
             "Implement the capacity-driven resident/HBM gather scheduler and shared-mesh source "
-            "routing, then measure K/V buffering parallelism and characterized SRAM substitution."
+            "routing, then measure V buffering parallelism, K ingress control PPA, and "
+            "characterized SRAM substitution."
         ),
     }
 
@@ -302,6 +328,7 @@ def render_markdown(report: JsonDict) -> str:
     historical = report["historical_phase2_vc0"]
     cluster = report["cluster_consumption"]
     transpose = report["one_buffer_transpose_reference"]
+    key_frontier = report["key_ingress_architecture_frontier"]
     lines = [
         "# Llama7B Exact K/V Ingress Closure Audit",
         "",
@@ -322,6 +349,15 @@ def render_markdown(report: JsonDict) -> str:
         f"- paired-stream K block: `{transpose['key']['transfer_cycles_without_stall']}` transfer cycles, "
         f"target II `{transpose['key']['minimum_target_ii_cycles']}`",
         "- K output writes the embodied 64-bank store; p53/p54 parallel readout is verified",
+        "",
+        "## K Ingress Architecture Frontier",
+        "",
+        *[
+            f"- {name}: `{row['head_cycles_without_stall']}` cycles/head, "
+            f"{row['transpose_buffers']} buffer(s), {row['stage_write_bits']}-bit stage write, "
+            f"RTL verified `{str(row['rtl_verified']).lower()}`"
+            for name, row in key_frontier.items()
+        ],
         "",
         "## Required RTL Ownership",
         "",
