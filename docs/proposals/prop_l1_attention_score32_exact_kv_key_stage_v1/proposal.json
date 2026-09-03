@@ -1,0 +1,51 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_kv_key_stage_v1",
+  "created_utc": "2026-09-03T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Embody exact K staging and Q broadcast for p53/p54 producers",
+  "hypothesis": "A 64-bank exact K store with per-lane pending masks can turn serial canonical ingress into deterministic p53/p54 parallel producer service without synthetic query variation or repeated handshakes under stalls.",
+  "direct_comparison": {
+    "primary_question": "Can every canonical K byte and one real shared Q group reach all p53/p54 producer inputs with exact block ownership, ordering, last markers, and ready-valid behavior?",
+    "include": [
+      "complete 128 KiB int8 K head tile",
+      "complete 1 KiB eight-head Q group",
+      "64 absolute K block banks",
+      "group-specific p53/p54 one-block and two-block assignment",
+      "per-producer pending handshake state",
+      "all 4,096 canonical K input flits and 8,192 producer output beats",
+      "independent producer stalls"
+    ],
+    "exclude": [
+      "V cluster fill composition",
+      "multiple transpose buffers and fill/drain overlap",
+      "capacity/HBM gather scheduling",
+      "characterized SRAM macros",
+      "HBM controller and PHY"
+    ]
+  },
+  "service_contract": {
+    "one_buffer_k_head_fill_cycles": 12351,
+    "producer_input_cycles_without_stall": 256,
+    "query_fill_can_overlap_key_fill": true,
+    "producer_skew_bound_beats": 1
+  },
+  "required_evaluations": [],
+  "remaining_abstractions": [
+    "The 128 KiB K and 1 KiB Q arrays are inferred storage rather than SRAM macros.",
+    "One transpose buffer serializes fill and drain and is not the expected throughput frontier.",
+    "V fill and cluster command release are not composed here.",
+    "Capacity-resident and transient-HBM gather scheduling remain external."
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_attention_score32_exact_kv_ingress_assembler_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_kv_key_stage_contract.md",
+    "npu/sim/rtl/attention_score32_exact_kv_key_stage.sv",
+    "npu/sim/rtl/attention_score32_exact_kv_key_ingress.sv",
+    "tests/test_attention_score32_exact_kv_key_stage.py"
+  ]
+}
