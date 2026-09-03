@@ -288,6 +288,45 @@ def test_read_config_target_builds_shared_sram_k_round_scheduler_commands(tmp_pa
     assert "--top attention_shared_sram_k_round_scheduler_b17_w17" in target.commands[2]["run"]
 
 
+def test_read_config_target_builds_exact_k_ingress_commands(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    design_dir = repo_root / "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_pingpong_p53_g3"
+    design_dir.mkdir(parents=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "top_name": design_dir.name,
+                "attention_score32_exact_kv_key_ingress_ppa_harness": {
+                    "architecture": "pingpong_wide_auto",
+                    "producers": 53,
+                    "kv_head": 3,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    config_rel = str(config_path.relative_to(repo_root))
+    target = _read_config_target(
+        config_path,
+        repo_root=repo_root,
+        config_rel=config_rel,
+        out_root="runs/designs/npu_blocks",
+        make_target=None,
+    )
+    assert target.design_name == design_dir.name
+    assert target.expected_metrics_path == f"runs/designs/npu_blocks/{design_dir.name}/metrics.csv"
+    assert [command["name"] for command in target.commands] == [
+        "generate_attention_score32_exact_kv_key_ingress_ppa_harness_rtl",
+        "check_attention_score32_exact_kv_key_ingress_ppa_guard",
+        "run_block_sweep",
+        "extract_attention_score32_exact_kv_key_ingress_ppa_harness_timing_paths",
+    ]
+    assert "gen_attention_score32_exact_kv_key_ingress_ppa_harness.py" in target.commands[0]["run"]
+    assert "check_attention_score32_exact_kv_key_ingress_ppa_guard.py" in target.commands[1]["run"]
+    assert f"--top {design_dir.name}" in target.commands[2]["run"]
+
+
 def _write_example_repo(repo_root: Path) -> tuple[str, str]:
     config_path = repo_root / "examples" / "config_softmax_rowwise_int8.json"
     config_path.parent.mkdir(parents=True, exist_ok=True)

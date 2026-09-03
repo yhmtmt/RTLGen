@@ -1,0 +1,12 @@
+{
+  "top_name": "attention_score32_exact_kv_key_ingress_onebuf_p54_g2",
+  "attention_score32_exact_kv_key_ingress_ppa_harness": {
+    "architecture": "one_buffer_serial",
+    "producers": 54,
+    "kv_head": 2
+  },
+  "report_links": {
+    "proposal_id": "prop_l1_attention_score32_exact_kv_key_ingress_ppa_v1",
+    "proposal_path": "docs/proposals/prop_l1_attention_score32_exact_kv_key_ingress_ppa_v1/proposal.json"
+  }
+}
