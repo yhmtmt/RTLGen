@@ -203,7 +203,7 @@ module tb;
           $finish(1);
         end
         if (producer_last[check_i] !==
-            (accepted[check_i] == count_mem[check_i] * 128 - 1)) begin
+            ((accepted[check_i] % 128) == 127)) begin
           $display("LAST_MISMATCH producer=%0d beat=%0d", check_i, accepted[check_i]);
           $finish(1);
         end

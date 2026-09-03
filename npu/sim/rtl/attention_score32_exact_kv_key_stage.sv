@@ -155,8 +155,7 @@ module attention_score32_exact_kv_key_stage #(
       assign producer_key[(producer*128) +: 128] =
         key_bank_read_data[(read_slot_w*128) +: 128];
       assign producer_last[producer] = pending_q[producer] &&
-        (command_beat_q[6:0] == 7'd127) &&
-        (command_beat_q[7] || !producer_has_extra(producer, fill_head_q));
+        (command_beat_q[6:0] == 7'd127);
     end
   endgenerate
 

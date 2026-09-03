@@ -181,9 +181,16 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
         "minimum_target_ii_cycles": 193,
     }
     assert report["one_buffer_transpose_reference"]["not_a_cluster_throughput_claim"] is True
+    assert "embodied 64-bank" in report["one_buffer_transpose_reference"]["key_output_role"]
     assert report["implementation_status"]["verified_counts"] == {
         "canonical_k_input_flits_per_head": 4096,
         "producer_output_beats_per_head": 8192,
     }
+    ownership = "\n".join(report["required_rtl_ownership"])
+    assert "future banked" not in ownership
+    assert "banked producer-local K staging store" not in ownership
+    assert "V transpose output" in ownership
+    assert "Compose the embodied V transposer" in report["next_gate"]
     assert report["revision_effect"]["frontier_recost_allowed"] is False
     assert "cannot be wired directly" in render_markdown(report)
+    assert "p53/p54 parallel readout is verified" in render_markdown(report)

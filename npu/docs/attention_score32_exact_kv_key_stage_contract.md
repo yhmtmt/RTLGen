@@ -20,6 +20,9 @@ On command acceptance, all producers receive block zero for 128 dimensions.
 Only the 10 p54 or 11 p53 group-specific extra producers continue through
 block one. Q is duplicated across both streams and broadcast identically to
 all active producers, as required for attention on one query token.
+`producer_last` marks dimension 127 of each 128-dimension block, including
+block zero for producers that continue into block one. The downstream score
+cluster uses this marker to retire each token block before accepting another.
 
 Each producer has a pending bit. A ready lane accepts its current beat once
 and clears its bit; the global dimension advances only after every active lane

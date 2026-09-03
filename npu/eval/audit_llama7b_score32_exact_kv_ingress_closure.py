@@ -242,7 +242,9 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "transfer_cycles_without_stall": key_transpose.transfer_cycles_without_stall,
                 "minimum_target_ii_cycles": key_transpose.minimum_target_ii_cycles,
             },
-            "key_output_role": "serial writes into a future banked producer-local K staging store",
+            "key_output_role": (
+                "serial writes into the embodied 64-bank producer-local K staging store"
+            ),
             "not_a_cluster_throughput_claim": True,
         },
         "implementation_status": {
@@ -270,12 +272,13 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "planar gather descriptor generation for partial resident token ranges",
             "locality-aware tile-to-cluster scheduler preserving balanced waves",
             "on-chip packet routing for remote resident K/V bytes",
-            "K/V tensor address decoder and partial-packet byte validity",
+            "capacity/HBM source descriptor to canonical K/V tensor-address ingress",
             "1KiB token-major-to-fill-row V transpose buffer and assembler",
-            "2KiB paired-stream K transpose buffer, producer-beat assembler, and p53/p54 slot distributor",
-            "banked producer-local K staging store with parallel p53/p54 readout",
-            "per-cluster fill target, double-buffer residency, and command release",
+            "V transpose output to exact cluster-SRAM fill composition",
+            "per-cluster V fill target, double-buffer residency, and command release",
             "backpressure from cluster SRAM and producers through ingress and mesh",
+            "overlapped or multi-lane K/V transpose buffering selected from measured PPA",
+            "characterized SRAM macro substitution for inferred K/Q and cluster stores",
         ],
         "revision_effect": {
             "shared_mesh_15769_cycle_result_role": "standalone_historical_traffic_capacity_bound_only",
@@ -287,8 +290,8 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             ),
         },
         "next_gate": (
-            "Implement and verify the canonical tensor-address decoder plus representative p54/p53 "
-            "K/V transpose assemblers before composing capacity-driven NoC/HBM source scheduling."
+            "Compose the embodied V transposer with exact cluster-SRAM fill, then implement the "
+            "capacity-driven resident/HBM gather scheduler and measure K/V buffering parallelism."
         ),
     }
 
@@ -318,7 +321,7 @@ def render_markdown(report: JsonDict) -> str:
         f"target II `{transpose['value']['minimum_target_ii_cycles']}`",
         f"- paired-stream K block: `{transpose['key']['transfer_cycles_without_stall']}` transfer cycles, "
         f"target II `{transpose['key']['minimum_target_ii_cycles']}`",
-        "- K output is a serial staging write; banked p53/p54 parallel readout remains open",
+        "- K output writes the embodied 64-bank store; p53/p54 parallel readout is verified",
         "",
         "## Required RTL Ownership",
         "",
