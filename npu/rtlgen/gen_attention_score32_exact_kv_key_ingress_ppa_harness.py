@@ -14,7 +14,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_KEY = "attention_score32_exact_kv_key_ingress_ppa_harness"
 MANIFEST_NAME = "attention_score32_exact_kv_key_ingress_ppa_harness_manifest.json"
 PROPOSAL_ID = "prop_l1_attention_score32_exact_kv_key_ingress_ppa_v1"
-ONE_BUFFER_SOURCE = REPO_ROOT / "npu/sim/rtl/attention_score32_exact_kv_ingress_transpose.sv"
+ONE_BUFFER_SOURCE = (
+    REPO_ROOT / "npu/sim/rtl/attention_score32_exact_kv_key_single_buffer_transpose.sv"
+)
 PINGPONG_SOURCE = (
     REPO_ROOT / "npu/sim/rtl/attention_score32_exact_kv_key_pingpong_transpose.sv"
 )
@@ -193,26 +195,13 @@ def _one_buffer_body() -> str:
   wire [15:0] output_metadata_w = {key_producer_w, key_kv_head_w,
     key_producer_block_w, key_dimension_w};
   wire run_complete_w = output_fire_w && output_count_q == 32'd8191;
-  wire unused_value_valid;
-  wire unused_value_stream;
-  wire [1:0] unused_value_kv_head;
-  wire [5:0] unused_value_block_slot;
-  wire [3:0] unused_value_slice;
-  wire [511:0] unused_value_data;
-  wire unused_value_last;
-
-  attention_score32_exact_kv_ingress_transpose #(.PRODUCERS(PRODUCERS)) dut (
+  attention_score32_exact_kv_key_single_buffer_transpose #(.PRODUCERS(PRODUCERS)) dut (
     .clk(clk), .rst_n(rst_n),
     .target_valid(target_pending_q), .target_ready(target_ready_w),
-    .target_is_key(1'b1), .target_kv_head(KV_HEAD), .target_stream(1'b0),
-    .target_block_slot(target_slot_q),
+    .target_kv_head(KV_HEAD), .target_block_slot(target_slot_q),
     .ingress_valid(ingress_valid_w), .ingress_ready(ingress_ready_w),
     .ingress_tile_byte_addr(ingress_address_w), .ingress_data(data_q),
     .ingress_byte_valid(32'hffff_ffff),
-    .value_valid(unused_value_valid), .value_ready(1'b0),
-    .value_stream(unused_value_stream), .value_kv_head(unused_value_kv_head),
-    .value_block_slot(unused_value_block_slot), .value_slice(unused_value_slice),
-    .value_data(unused_value_data), .value_last(unused_value_last),
     .key_valid(key_valid_w), .key_ready(running_q),
     .key_producer(key_producer_w), .key_kv_head(key_kv_head_w),
     .key_producer_block(key_producer_block_w), .key_dimension(key_dimension_w),

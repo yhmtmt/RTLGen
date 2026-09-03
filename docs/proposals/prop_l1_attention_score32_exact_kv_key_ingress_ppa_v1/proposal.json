@@ -63,7 +63,7 @@
   ],
   "source_refs": [
     "npu/docs/attention_score32_exact_kv_key_pingpong_contract.md",
-    "npu/sim/rtl/attention_score32_exact_kv_ingress_transpose.sv",
+    "npu/sim/rtl/attention_score32_exact_kv_key_single_buffer_transpose.sv",
     "npu/sim/rtl/attention_score32_exact_kv_key_pingpong_transpose.sv",
     "npu/rtlgen/gen_attention_score32_exact_kv_key_ingress_ppa_harness.py",
     "npu/eval/check_attention_score32_exact_kv_key_ingress_ppa_guard.py"

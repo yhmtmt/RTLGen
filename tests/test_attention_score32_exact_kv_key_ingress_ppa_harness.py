@@ -43,6 +43,11 @@ def test_harness_generation_is_manifested_and_lints(
     assert manifest["full_k_stage_macro_area_included"] is False
     assert manifest["narrow_io_harness_overhead_included"] is True
     assert manifest["top_pin_bits"] == 197
+    rtl = (out / "top.v").read_text(encoding="utf-8")
+    if architecture == "one_buffer_serial":
+        assert "module attention_score32_exact_kv_key_single_buffer_transpose" in rtl
+        assert "module attention_score32_exact_kv_ingress_transpose" not in rtl
+        assert "value_data" not in rtl
     if shutil.which("verilator") is not None:
         completed = subprocess.run(
             [

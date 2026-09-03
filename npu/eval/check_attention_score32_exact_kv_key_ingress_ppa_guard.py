@@ -92,7 +92,7 @@ def check(design_dir: Path) -> None:
     if architecture == "one_buffer_serial":
         required.extend(
             [
-                "module attention_score32_exact_kv_ingress_transpose",
+                "module attention_score32_exact_kv_key_single_buffer_transpose",
                 ".target_valid(target_pending_q)",
                 "output_count_q == 32'd8191",
             ]
