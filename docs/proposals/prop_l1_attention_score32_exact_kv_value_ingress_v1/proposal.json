@@ -1,0 +1,50 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_kv_value_ingress_v1",
+  "created_utc": "2026-09-03T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Compose canonical V ingress with exact cluster SRAM residency",
+  "hypothesis": "A target-owned V transposer can replace the synthetic fill plane with exact canonical addresses, double-buffer metadata, row-level backpressure, and verifiable SRAM readback.",
+  "direct_comparison": {
+    "primary_question": "Can every canonical V byte fill and be read from the existing exact cluster SRAM without an external synthetic row source?",
+    "include": [
+      "complete 128 KiB int8 V head tile",
+      "128 unique stream/block targets",
+      "4,096 canonical 256-bit input flits",
+      "2,048 exact 512-bit SRAM rows",
+      "real 16-bank double-buffer endpoint residency and readback",
+      "fill-target metadata and ready-valid backpressure"
+    ],
+    "exclude": [
+      "multiple transpose buffers and fill/drain overlap",
+      "capacity/HBM gather descriptor generation",
+      "shared-mesh source routing",
+      "characterized SRAM macros",
+      "HBM controller and PHY"
+    ]
+  },
+  "service_contract": {
+    "one_buffer_v_head_fill_cycles": 6271,
+    "canonical_input_flits_per_head": 4096,
+    "cluster_sram_rows_per_head": 2048,
+    "unique_blocks_per_head": 128
+  },
+  "required_evaluations": [],
+  "remaining_abstractions": [
+    "The endpoint arrays remain inferred storage rather than characterized SRAM macros.",
+    "One transpose buffer serializes fill and drain and is not the expected throughput frontier.",
+    "Capacity-resident and transient-HBM gather scheduling remain external.",
+    "Shared-mesh source routing and the external HBM controller/PHY remain external."
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_attention_score32_exact_kv_ingress_assembler_v1/proposal.json",
+    "docs/proposals/prop_l1_attention_score32_exact_kv_key_stage_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_kv_value_ingress_contract.md",
+    "npu/sim/rtl/attention_score32_exact_kv_value_ingress.sv",
+    "tests/test_attention_score32_exact_kv_value_ingress.py"
+  ]
+}

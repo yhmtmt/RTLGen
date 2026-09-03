@@ -23,13 +23,10 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 - locality-aware tile-to-cluster scheduler preserving balanced waves
 - on-chip packet routing for remote resident K/V bytes
 - capacity/HBM source descriptor to canonical K/V tensor-address ingress
-- 1KiB token-major-to-fill-row V transpose buffer and assembler
-- V transpose output to exact cluster-SRAM fill composition
-- per-cluster V fill target, double-buffer residency, and command release
 - backpressure from cluster SRAM and producers through ingress and mesh
 - overlapped or multi-lane K/V transpose buffering selected from measured PPA
 - characterized SRAM macro substitution for inferred K/Q and cluster stores
 
 ## Next Gate
 
-Compose the embodied V transposer with exact cluster-SRAM fill, then implement the capacity-driven resident/HBM gather scheduler and measure K/V buffering parallelism.
+Implement the capacity-driven resident/HBM gather scheduler and shared-mesh source routing, then measure K/V buffering parallelism and characterized SRAM substitution.

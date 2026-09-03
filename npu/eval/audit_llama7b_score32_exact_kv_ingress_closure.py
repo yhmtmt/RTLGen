@@ -254,13 +254,15 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "1KiB shared Q group store and duplicate-stream broadcast",
                 "per-lane p53/p54 producer pending-mask scheduler",
                 "canonical K flit through producer-output composition",
+                "canonical V flit through 16-bank double-buffer cluster-SRAM residency",
             ],
             "verified_counts": {
                 "canonical_k_input_flits_per_head": 4096,
                 "producer_output_beats_per_head": 8192,
+                "canonical_v_input_flits_per_head": 4096,
+                "cluster_sram_v_rows_per_head": 2048,
             },
             "remaining_before_frontier_recost": [
-                "V transpose to cluster fill and residency composition",
                 "capacity-resident and transient-HBM gather descriptor scheduler",
                 "multiple transpose buffers or proven fill-drain overlap",
                 "characterized SRAM macro substitution",
@@ -273,9 +275,6 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "locality-aware tile-to-cluster scheduler preserving balanced waves",
             "on-chip packet routing for remote resident K/V bytes",
             "capacity/HBM source descriptor to canonical K/V tensor-address ingress",
-            "1KiB token-major-to-fill-row V transpose buffer and assembler",
-            "V transpose output to exact cluster-SRAM fill composition",
-            "per-cluster V fill target, double-buffer residency, and command release",
             "backpressure from cluster SRAM and producers through ingress and mesh",
             "overlapped or multi-lane K/V transpose buffering selected from measured PPA",
             "characterized SRAM macro substitution for inferred K/Q and cluster stores",
@@ -285,13 +284,14 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "release_coupled_vc1_role": "exact_reduction_transport_timing_with_vc0_ingress_still_open",
             "frontier_recost_allowed": False,
             "reason": (
-                "Neither historical fractional VC0 bytes nor the external synthetic fill plane proves "
-                "the complete exact K/V data path consumed by the score32 clusters."
+                "Exact K and V endpoint paths are embodied separately, but capacity/HBM source "
+                "descriptors, shared-mesh composition, overlap selection, and physical memory "
+                "costs are not yet closed for the complete score32 cluster path."
             ),
         },
         "next_gate": (
-            "Compose the embodied V transposer with exact cluster-SRAM fill, then implement the "
-            "capacity-driven resident/HBM gather scheduler and measure K/V buffering parallelism."
+            "Implement the capacity-driven resident/HBM gather scheduler and shared-mesh source "
+            "routing, then measure K/V buffering parallelism and characterized SRAM substitution."
         ),
     }
 

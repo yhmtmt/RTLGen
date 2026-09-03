@@ -83,16 +83,18 @@
       "64-bank 128KiB K staging store",
       "1KiB shared Q group store and duplicate-stream broadcast",
       "per-lane p53/p54 producer pending-mask scheduler",
-      "canonical K flit through producer-output composition"
+      "canonical K flit through producer-output composition",
+      "canonical V flit through 16-bank double-buffer cluster-SRAM residency"
     ],
     "remaining_before_frontier_recost": [
-      "V transpose to cluster fill and residency composition",
       "capacity-resident and transient-HBM gather descriptor scheduler",
       "multiple transpose buffers or proven fill-drain overlap",
       "characterized SRAM macro substitution"
     ],
     "verified_counts": {
       "canonical_k_input_flits_per_head": 4096,
+      "canonical_v_input_flits_per_head": 4096,
+      "cluster_sram_v_rows_per_head": 2048,
       "producer_output_beats_per_head": 8192
     }
   },
@@ -109,7 +111,7 @@
     "tiles": 128
   },
   "model": "llama7b_score32_exact_kv_ingress_closure_audit_v1",
-  "next_gate": "Compose the embodied V transposer with exact cluster-SRAM fill, then implement the capacity-driven resident/HBM gather scheduler and measure K/V buffering parallelism.",
+  "next_gate": "Implement the capacity-driven resident/HBM gather scheduler and shared-mesh source routing, then measure K/V buffering parallelism and characterized SRAM substitution.",
   "one_buffer_transpose_reference": {
     "key": {
       "input_flits": 64,
@@ -155,27 +157,24 @@
     "locality-aware tile-to-cluster scheduler preserving balanced waves",
     "on-chip packet routing for remote resident K/V bytes",
     "capacity/HBM source descriptor to canonical K/V tensor-address ingress",
-    "1KiB token-major-to-fill-row V transpose buffer and assembler",
-    "V transpose output to exact cluster-SRAM fill composition",
-    "per-cluster V fill target, double-buffer residency, and command release",
     "backpressure from cluster SRAM and producers through ingress and mesh",
     "overlapped or multi-lane K/V transpose buffering selected from measured PPA",
     "characterized SRAM macro substitution for inferred K/Q and cluster stores"
   ],
   "revision_effect": {
     "frontier_recost_allowed": false,
-    "reason": "Neither historical fractional VC0 bytes nor the external synthetic fill plane proves the complete exact K/V data path consumed by the score32 clusters.",
+    "reason": "Exact K and V endpoint paths are embodied separately, but capacity/HBM source descriptors, shared-mesh composition, overlap selection, and physical memory costs are not yet closed for the complete score32 cluster path.",
     "release_coupled_vc1_role": "exact_reduction_transport_timing_with_vc0_ingress_still_open",
     "shared_mesh_15769_cycle_result_role": "standalone_historical_traffic_capacity_bound_only"
   },
   "source_refs": [
     {
       "path": "npu/eval/audit_llama7b_score32_exact_kv_ingress_closure.py",
-      "sha256": "4b9a25cede6da491401482fd3e3848d742266fa647b9c1539a1109da64b43f3d"
+      "sha256": "f6ffd49f26e901fd6a0ee7e8bf37fcc0b24a45578ad4773ded14df8fc6814397"
     },
     {
       "path": "npu/sim/perf/attention_kv_tile_layout.py",
-      "sha256": "6d11ad0e57d413f3a4d38905f9b1201459ecf9711da17d31f34e93ba1a0d4337"
+      "sha256": "2a66408f78e713454a0a3d172aac4beb7321359aa0a279b9a7f2b252cb19b3da"
     },
     {
       "path": "npu/sim/rtl/attention_score32_exact_kv_ingress_transpose.sv",
@@ -188,6 +187,18 @@
     {
       "path": "npu/sim/rtl/attention_score32_exact_kv_key_ingress.sv",
       "sha256": "bb96a14a2c33c928e0cc126d0d43b0923315e1eacdd6301245832513f9e3a971"
+    },
+    {
+      "path": "npu/sim/rtl/attention_score32_exact_kv_value_ingress.sv",
+      "sha256": "7cd541636ce18f12d55f0b18274f6462a50fd9daf8e7f1904b366aa553ec4ed7"
+    },
+    {
+      "path": "npu/rtlgen/gen_attention_score32_exact_cluster_sram_service_gqa8.py",
+      "sha256": "c581e37b87cad04ba8b81ae6c874641fbcec02316f4d7ca82eeed480cc91d48d"
+    },
+    {
+      "path": "tests/test_attention_score32_exact_kv_value_ingress.py",
+      "sha256": "210229f25776e46d7ec968b612e217d9ae393a9b22fe811047a71198e9a1c9d2"
     },
     {
       "path": "npu/eval/model_llama7b_shared_sram_residency.py",

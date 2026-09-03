@@ -621,6 +621,12 @@ run the already queued exp-LUT branch:
     functional reference. Its single transpose buffer costs 12,351 cycles per
     K head tile before the 256-cycle producer input phase; do not promote that
     conservative serialization as the throughput frontier.
+    The V path now composes canonical planar flits into the real 16-bank,
+    double-buffer cluster SRAM endpoint. A complete 128 KiB V head fills all
+    2,048 unique rows and reads back through the endpoint service; its
+    one-buffer no-stall bound is 6,271 cycles. This closes the synthetic V-fill
+    plane functionally but not the capacity/HBM descriptor source or optimal
+    fill/drain overlap.
 22. Compose the ingress block with capacity-driven resident descriptors,
     transient HBM-return source selection, shared-mesh routing, cluster
     double-buffer residency, and producer release. Measure representative

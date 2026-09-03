@@ -185,12 +185,15 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     assert report["implementation_status"]["verified_counts"] == {
         "canonical_k_input_flits_per_head": 4096,
         "producer_output_beats_per_head": 8192,
+        "canonical_v_input_flits_per_head": 4096,
+        "cluster_sram_v_rows_per_head": 2048,
     }
     ownership = "\n".join(report["required_rtl_ownership"])
     assert "future banked" not in ownership
     assert "banked producer-local K staging store" not in ownership
-    assert "V transpose output" in ownership
-    assert "Compose the embodied V transposer" in report["next_gate"]
+    assert "V transpose output" not in ownership
+    assert "1KiB token-major-to-fill-row V transpose buffer" not in ownership
+    assert "capacity-driven resident/HBM gather scheduler" in report["next_gate"]
     assert report["revision_effect"]["frontier_recost_allowed"] is False
     assert "cannot be wired directly" in render_markdown(report)
     assert "p53/p54 parallel readout is verified" in render_markdown(report)
