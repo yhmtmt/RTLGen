@@ -2,11 +2,14 @@
   "canonical_layout": {
     "key_mapping": "block_slot=(token%512)//8; invert the corrected per-group p53/p54 slot bases; for each dimension, the 128-bit beat packs eight stream-0 and eight stream-1 token bytes",
     "key_reorder_requirement": "pair one 1024-byte block from each stream and transpose the 16 by 128 byte matrix into 128 producer beats",
+    "resident_range_mapping": "a full 1024-token tile is contiguous; a 128-token tail requires eight strided 16KiB gather spans, one from each K/V head plane",
     "tile_byte_order": "K[kv_head][token][dimension] then V[kv_head][token][dimension]",
     "value_fill_mapping": "stream=token//512; block_slot=(token%512)//8; slice=dimension//8; byte=(token%8)*8+(dimension%8)",
     "value_reorder_requirement": "one 1024-byte token-major block maps to sixteen 64-byte fill rows; a sequential 256-bit flit contributes to four rows, so two consecutive flits do not form one row"
   },
   "capacity_driven_residency": {
+    "exact_planar_gather_segments_per_layer": 10,
+    "full_tile_contiguous_segments": 1,
     "placement_options": {
       "locality_aware_owner_compute": {
         "does_not_include": "transient HBM-return transport",
@@ -24,6 +27,17 @@
     "resident_share_of_layer_kv": 0.0166015625,
     "scope": "resident_cache_bytes_only; transient HBM-return routing is excluded and remains an on-chip ingress obligation",
     "shared_capacity_bytes": 71303168,
+    "tail_128_token_contiguous_segments": 8,
+    "tail_segment_bytes": [
+      16384,
+      16384,
+      16384,
+      16384,
+      16384,
+      16384,
+      16384,
+      16384
+    ],
     "total_hbm_read_bytes_per_layer": 134217728,
     "transient_refill_bytes_per_layer": 2228224,
     "unresident_hbm_return_bytes_per_layer": 131989504,
@@ -82,6 +96,7 @@
     "consecutive_flits_form_one_value_fill_row": false,
     "current_max_context_bytes": 17408,
     "current_max_packets_per_context": 68,
+    "historical_single_base_plus_offset_cannot_represent_partial_planar_range": true,
     "key_paired_stream_transpose_extent_bytes": 2048,
     "missing_metadata": [
       "tensor_kind_k_or_v",
@@ -100,6 +115,7 @@
   "required_rtl_ownership": [
     "external HBM-return ready/valid ingress boundary, excluding controller and PHY",
     "capacity-driven resident-range descriptor and source selection",
+    "planar gather descriptor generation for partial resident token ranges",
     "locality-aware tile-to-cluster scheduler preserving balanced waves",
     "on-chip packet routing for remote resident K/V bytes",
     "K/V tensor address decoder and partial-packet byte validity",
@@ -117,11 +133,11 @@
   "source_refs": [
     {
       "path": "npu/eval/audit_llama7b_score32_exact_kv_ingress_closure.py",
-      "sha256": "12185d5455efc7cef89b33d4aced2f13cd20dea24772fac622c3f4c5b4029f36"
+      "sha256": "543f78aa669fd04c7d9c7acbeb4101da57985e59e88ac45df2410a0071ad4097"
     },
     {
       "path": "npu/sim/perf/attention_kv_tile_layout.py",
-      "sha256": "830a50e783c0ae5f43640540a67988add775e033a2fc81cc71cd39c5bd683c93"
+      "sha256": "05f491d4daf156ac9a8f001b6b191577479c7091c673c844d842f09719962cf5"
     },
     {
       "path": "npu/eval/model_llama7b_shared_sram_residency.py",

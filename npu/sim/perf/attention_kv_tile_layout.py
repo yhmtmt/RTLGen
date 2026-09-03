@@ -55,6 +55,12 @@ class KeyProducerLocation:
     byte_in_128bit_beat: int
 
 
+@dataclass(frozen=True)
+class KvRangeSegment:
+    base_address: int
+    payload_bytes: int
+
+
 def _bounded(value: int, *, limit: int, label: str) -> int:
     result = int(value)
     if result not in range(limit):
@@ -91,6 +97,42 @@ def decode_kv_byte_address(address: int) -> KvCoordinate:
         token=token,
         dimension=dimension,
     )
+
+
+def kv_token_range_segments(*, token_start: int, token_count: int) -> tuple[KvRangeSegment, ...]:
+    """Return minimal contiguous spans for a token range in the planar tile layout."""
+
+    start = _bounded(token_start, limit=TILE_TOKENS, label="token_start")
+    count = int(token_count)
+    if count <= 0 or start + count > TILE_TOKENS:
+        raise ValueError("token_count must be positive and remain inside the tile")
+    plane_bytes = count * HEAD_DIM
+    spans = [
+        KvRangeSegment(
+            base_address=encode_kv_byte_address(
+                tensor=tensor,
+                kv_head=kv_head,
+                token=start,
+                dimension=0,
+            ),
+            payload_bytes=plane_bytes,
+        )
+        for tensor in ("k", "v")
+        for kv_head in range(KV_HEADS)
+    ]
+    merged: list[KvRangeSegment] = []
+    for span in spans:
+        if merged and merged[-1].base_address + merged[-1].payload_bytes == span.base_address:
+            previous = merged[-1]
+            merged[-1] = KvRangeSegment(
+                base_address=previous.base_address,
+                payload_bytes=previous.payload_bytes + span.payload_bytes,
+            )
+        else:
+            merged.append(span)
+    if sum(span.payload_bytes for span in merged) != count * 2 * KV_HEADS * HEAD_DIM:
+        raise AssertionError("K/V token-range byte conservation failed")
+    return tuple(merged)
 
 
 def value_fill_location(*, token: int, dimension: int) -> ValueFillLocation:
@@ -173,6 +215,7 @@ __all__ = [
     "HEAD_DIM",
     "KV_HEADS",
     "KeyProducerLocation",
+    "KvRangeSegment",
     "KvCoordinate",
     "TILE_TOKENS",
     "ValueFillLocation",
@@ -180,5 +223,6 @@ __all__ = [
     "decode_value_fill_byte",
     "encode_kv_byte_address",
     "key_producer_location",
+    "kv_token_range_segments",
     "value_fill_location",
 ]

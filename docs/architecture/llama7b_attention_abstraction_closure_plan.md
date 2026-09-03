@@ -315,6 +315,10 @@ evidence gaps:
   layer stream is 128 MiB: 64 MiB K and 64 MiB V. Locality-aware placement can
   eliminate remote transport only for resident-cache hits; it does not remove
   transient HBM-return traffic.
+  Under the retained planar K/V layout, each layer's capacity allocation is
+  two complete contiguous 1 MiB tiles plus a 128-token tail. The tail is not a
+  contiguous 128 KiB range: it requires eight strided 16 KiB gathers, one per
+  K/V head plane. The exact ingress scheduler must emit those descriptors.
 - HBM/DRAM controller RTL and vendor current signoff remain outside the RTLGen
   chip boundary. They stay as source-backed service and energy envelopes, not
   as free components and not as claims of RTL closure.
@@ -603,7 +607,8 @@ run the already queued exp-LUT branch:
     Preserve separate VC0 and VC1 completion and do not interpret the result
     as complete dataflow closure.
 21. Implement `prop_l1_attention_score32_exact_kv_ingress_assembler_v1` from
-    the canonical K/V layout. Require a checked address decoder, partial-byte
+    the canonical K/V layout. Require a checked address decoder, planar gather
+    descriptors for partial resident ranges, partial-byte
     validity, a 1 KiB token-major-to-fill-row V transpose buffer, and a 2 KiB
     paired-stream p53/p54 K transpose buffer. A sequential 256-bit V flit
     contributes to four different fill rows, so payload-width equality cannot

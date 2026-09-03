@@ -27,6 +27,7 @@ from npu.sim.perf.attention_kv_tile_layout import (
     HEAD_DIM,
     KV_HEADS,
     TILE_TOKENS,
+    kv_token_range_segments,
 )
 
 
@@ -87,6 +88,8 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
         raise AssertionError("exact K/V and cluster V-fill byte conservation failed")
     if remote_bytes + local_bytes != resident_per_layer:
         raise AssertionError("historical fractional bytes must equal the capacity share per layer")
+    full_tile_segments = kv_token_range_segments(token_start=0, token_count=TILE_TOKENS)
+    tail_segments = kv_token_range_segments(token_start=0, token_count=128)
 
     whole_contexts = residency["residency"]["context_payload_distribution"]
     return {
@@ -127,6 +130,12 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "resident_bytes_per_layer": resident_per_layer,
             "resident_share_of_layer_kv": resident_per_layer / layer_kv_bytes,
             "whole_context_payload_distribution_all_layers": whole_contexts,
+            "exact_planar_gather_segments_per_layer": (
+                2 * len(full_tile_segments) + len(tail_segments)
+            ),
+            "full_tile_contiguous_segments": len(full_tile_segments),
+            "tail_128_token_contiguous_segments": len(tail_segments),
+            "tail_segment_bytes": [segment.payload_bytes for segment in tail_segments],
             "unresident_hbm_return_bytes_per_layer": layer_kv_bytes - resident_per_layer,
             "transient_refill_bytes_per_layer": resident_per_layer,
             "total_hbm_read_bytes_per_layer": layer_kv_bytes,
@@ -189,9 +198,14 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "dimension",
                 "valid_payload_bytes_for_partial_context",
             ],
+            "historical_single_base_plus_offset_cannot_represent_partial_planar_range": True,
         },
         "canonical_layout": {
             "tile_byte_order": "K[kv_head][token][dimension] then V[kv_head][token][dimension]",
+            "resident_range_mapping": (
+                "a full 1024-token tile is contiguous; a 128-token tail requires eight "
+                "strided 16KiB gather spans, one from each K/V head plane"
+            ),
             "value_fill_mapping": (
                 "stream=token//512; block_slot=(token%512)//8; "
                 "slice=dimension//8; byte=(token%8)*8+(dimension%8)"
@@ -214,6 +228,7 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
         "required_rtl_ownership": [
             "external HBM-return ready/valid ingress boundary, excluding controller and PHY",
             "capacity-driven resident-range descriptor and source selection",
+            "planar gather descriptor generation for partial resident token ranges",
             "locality-aware tile-to-cluster scheduler preserving balanced waves",
             "on-chip packet routing for remote resident K/V bytes",
             "K/V tensor address decoder and partial-packet byte validity",

@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/npu-eval-tests.yml"
       - "npu/eval/**"
+      - "npu/sim/perf/**"
       - "runs/campaigns/npu/e2e_eval_v0/**"
       - "tests/test_eval_campaign_tools.py"
       - "tests/test_run_campaign_mapper_notes.py"
@@ -13,6 +14,7 @@ on:
     paths:
       - ".github/workflows/npu-eval-tests.yml"
       - "npu/eval/**"
+      - "npu/sim/perf/**"
       - "runs/campaigns/npu/e2e_eval_v0/**"
       - "tests/test_eval_campaign_tools.py"
       - "tests/test_run_campaign_mapper_notes.py"

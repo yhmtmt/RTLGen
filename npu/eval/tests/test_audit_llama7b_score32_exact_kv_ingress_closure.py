@@ -14,6 +14,7 @@ from npu.sim.perf.attention_kv_tile_layout import (
     decode_value_fill_byte,
     encode_kv_byte_address,
     key_producer_location,
+    kv_token_range_segments,
     value_fill_location,
 )
 
@@ -48,6 +49,21 @@ def test_kv_byte_layout_round_trips_boundaries() -> None:
     assert encode_kv_byte_address(
         tensor="v", kv_head=3, token=1023, dimension=127
     ) == BYTES_PER_KV_TILE - 1
+
+
+def test_planar_resident_range_requires_eight_tail_gathers() -> None:
+    full = kv_token_range_segments(token_start=0, token_count=1024)
+    assert [(segment.base_address, segment.payload_bytes) for segment in full] == [
+        (0, BYTES_PER_KV_TILE)
+    ]
+
+    tail = kv_token_range_segments(token_start=0, token_count=128)
+    assert len(tail) == 8
+    assert {segment.payload_bytes for segment in tail} == {16 * 1024}
+    assert [segment.base_address for segment in tail] == [
+        plane * 128 * 1024 for plane in range(8)
+    ]
+    assert sum(segment.payload_bytes for segment in tail) == 128 * 1024
 
 
 def test_value_fill_mapping_is_bijective_over_a_head_tile() -> None:
@@ -135,6 +151,8 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     assert report["cluster_consumption"]["total_value_fill_bytes"] == 64 * 1024 * 1024
     assert report["cluster_consumption"]["key_stream_bytes"] == 64 * 1024 * 1024
     assert report["capacity_driven_residency"]["resident_bytes_per_layer"] == 2_228_224
+    assert report["capacity_driven_residency"]["exact_planar_gather_segments_per_layer"] == 10
+    assert report["capacity_driven_residency"]["tail_128_token_contiguous_segments"] == 8
     assert report["capacity_driven_residency"]["unresident_hbm_return_bytes_per_layer"] == 131_989_504
     placements = report["capacity_driven_residency"]["placement_options"]
     assert placements["remote_balanced_contiguous"]["remote_transport_bytes_per_layer"] == 2_228_224

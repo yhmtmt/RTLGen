@@ -13,6 +13,7 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 
 - external HBM-return ready/valid ingress boundary, excluding controller and PHY
 - capacity-driven resident-range descriptor and source selection
+- planar gather descriptor generation for partial resident token ranges
 - locality-aware tile-to-cluster scheduler preserving balanced waves
 - on-chip packet routing for remote resident K/V bytes
 - K/V tensor address decoder and partial-packet byte validity
