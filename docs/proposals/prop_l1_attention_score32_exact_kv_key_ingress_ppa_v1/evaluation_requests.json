@@ -18,6 +18,7 @@
       ],
       "sweep_path": "runs/campaigns/npu/attention_score32_exact_kv_key_ingress_ppa_v1/sweeps/nangate45.json",
       "out_root": "runs/designs/npu_blocks",
+      "required_complete_ppa_rows": 6,
       "expected_outputs": [
         "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_onebuf_p53_g3/metrics.csv",
         "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_onebuf_p53_g3/timing_debug_report.md",

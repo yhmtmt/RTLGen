@@ -52,7 +52,8 @@
         "runs/designs/npu_blocks/attention_score32_exact_kv_key_ingress_pingpong_p54_g2/config.json"
       ],
       "sweep_path": "runs/campaigns/npu/attention_score32_exact_kv_key_ingress_ppa_v1/sweeps/nangate45.json",
-      "out_root": "runs/designs/npu_blocks"
+      "out_root": "runs/designs/npu_blocks",
+      "required_complete_ppa_rows": 6
     }
   ],
   "remaining_abstractions": [
