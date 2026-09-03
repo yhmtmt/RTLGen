@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/npu-eval-tests.yml"
       - "npu/eval/**"
+      - "npu/sim/perf/**"
       - "runs/campaigns/npu/e2e_eval_v0/**"
       - "tests/test_eval_campaign_tools.py"
       - "tests/test_run_campaign_mapper_notes.py"
@@ -13,6 +14,7 @@ on:
     paths:
       - ".github/workflows/npu-eval-tests.yml"
       - "npu/eval/**"
+      - "npu/sim/perf/**"
       - "runs/campaigns/npu/e2e_eval_v0/**"
       - "tests/test_eval_campaign_tools.py"
       - "tests/test_run_campaign_mapper_notes.py"
@@ -46,4 +48,5 @@ jobs:
             npu/eval/tests/test_audit_attention_score32_exact_shared_root_storage_physical_frontier.py \
             npu/eval/tests/test_probe_llama7b_score32_exact_cluster_release_cadence.py \
             npu/eval/tests/test_prepare_llama7b_score32_exact_shared_mesh_release_replay.py \
-            npu/eval/tests/test_run_llama7b_score32_exact_shared_mesh_release_replay.py
+            npu/eval/tests/test_run_llama7b_score32_exact_shared_mesh_release_replay.py \
+            npu/eval/tests/test_audit_llama7b_score32_exact_kv_ingress_closure.py

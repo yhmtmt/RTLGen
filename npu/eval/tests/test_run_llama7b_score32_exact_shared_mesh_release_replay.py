@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -58,3 +60,22 @@ def test_result_rejects_missing_or_inconsistent_pass_summary(tmp_path: Path) -> 
     inconsistent = PASS_LINE.replace("release_coupled_cycles=17000", "release_coupled_cycles=16999")
     with pytest.raises(ValueError, match="later producer"):
         build_result(replay=replay, cadence_path=cadence_path, pytest_stdout=inconsistent)
+
+
+@pytest.mark.parametrize(
+    "script",
+    [
+        "npu/eval/probe_llama7b_score32_exact_cluster_release_cadence.py",
+        "npu/eval/run_llama7b_score32_exact_shared_mesh_release_replay.py",
+        "npu/eval/audit_llama7b_score32_exact_kv_ingress_closure.py",
+    ],
+)
+def test_executable_entrypoint_imports_from_repo_root(script: str) -> None:
+    completed = subprocess.run(
+        [sys.executable, script, "--help"],
+        cwd=Path(__file__).resolve().parents[3],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert completed.returncode == 0, completed.stderr

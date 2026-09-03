@@ -9,8 +9,13 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import sys
 import tempfile
 from typing import Any
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from npu.eval import probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 as probe
 from npu.eval.check_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_guard import (
@@ -29,7 +34,6 @@ from npu.rtlgen.gen_attention_score32_exact_local16_global_tree_cluster_sram_gqa
 
 
 JsonDict = dict[str, Any]
-REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = REPO_ROOT / Path(
     "runs/designs/npu_blocks/"
     "attention_score32_exact_local16_global_tree_cluster_sram_gqa8_p54x8_p53x8_c16_r2_l8_b59/"
