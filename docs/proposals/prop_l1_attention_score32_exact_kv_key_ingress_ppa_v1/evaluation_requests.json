@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_attention_score32_exact_kv_key_ingress_ppa_v1",
-  "source_commit": "3cd4938ff722b6adffcd9f825c99c6365f620284",
-  "source_commit_note": "Pin the remote evaluation to merged PR #1844, which contains the K-only serial baseline, ping-pong candidate, harness generator, semantic guard, configs, sweep, proposal linkage, and task-generator support.",
+  "source_commit": "TBD",
+  "source_commit_note": "Two-stage bootstrap: merge this six-row request contract, then replace TBD with that merge commit and generate from an exact clean checkout of it with proposal-file updates disabled. The resulting source contains the K-only serial baseline, ping-pong candidate, harness generator, semantic guard, configs, sweep, proposal linkage, task-generator support, and this request contract.",
   "requested_items": [
     {
       "item_id": "l1_attention_score32_exact_kv_key_ingress_ppa_v1",
