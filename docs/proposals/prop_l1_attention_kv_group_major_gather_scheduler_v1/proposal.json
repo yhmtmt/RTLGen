@@ -19,15 +19,15 @@
     ]
   },
   "service_contract": {
-    "order": "layer_head_group_wave_k_then_v_then_tile",
+    "order": "layer_head_group_wave_block_paired_k_then_v",
     "head_groups": 4,
     "waves_per_group": 8,
     "tiles_per_wave": 16,
-    "descriptors_per_layer": 1042,
-    "full_model_descriptors": 33344,
+    "descriptors_per_layer": 1546,
+    "full_model_descriptors": 49472,
     "counter_bits": 16,
     "per_source_descriptor_counter_bits": 14,
-    "hbm_corner_descriptors_each": 8192,
+    "hbm_corner_descriptors_each": 11696,
     "ordinary_plane_bytes": 131072,
     "partial_tile_resident_prefix_bytes": 16384,
     "partial_tile_hbm_suffix_bytes": 114688

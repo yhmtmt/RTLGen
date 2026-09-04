@@ -14,7 +14,8 @@
       "source, destination, canonical address, tensor-plane, and placement metadata",
       "4,096-packet full-tile terminal boundary",
       "same-cycle descriptor replacement after the final accepted packet",
-      "full Llama7B analytical packet-count conservation"
+      "full Llama7B analytical packet-count conservation",
+      "block-paired stream permutation for full K planes"
     ],
     "exclude": [
       "multi-source packet dispatch",
@@ -28,7 +29,7 @@
     "packet_bytes": 256,
     "flits_per_packet": 8,
     "maximum_packets_per_span": 4096,
-    "full_model_span_count": 33344,
+    "full_model_span_count": 49472,
     "full_model_packet_count": 17055744,
     "full_model_hbm_source_packet_count": 16777216,
     "full_model_canonical_consume_packet_count": 16777216,

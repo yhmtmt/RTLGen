@@ -16,25 +16,32 @@ separate policy and is not selected by this RTL.
 
 ## Descriptor Sequence
 
-Each layer emits 1,042 descriptors in two ordered phases:
+Each layer emits 1,546 descriptors in two ordered phases:
 
 - 10 refill descriptors: two contiguous 1 MiB tiles and eight 16 KiB planar
   spans for the 128-token tail;
-- 1,032 consume descriptors ordered by head group, wave, K/V plane, then tile.
-  Every ordinary plane uses one 128 KiB descriptor; each of tile 2's eight
-  planes uses a 16 KiB resident prefix followed by a 112 KiB HBM suffix.
+- 1,536 consume descriptors ordered by head group, wave, K then V, and tile.
+  Every ordinary K plane uses one 128 KiB descriptor whose packetizer emits
+  block-paired streams. Tile 2 instead uses 128 ordered 1 KiB K descriptors
+  because its resident/HBM boundary separates the two streams. Every ordinary
+  V plane uses one 128 KiB descriptor; tile 2's V planes use a 16 KiB resident
+  prefix followed by a 112 KiB HBM suffix.
 
 For each of four GQA head groups, waves 0 through 7 deliver one K plane and one
 V plane to each of the 16 destination clusters. This matches the embodied
 cluster-SRAM command cadence and its one-`{head_base,wave}`-per-buffer
-residency contract. The 32-layer schedule therefore contains 33,344
+residency contract plus the K transposer's paired-stream block contract. The
+32-layer schedule therefore contains 49,472
 descriptors. `last` is set only on the final V descriptor of group 3, wave 7.
 
 The superseded 153-descriptor tile-major order had correct aggregate byte
 counts but could not drive the cluster SRAM: after `V0,wave0`, it requested
 `V1,wave0` in the same buffer while the compute hierarchy required
 `V0,wave1`. It remains historical traffic accounting, not executable
-scheduling evidence.
+scheduling evidence. The later plane-contiguous group-major order also had
+correct traffic quantities, but its stream-major K packets could not complete
+the embodied paired-stream K transposer; it is superseded by block-paired K
+delivery.
 
 Every descriptor identifies the layer, tile, tile-local segment, operation,
 source kind and endpoint, destination cluster, K/V plane, canonical tile
@@ -57,13 +64,13 @@ Per layer, the scheduler accounts for:
 - 134,217,728 canonical consume bytes.
 
 The Python model checks these conservation identities. The RTL test compares
-all 33,344 emitted descriptors against the model under backpressure and checks
+all 49,472 emitted descriptors against the model under backpressure and checks
 that stalled descriptors remain stable.
 
 ## Remaining Boundary
 
-Packetization, shared-mesh routing, payload movement, and per-destination
-descriptor ordering are composed. Ordered canonical ejection still requires
-automatic target/control adaptation into the exact K/V transposers. V
-fill/drain overlap and characterized SRAM substitution remain open. The
-external HBM controller and PHY are intentionally outside the design boundary.
+Packetization, shared-mesh routing, payload movement, per-destination
+descriptor ordering, and automatic per-cluster K/V target control are
+composed. V fill/drain overlap and characterized SRAM substitution remain
+open. The external HBM controller and PHY are intentionally outside the design
+boundary.

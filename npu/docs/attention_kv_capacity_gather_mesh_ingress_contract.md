@@ -67,9 +67,9 @@ Icarus CI budget, so it is not used as a routine regression.
 
 ## Remaining Boundary
 
-Canonical ejection now reaches an ordered per-cluster ready/valid flit port.
-The next RTL must derive K/V head and V block/fill targets and connect those
-ports to the existing exact K ping-pong and V cluster-SRAM ingress modules.
-V fill/drain overlap and characterized SRAM macros remain architecture
-dimensions. The external HBM controller and PHY remain intentionally outside
-the design boundary.
+Canonical ejection now reaches address-derived per-cluster K/V targets and the
+existing exact K ping-pong and V cluster-SRAM ingress modules. The remaining
+structural gate is composing all 16 paths and their command barrier into the
+generated score hierarchy. V fill/drain overlap and characterized SRAM macros
+remain architecture dimensions. The external HBM controller and PHY remain
+intentionally outside the design boundary.

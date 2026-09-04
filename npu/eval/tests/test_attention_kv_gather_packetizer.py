@@ -18,7 +18,7 @@ def test_representative_span_packet_boundaries() -> None:
     hbm_tail = next(
         row
         for row in rows
-        if row.operation == "consume" and row.tile == 2 and row.plane == 0 and row.source == "hbm"
+        if row.operation == "consume" and row.tile == 2 and row.plane == 4 and row.source == "hbm"
     )
     for descriptor, expected_count in ((rows[0], 4096), (rows[2], 64), (hbm_tail, 448)):
         packets = packet_commands(descriptor)
@@ -39,6 +39,45 @@ def test_representative_span_packet_boundaries() -> None:
         assert all(packet.tag == (packet.packet_index & 0xFF) for packet in packets)
 
 
+def test_full_key_plane_packets_pair_streams_by_block() -> None:
+    descriptor = next(
+        row
+        for row in layer_descriptors(0)
+        if row.operation == "consume" and row.tile == 0 and row.plane == 0
+    )
+    packets = packet_commands(descriptor)
+    assert [packet.canonical_byte_address for packet in packets[:12]] == [
+        *range(0, 1024, 256),
+        *range(64 * 1024, 64 * 1024 + 1024, 256),
+        *range(1024, 2048, 256),
+    ]
+    assert sorted(packet.canonical_byte_address for packet in packets) == list(
+        range(0, 128 * 1024, 256)
+    )
+
+
+def test_each_cluster_key_wave_expands_to_transposer_flit_order() -> None:
+    key_rows = [
+        row
+        for row in layer_descriptors(0)
+        if row.operation == "consume" and row.plane == 0
+    ]
+    for tile in range(16):
+        addresses = [
+            packet.canonical_byte_address + flit * 32
+            for row in key_rows
+            if row.tile == tile
+            for packet in packet_commands(row)
+            for flit in range(FLITS_PER_PACKET)
+        ]
+        assert addresses == [
+            stream * 64 * 1024 + block * 1024 + flit * 32
+            for block in range(64)
+            for stream in range(2)
+            for flit in range(32)
+        ]
+
+
 def test_schedule_last_only_marks_last_packet() -> None:
     descriptor = replace(layer_descriptors(0)[2], last=True)
     packets = packet_commands(descriptor)
@@ -48,7 +87,7 @@ def test_schedule_last_only_marks_last_packet() -> None:
 
 def test_full_schedule_packet_accounting() -> None:
     assert full_schedule_packet_summary() == {
-        "descriptor_count": 33344,
+        "descriptor_count": 49472,
         "packet_count": 17_055_744,
         "hbm_source_packet_count": 16_777_216,
         "canonical_consume_packet_count": 16_777_216,
