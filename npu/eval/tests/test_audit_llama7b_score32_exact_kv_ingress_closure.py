@@ -163,10 +163,21 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     )
     gather = report["capacity_hbm_gather_scheduler"]
     assert gather["persistence_mode"] == "transient"
-    assert gather["descriptors_per_layer"] == 153
+    assert gather["descriptors_per_layer"] == 1042
     assert gather["refill_descriptors_per_layer"] == 10
-    assert gather["consume_descriptors_per_layer"] == 143
-    assert gather["full_model_descriptors"] == 4896
+    assert gather["consume_descriptors_per_layer"] == 1032
+    assert gather["full_model_descriptors"] == 33344
+    assert gather["consume_order"] == "head_group_then_wave_then_k_v_then_tile"
+    assert gather["head_groups"] == 4
+    assert gather["waves_per_head_group"] == 8
+    assert gather["tiles_per_wave"] == 16
+    assert gather["superseded_tile_major_descriptor_count"] == 4896
+    assert gather["superseded_tile_major_role"] == "byte_accounting_only_buffer_incompatible"
+    assert gather["maximum_descriptors_per_source"] == 8192
+    assert gather["per_source_descriptor_counter_bits"] == 14
+    assert gather["descriptors_by_source"] == {
+        source: 8192 if source in {0, 3, 12, 15} else 48 for source in range(16)
+    }
     assert gather["resident_refill_bytes_per_layer"] == 2_228_224
     assert gather["resident_consume_bytes_per_layer"] == 2_228_224
     assert gather["direct_hbm_consume_bytes_per_layer"] == 131_989_504
@@ -178,7 +189,7 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     assert gather["packet_expansion"] == {
         "packet_bytes": 256,
         "flits_per_packet": 8,
-        "descriptor_count": 4896,
+        "descriptor_count": 33344,
         "packet_count": 17_055_744,
         "hbm_source_packet_count": 16_777_216,
         "canonical_consume_packet_count": 16_777_216,
@@ -245,8 +256,8 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
         "consecutive_pingpong_k_input_flits": 4096,
         "canonical_v_input_flits_per_head": 4096,
         "cluster_sram_v_rows_per_head": 2048,
-        "gather_descriptors_per_layer": 153,
-        "gather_descriptors_full_model": 4896,
+        "gather_descriptors_per_layer": 1042,
+        "gather_descriptors_full_model": 33344,
         "gather_hbm_source_bytes_per_layer": 128 * 1024 * 1024,
         "gather_consume_bytes_per_cluster": 8 * 1024 * 1024,
         "gather_packets_full_model": 17_055_744,
@@ -273,6 +284,6 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     assert "cannot be wired directly" in render_markdown(report)
     assert "p53/p54 parallel readout is verified" in render_markdown(report)
     assert "4,896" not in render_markdown(report)
-    assert "`4896` over 32 layers" in render_markdown(report)
+    assert "`33344` over 32 layers" in render_markdown(report)
     assert "`17055744` commands" in render_markdown(report)
     assert "`69632` flits/layer" in render_markdown(report)

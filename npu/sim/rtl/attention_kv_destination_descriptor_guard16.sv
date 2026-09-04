@@ -26,8 +26,8 @@ module attention_kv_destination_descriptor_guard16 (
   output reg [15:0] destination_locked,
   output reg [15:0] descriptor_final_pending,
   output wire [16*4-1:0] locked_descriptor_source,
-  output reg [12:0] accepted_descriptor_count,
-  output reg [12:0] completed_descriptor_count,
+  output reg [15:0] accepted_descriptor_count,
+  output reg [15:0] completed_descriptor_count,
   output reg protocol_error
 );
   reg [3:0] locked_source_q [0:15];
@@ -101,8 +101,8 @@ module attention_kv_destination_descriptor_guard16 (
     if (!rst_n) begin
       destination_locked <= 16'd0;
       descriptor_final_pending <= 16'd0;
-      accepted_descriptor_count <= 13'd0;
-      completed_descriptor_count <= 13'd0;
+      accepted_descriptor_count <= 16'd0;
+      completed_descriptor_count <= 16'd0;
       protocol_error <= 1'b0;
       for (reset_i = 0; reset_i < 16; reset_i = reset_i + 1) begin
         locked_source_q[reset_i] <= 4'd0;

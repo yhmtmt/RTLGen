@@ -1,0 +1,52 @@
+{
+  "proposal_id": "prop_l1_attention_kv_group_major_gather_scheduler_v1",
+  "created_utc": "2026-09-04T01:30:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block_revision",
+  "abstraction_layer": "architecture_block",
+  "title": "Revise exact K/V gather to executable group-major wave cadence",
+  "hypothesis": "Plane-granular group-major gather descriptors can preserve exact traffic while directly satisfying the embodied cluster-SRAM residency and command cadence.",
+  "revision": {
+    "supersedes_behavior": "tile-major K0..K3,V0..V3 consume order",
+    "reason": "The 128 KiB SRAM buffer holds one head_base and wave. Tile-major delivery requests V1 wave0 after V0 wave0 while the compute hierarchy requires V0 wave1, so it cannot execute without an unmodeled reorder store.",
+    "preserved_evidence": [
+      "134217728 canonical consume bytes per layer",
+      "134217728 HBM source bytes per layer",
+      "2228224 resident bytes per layer",
+      "8388608 consume bytes per cluster per layer",
+      "17055744 total packet commands"
+    ]
+  },
+  "service_contract": {
+    "order": "layer_head_group_wave_k_then_v_then_tile",
+    "head_groups": 4,
+    "waves_per_group": 8,
+    "tiles_per_wave": 16,
+    "descriptors_per_layer": 1042,
+    "full_model_descriptors": 33344,
+    "counter_bits": 16,
+    "per_source_descriptor_counter_bits": 14,
+    "hbm_corner_descriptors_each": 8192,
+    "ordinary_plane_bytes": 131072,
+    "partial_tile_resident_prefix_bytes": 16384,
+    "partial_tile_hbm_suffix_bytes": 114688
+  },
+  "required_evaluations": [],
+  "remaining_abstractions": [
+    "Automatic target/control adaptation from ordered canonical ejection into K/V transposers.",
+    "V fill/drain overlap and characterized SRAM substitution.",
+    "External HBM controller and PHY."
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_attention_kv_capacity_gather_scheduler_v1/proposal.json",
+    "npu/docs/attention_score32_exact_local16_global_tree_cluster_sram_gqa8_contract.md"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_kv_capacity_gather_scheduler_contract.md",
+    "npu/sim/perf/attention_kv_capacity_gather_scheduler.py",
+    "npu/sim/rtl/attention_kv_capacity_gather_scheduler.sv",
+    "npu/eval/tests/test_attention_kv_capacity_gather_scheduler.py",
+    "tests/test_attention_kv_capacity_gather_scheduler_rtl.py"
+  ]
+}

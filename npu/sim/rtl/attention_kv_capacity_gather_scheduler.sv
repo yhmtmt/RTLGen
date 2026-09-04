@@ -26,7 +26,7 @@ module attention_kv_capacity_gather_scheduler (
   output wire desc_last,
 
   output reg done,
-  output reg [12:0] generated_descriptor_count,
+  output reg [15:0] generated_descriptor_count,
   output reg protocol_error
 );
   localparam PHASE_REFILL = 1'b0;
@@ -35,12 +35,16 @@ module attention_kv_capacity_gather_scheduler (
   localparam [20:0] TAIL_BYTES = 21'h004000;
   localparam [20:0] TAIL_HBM_BYTES = 21'h01c000;
   localparam [3:0] ALL_PLANES = 4'd8;
-  localparam [12:0] EXPECTED_DESCRIPTORS = 13'd4896;
+  localparam [15:0] EXPECTED_DESCRIPTORS = 16'd33344;
 
   reg phase_q;
   reg [4:0] layer_q;
-  reg [6:0] tile_q;
-  reg [3:0] segment_q;
+  reg [3:0] refill_segment_q;
+  reg [1:0] group_q;
+  reg [2:0] wave_q;
+  reg [3:0] tile_lane_q;
+  reg tensor_q;
+  reg split_q;
 
   reg [6:0] tile_r;
   reg [3:0] descriptor_segment_r;
@@ -68,8 +72,8 @@ module attention_kv_capacity_gather_scheduler (
   endfunction
 
   always @(*) begin
-    tile_r = tile_q;
-    descriptor_segment_r = segment_q;
+    tile_r = 7'd0;
+    descriptor_segment_r = 4'd0;
     plane_r = ALL_PLANES;
     source_hbm_r = 1'b1;
     canonical_base_r = 20'd0;
@@ -77,30 +81,35 @@ module attention_kv_capacity_gather_scheduler (
     payload_r = TILE_BYTES;
 
     if (phase_q == PHASE_REFILL) begin
-      if (segment_q < 4'd2) begin
-        tile_r = {3'd0, segment_q};
+      if (refill_segment_q < 4'd2) begin
+        tile_r = {3'd0, refill_segment_q};
         descriptor_segment_r = 4'd0;
-        resident_offset_r = {3'd0, segment_q, 20'd0};
+        resident_offset_r = {3'd0, refill_segment_q, 20'd0};
       end else begin
         tile_r = 7'd2;
-        plane_r = segment_q - 4'd2;
+        plane_r = refill_segment_q - 4'd2;
         descriptor_segment_r = plane_r;
         canonical_base_r = {plane_r[2:0], 17'd0};
         resident_offset_r = 27'h0200000 + {10'd0, plane_r[2:0], 14'd0};
         payload_r = TAIL_BYTES;
       end
     end else begin
-      if (tile_q < 7'd2) begin
+      tile_r = {wave_q, tile_lane_q};
+      plane_r = {1'b0, tensor_q, group_q};
+      descriptor_segment_r = {plane_r[2:0], 1'b0} + split_q;
+      canonical_base_r = {plane_r[2:0], 17'd0} +
+        (split_q ? 20'h04000 : 20'd0);
+      if (tile_r < 7'd2) begin
         source_hbm_r = 1'b0;
-        resident_offset_r = {tile_q, 20'd0};
-      end else if (tile_q == 7'd2) begin
-        plane_r = {1'b0, segment_q[3:1]};
-        canonical_base_r = {plane_r[2:0], 17'd0} +
-          (segment_q[0] ? 20'h04000 : 20'd0);
+        resident_offset_r = {tile_r, 20'd0} + {7'd0, canonical_base_r};
+        payload_r = 21'h020000;
+      end else if (tile_r == 7'd2) begin
         resident_offset_r = 27'h0200000 +
           {10'd0, plane_r[2:0], 14'd0};
-        source_hbm_r = segment_q[0];
-        payload_r = segment_q[0] ? TAIL_HBM_BYTES : TAIL_BYTES;
+        source_hbm_r = split_q;
+        payload_r = split_q ? TAIL_HBM_BYTES : TAIL_BYTES;
+      end else begin
+        payload_r = 21'h020000;
       end
     end
 
@@ -134,7 +143,8 @@ module attention_kv_capacity_gather_scheduler (
     resident_address_r : {14'd0, canonical_base_r};
   assign desc_payload_bytes = payload_r;
   assign desc_last = phase_q == PHASE_CONSUME &&
-    layer_q == 5'd31 && tile_q == 7'd127;
+    layer_q == 5'd31 && group_q == 2'd3 && wave_q == 3'd7 &&
+    tile_lane_q == 4'd15 && tensor_q && !split_q;
 
   wire desc_fire = desc_valid && desc_ready;
 
@@ -142,37 +152,59 @@ module attention_kv_capacity_gather_scheduler (
     if (!rst_n) begin
       phase_q <= PHASE_REFILL;
       layer_q <= 5'd0;
-      tile_q <= 7'd0;
-      segment_q <= 4'd0;
+      refill_segment_q <= 4'd0;
+      group_q <= 2'd0;
+      wave_q <= 3'd0;
+      tile_lane_q <= 4'd0;
+      tensor_q <= 1'b0;
+      split_q <= 1'b0;
       done <= 1'b0;
-      generated_descriptor_count <= 13'd0;
+      generated_descriptor_count <= 16'd0;
       protocol_error <= 1'b0;
     end else if (desc_fire) begin
       generated_descriptor_count <= generated_descriptor_count + 1'b1;
       if (phase_q == PHASE_REFILL) begin
-        if (segment_q == 4'd9) begin
+        if (refill_segment_q == 4'd9) begin
           phase_q <= PHASE_CONSUME;
-          tile_q <= 7'd0;
-          segment_q <= 4'd0;
+          group_q <= 2'd0;
+          wave_q <= 3'd0;
+          tile_lane_q <= 4'd0;
+          tensor_q <= 1'b0;
+          split_q <= 1'b0;
         end else begin
-          segment_q <= segment_q + 1'b1;
+          refill_segment_q <= refill_segment_q + 1'b1;
         end
-      end else if (tile_q == 7'd2 && segment_q != 4'd15) begin
-        segment_q <= segment_q + 1'b1;
-      end else if (tile_q == 7'd127) begin
-        if (layer_q == 5'd31) begin
-          done <= 1'b1;
-          if (generated_descriptor_count + 1'b1 != EXPECTED_DESCRIPTORS)
-            protocol_error <= 1'b1;
-        end else begin
-          phase_q <= PHASE_REFILL;
-          layer_q <= layer_q + 1'b1;
-          tile_q <= 7'd0;
-          segment_q <= 4'd0;
-        end
+      end else if ({wave_q, tile_lane_q} == 7'd2 && !split_q) begin
+        split_q <= 1'b1;
       end else begin
-        tile_q <= tile_q + 1'b1;
-        segment_q <= 4'd0;
+        split_q <= 1'b0;
+        if (tile_lane_q != 4'd15) begin
+          tile_lane_q <= tile_lane_q + 1'b1;
+        end else begin
+          tile_lane_q <= 4'd0;
+          if (!tensor_q) begin
+            tensor_q <= 1'b1;
+          end else begin
+            tensor_q <= 1'b0;
+            if (wave_q != 3'd7) begin
+              wave_q <= wave_q + 1'b1;
+            end else begin
+              wave_q <= 3'd0;
+              if (group_q != 2'd3) begin
+                group_q <= group_q + 1'b1;
+              end else if (layer_q == 5'd31) begin
+                done <= 1'b1;
+                if (generated_descriptor_count + 1'b1 != EXPECTED_DESCRIPTORS)
+                  protocol_error <= 1'b1;
+              end else begin
+                phase_q <= PHASE_REFILL;
+                layer_q <= layer_q + 1'b1;
+                refill_segment_q <= 4'd0;
+                group_q <= 2'd0;
+              end
+            end
+          end
+        end
       end
     end
   end

@@ -71,9 +71,28 @@
       "14": 8388608,
       "15": 8388608
     },
-    "consume_descriptors_per_layer": 143,
+    "consume_descriptors_per_layer": 1032,
+    "consume_order": "head_group_then_wave_then_k_v_then_tile",
     "descriptor_granularity": "contiguous canonical byte span",
-    "descriptors_per_layer": 153,
+    "descriptors_by_source": {
+      "0": 8192,
+      "1": 48,
+      "2": 48,
+      "3": 8192,
+      "4": 48,
+      "5": 48,
+      "6": 48,
+      "7": 48,
+      "8": 48,
+      "9": 48,
+      "10": 48,
+      "11": 48,
+      "12": 8192,
+      "13": 48,
+      "14": 48,
+      "15": 8192
+    },
+    "descriptors_per_layer": 1042,
     "direct_hbm_consume_bytes_per_layer": 131989504,
     "does_not_include": [
       "HBM controller or PHY",
@@ -81,17 +100,19 @@
       "V fill/drain overlap",
       "characterized SRAM macros"
     ],
-    "full_model_descriptors": 4896,
+    "full_model_descriptors": 33344,
     "hbm_source_endpoints": [
       0,
       3,
       12,
       15
     ],
+    "head_groups": 4,
+    "maximum_descriptors_per_source": 8192,
     "owner_cluster_rule": "(layer*3+tile)%16",
     "packet_expansion": {
       "canonical_consume_packet_count": 16777216,
-      "descriptor_count": 4896,
+      "descriptor_count": 33344,
       "flits_per_packet": 8,
       "hbm_source_packet_count": 16777216,
       "maximum_packets_per_span": 4096,
@@ -102,14 +123,19 @@
       "resident_refill_packet_count": 278528
     },
     "partial_tile_policy": "eight ordered planes, each consuming a 16KiB resident prefix followed by a 112KiB direct-HBM suffix",
+    "per_source_descriptor_counter_bits": 14,
     "persistence_mode": "transient",
     "python_rtl_descriptor_equivalence_verified": true,
     "ready_valid_stall_stability_verified": true,
     "refill_descriptors_per_layer": 10,
     "resident_consume_bytes_per_layer": 2228224,
     "resident_refill_bytes_per_layer": 2228224,
+    "superseded_tile_major_descriptor_count": 4896,
+    "superseded_tile_major_role": "byte_accounting_only_buffer_incompatible",
+    "tiles_per_wave": 16,
     "total_canonical_consume_bytes_per_layer": 134217728,
-    "total_hbm_source_bytes_per_layer": 134217728
+    "total_hbm_source_bytes_per_layer": 134217728,
+    "waves_per_head_group": 8
   },
   "cluster_consumption": {
     "clusters": 16,
@@ -153,7 +179,8 @@
       "receive-before-transmit endpoint composition through the 4x4 XY mesh",
       "resident-write and canonical-ingress payload ejection with metadata",
       "payload-counted transient-refill, consume, and layer-transition barriers",
-      "per-destination descriptor completion ordering across split resident/HBM planes"
+      "per-destination descriptor completion ordering across split resident/HBM planes",
+      "group-major wave-ordered plane delivery compatible with cluster SRAM residency"
     ],
     "remaining_before_frontier_recost": [
       "per-cluster canonical-ejection target/control adapters into exact K/V transposers",
@@ -168,8 +195,8 @@
       "consecutive_pingpong_k_input_flits": 4096,
       "destination_descriptor_locks": 16,
       "gather_consume_bytes_per_cluster": 8388608,
-      "gather_descriptors_full_model": 4896,
-      "gather_descriptors_per_layer": 153,
+      "gather_descriptors_full_model": 33344,
+      "gather_descriptors_per_layer": 1042,
       "gather_hbm_packets_full_model": 16777216,
       "gather_hbm_source_bytes_per_layer": 134217728,
       "gather_packets_full_model": 17055744,
@@ -323,7 +350,7 @@
   "source_refs": [
     {
       "path": "npu/eval/audit_llama7b_score32_exact_kv_ingress_closure.py",
-      "sha256": "98bac2a29aea3e5cc9ad55b58d73931a2ccb5a85ceb8a3d5805f2b465bdabadc"
+      "sha256": "430ac80020861afb87e185e9adf1005b2a00cacaa321e0890264b575522f5248"
     },
     {
       "path": "npu/sim/perf/attention_kv_tile_layout.py",
@@ -383,27 +410,27 @@
     },
     {
       "path": "npu/sim/perf/attention_kv_capacity_gather_scheduler.py",
-      "sha256": "0a926d5a8b6445f773dadc22e53535467c4af5401cfe77b7bd01adf7f84121d3"
+      "sha256": "95744c089369237a9d202500b78ffeba3c36ed367b9a96b5d53b6458e76f2c6b"
     },
     {
       "path": "npu/sim/rtl/attention_kv_capacity_gather_scheduler.sv",
-      "sha256": "59a3493ec372e4a9c021aa6477737c3421c7ee8403f3375cb84b9512f17f9c06"
+      "sha256": "e0c73b08c05120cd27c36a350c31cfa65e328548f80143d9e5d5933d86b05fe7"
     },
     {
       "path": "npu/eval/tests/test_attention_kv_capacity_gather_scheduler.py",
-      "sha256": "ea999cbec9dd634f34797ddc809012296cd9c6c95cf67182224e3636825827ee"
+      "sha256": "bd19693b07c57b53b7b56866ab7d0b72a4ba0c56c144c7b299e6233589c89f94"
     },
     {
       "path": "tests/test_attention_kv_capacity_gather_scheduler_rtl.py",
-      "sha256": "3087d7ddf609f7149bc6e064c166ef068ff7e7c0fe1f7d22c08b461a47c43f3f"
+      "sha256": "f2765e42eddc802faa9c49fc46904b08da19354c4fb2f4f386a2457b413005fe"
     },
     {
       "path": "npu/docs/attention_kv_capacity_gather_scheduler_contract.md",
-      "sha256": "3fa764660105dcbfb52d4751cc1a0ef1df2d2ccc4e819377a4891f047681e8e6"
+      "sha256": "592449d001f00b33c3d3c326959d4774bf11e3969f45eed15205b634f5117906"
     },
     {
       "path": "docs/proposals/prop_l1_attention_kv_capacity_gather_scheduler_v1/proposal.json",
-      "sha256": "3fdb074273e9423b58aba839184f806372af015dc0a861d25d1cc6ac73bfc837"
+      "sha256": "e23d063a5a2c10ebe8599851bf6b60e573cc460ea964583b95d3f69c5b9131f9"
     },
     {
       "path": "npu/sim/perf/attention_kv_gather_packetizer.py",
@@ -411,31 +438,31 @@
     },
     {
       "path": "npu/sim/rtl/attention_kv_gather_span_packetizer.sv",
-      "sha256": "babf344c13eb771f5b85cca7972ce8ba4629db6de08307135ebcc087f9ec4b3a"
+      "sha256": "fc3d387c3ea1486ed6f8c474c93dd1f50cb27d2f1fb66d26c6ae597899326c02"
     },
     {
       "path": "npu/eval/tests/test_attention_kv_gather_packetizer.py",
-      "sha256": "e79bc1d749aeeed2edcabb295553251e750918ed0b5af503888af0140676c557"
+      "sha256": "c26b88540ac998c8e3dc6dd0bbd9f64391fb4f0be6c8a5b2a4269424f9dfe939"
     },
     {
       "path": "tests/test_attention_kv_gather_span_packetizer_rtl.py",
-      "sha256": "39813d87c7c517dab127620b94fc656e38cf0e42f4ea6091851982f1fc4a6e97"
+      "sha256": "a3de92539aa9660e6954d9bb978bc8724d4133c0f06692872b3c73f6772c10b8"
     },
     {
       "path": "npu/docs/attention_kv_gather_span_packetizer_contract.md",
-      "sha256": "2fc99e1faa73443b20f21ed953a74caec7121ef40eb431fc01320af7dfc0687d"
+      "sha256": "63e8acd9110205dcce9766d6d6a3d78e3adbd37f1892134a585c439e94a404f6"
     },
     {
       "path": "docs/proposals/prop_l1_attention_kv_gather_span_packetizer_v1/proposal.json",
-      "sha256": "fb2989272e3413bbaba7b7d253d23b95e10426aac0d679c12eaffb0cfa8fd51b"
+      "sha256": "2adcff857a5f98e81dbcc61997da3bdd9382afbd0d1da022aed5c7b062d15578"
     },
     {
       "path": "npu/sim/rtl/attention_kv_gather_span_dispatch16.sv",
-      "sha256": "81377ad5390117b91459879a1419819b260e7f84468748eb22908fe9d1e70510"
+      "sha256": "ed5521cababd3c90fe0698902fc0d42e1fd1f9fda6e80a749d178462d3bbaab6"
     },
     {
       "path": "npu/sim/rtl/attention_kv_gather_packet_mesh4x4.sv",
-      "sha256": "59c3fba3222dc5d5c228282f5969cccf7e871ee4bd64d9cb11e4c4185fb04c81"
+      "sha256": "450507889deefc338342d0d8eb518003fb05d2827e44ae471eb89bb70399d2ed"
     },
     {
       "path": "npu/sim/rtl/attention_kv_gather_layer_barrier.sv",
@@ -443,11 +470,11 @@
     },
     {
       "path": "npu/sim/rtl/attention_kv_capacity_gather_mesh_ingress.sv",
-      "sha256": "65f7f0f19d0213105d3f9cea38bbac66d93a01036cdbac6dd95b3814fbcf9cf5"
+      "sha256": "b67550549791f4045291feb2fc1448b572d35f19be57ed25539a9ad65006106d"
     },
     {
       "path": "tests/test_attention_kv_gather_span_dispatch16_rtl.py",
-      "sha256": "fdaa6ed7754e85099355310c04cd3fb88b15c7f8ceec47e1b98b236c8c3e3c0c"
+      "sha256": "c4fb73b5c5c5581ed67fd0da2727b1d712b321cec9998f86f4df6b0ff0fe33e6"
     },
     {
       "path": "tests/test_attention_kv_gather_packet_mesh4x4_rtl.py",
@@ -471,15 +498,19 @@
     },
     {
       "path": "npu/sim/rtl/attention_kv_destination_descriptor_guard16.sv",
-      "sha256": "6ec93fb6220066917bbdbb7f990b8103fae9e5b6f2370765768dfe0d9a321398"
+      "sha256": "ae8603dcf54246c401882c32fefe3bebe5944d42b7167a3aa64f3dea57ef5166"
     },
     {
       "path": "tests/test_attention_kv_destination_descriptor_guard16_rtl.py",
-      "sha256": "b53ecd05477be9dc3ae8260ff2f9fe9562db33299d003d0d84ce873c314826ee"
+      "sha256": "960d108600ead493dfd147d20184505c44e1ce18ecaf5063d75df1dd496323b6"
     },
     {
       "path": "docs/proposals/prop_l1_attention_kv_destination_descriptor_guard_v1/proposal.json",
       "sha256": "ba10503ac646bc4345a5d7ec603c58b3cb4cc2201c1a5ab5f2a45531ba4aec56"
+    },
+    {
+      "path": "docs/proposals/prop_l1_attention_kv_group_major_gather_scheduler_v1/proposal.json",
+      "sha256": "8f00ddbb2c02be8639b50d231f8c5dcf5f7f11961e160935acfc26d33920e671"
     }
   ],
   "version": 1

@@ -37,8 +37,8 @@ module tb;
   wire [15:0] destination_locked;
   wire [15:0] descriptor_final_pending;
   wire [16*4-1:0] locked_descriptor_source;
-  wire [12:0] accepted_descriptor_count;
-  wire [12:0] completed_descriptor_count;
+  wire [15:0] accepted_descriptor_count;
+  wire [15:0] completed_descriptor_count;
   wire protocol_error;
 
   attention_kv_destination_descriptor_guard16 dut (.*);

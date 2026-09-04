@@ -47,7 +47,12 @@ def test_rtl_expands_full_and_partial_spans_exactly(tmp_path: Path) -> None:
     if shutil.which("iverilog") is None or shutil.which("vvp") is None:
         pytest.skip("iverilog and vvp are required")
     layer = layer_descriptors(0)
-    descriptors = [layer[0], layer[2], replace(layer[13], last=True)]
+    hbm_tail = next(
+        row
+        for row in layer
+        if row.operation == CONSUME and row.tile == 2 and row.plane == 0 and row.source == HBM
+    )
+    descriptors = [layer[0], layer[2], replace(hbm_tail, last=True)]
     drives = "".join(
         _drive_descriptor(row, last=index + 1 == len(descriptors))
         for index, row in enumerate(descriptors)
@@ -94,7 +99,7 @@ module tb;
   wire [3:0] cmd_flit_count;
   wire cmd_descriptor_last;
   wire cmd_schedule_last;
-  wire [12:0] accepted_descriptor_count;
+  wire [13:0] accepted_descriptor_count;
   wire [24:0] generated_packet_count;
   wire protocol_error;
   wire [144:0] cmd_bundle = {{
@@ -147,7 +152,7 @@ module tb;
 {drives}
     while (!schedule_done) @(posedge clk);
     @(negedge clk);
-    if (protocol_error || accepted_descriptor_count != 13'd3 ||
+    if (protocol_error || accepted_descriptor_count != 14'd3 ||
         generated_packet_count != 25'd4608) begin
       $display("FAIL error=%0d descriptors=%0d packets=%0d", protocol_error,
         accepted_descriptor_count, generated_packet_count);

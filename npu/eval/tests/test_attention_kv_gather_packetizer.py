@@ -15,7 +15,12 @@ from npu.sim.perf.attention_kv_gather_packetizer import (
 
 def test_representative_span_packet_boundaries() -> None:
     rows = layer_descriptors(0)
-    for descriptor, expected_count in ((rows[0], 4096), (rows[2], 64), (rows[13], 448)):
+    hbm_tail = next(
+        row
+        for row in rows
+        if row.operation == "consume" and row.tile == 2 and row.plane == 0 and row.source == "hbm"
+    )
+    for descriptor, expected_count in ((rows[0], 4096), (rows[2], 64), (hbm_tail, 448)):
         packets = packet_commands(descriptor)
         assert len(packets) == expected_count
         assert packets[0].packet_index == 0
@@ -43,7 +48,7 @@ def test_schedule_last_only_marks_last_packet() -> None:
 
 def test_full_schedule_packet_accounting() -> None:
     assert full_schedule_packet_summary() == {
-        "descriptor_count": 4896,
+        "descriptor_count": 33344,
         "packet_count": 17_055_744,
         "hbm_source_packet_count": 16_777_216,
         "canonical_consume_packet_count": 16_777_216,

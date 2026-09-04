@@ -43,7 +43,7 @@ module attention_kv_gather_span_dispatch16 (
   output wire [16*4-1:0] cmd_flit_count,
   output wire [15:0] cmd_descriptor_last,
   output wire [15:0] cmd_schedule_last,
-  output wire [16*13-1:0] accepted_descriptor_count,
+  output wire [16*14-1:0] accepted_descriptor_count,
   output wire [16*25-1:0] generated_packet_count,
   output wire [15:0] packetizer_protocol_error
 );
@@ -96,7 +96,7 @@ module attention_kv_gather_span_dispatch16 (
         .cmd_descriptor_last(cmd_descriptor_last[lane_g]),
         .cmd_schedule_last(cmd_schedule_last[lane_g]),
         .accepted_descriptor_count(
-          accepted_descriptor_count[(lane_g*13) +: 13]
+          accepted_descriptor_count[(lane_g*14) +: 14]
         ),
         .generated_packet_count(generated_packet_count[(lane_g*25) +: 25]),
         .protocol_error(packetizer_protocol_error[lane_g])

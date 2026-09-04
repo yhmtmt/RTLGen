@@ -58,7 +58,7 @@ module attention_kv_gather_packet_mesh4x4 (
   output wire [16*32-1:0] router_max_input_occupancy,
   output wire [16*5*32-1:0] router_route_flit_count,
   output reg [24:0] accepted_packet_command_count,
-  output reg [12:0] submitted_descriptor_count,
+  output reg [15:0] submitted_descriptor_count,
   output reg schedule_packet_submitted,
   output reg command_protocol_error,
   output wire protocol_error
@@ -241,7 +241,7 @@ module attention_kv_gather_packet_mesh4x4 (
     if (!rst_n) begin
       receive_installed_q <= 16'd0;
       accepted_packet_command_count <= 25'd0;
-      submitted_descriptor_count <= 13'd0;
+      submitted_descriptor_count <= 16'd0;
       schedule_packet_submitted <= 1'b0;
       command_protocol_error <= 1'b0;
       for (reset_i = 0; reset_i < 16; reset_i = reset_i + 1)

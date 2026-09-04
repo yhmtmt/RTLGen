@@ -15,7 +15,8 @@
       "transient resident refill and direct-HBM source descriptors",
       "four explicit HBM corner endpoints",
       "locality-aware one-tile-per-cluster wave ownership",
-      "all 4,896 Python/RTL-equivalent descriptors under backpressure"
+      "all 33,344 Python/RTL-equivalent descriptors under backpressure",
+      "group-major head and wave order compatible with cluster SRAM residency"
     ],
     "exclude": [
       "persistent-residency HBM savings",
@@ -28,8 +29,9 @@
   },
   "service_contract": {
     "persistence_mode": "transient",
-    "descriptors_per_layer": 153,
-    "full_model_descriptors": 4896,
+    "descriptors_per_layer": 1042,
+    "full_model_descriptors": 33344,
+    "consume_order": "head_group_then_wave_then_k_v_then_tile",
     "resident_bytes_per_layer": 2228224,
     "total_hbm_source_bytes_per_layer": 134217728,
     "total_canonical_consume_bytes_per_layer": 134217728,
@@ -38,8 +40,7 @@
   },
   "required_evaluations": [],
   "remaining_abstractions": [
-    "Span descriptors still require packetization and shared-mesh source routing.",
-    "Returned payload must be composed with canonical K/V ingress under end-to-end backpressure.",
+    "Ordered canonical payload requires automatic K/V transposer target control.",
     "The external HBM controller and PHY remain outside the RTL boundary.",
     "The transient SRAM and endpoint stores still require characterized memory macros."
   ],
