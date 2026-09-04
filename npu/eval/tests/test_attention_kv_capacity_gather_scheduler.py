@@ -19,9 +19,9 @@ from npu.sim.perf.attention_kv_tile_layout import BYTES_PER_KV_TILE
 
 def test_layer_schedule_conserves_hbm_and_canonical_bytes() -> None:
     rows = layer_descriptors(0)
-    assert len(rows) == 1042
+    assert len(rows) == 1546
     assert sum(row.operation == REFILL for row in rows) == 10
-    assert sum(row.operation == CONSUME for row in rows) == 1032
+    assert sum(row.operation == CONSUME for row in rows) == 1536
     assert sum(row.payload_bytes for row in rows if row.operation == REFILL) == (
         RESIDENT_BYTES_PER_LAYER
     )
@@ -43,15 +43,26 @@ def test_layer_schedule_conserves_hbm_and_canonical_bytes() -> None:
     )
 
 
-def test_partial_tile_is_exact_monotonic_planar_split() -> None:
+def test_partial_tile_key_blocks_pair_streams_and_value_keeps_planar_split() -> None:
     rows = [
         row
         for row in layer_descriptors(0)
         if row.operation == CONSUME and row.tile == 2
     ]
-    assert len(rows) == 16
-    for pair_index, plane in enumerate((0, 4, 1, 5, 2, 6, 3, 7)):
-        resident, hbm = rows[pair_index * 2 : pair_index * 2 + 2]
+    assert len(rows) == 520
+    for plane in range(4):
+        key = [row for row in rows if row.plane == plane]
+        assert len(key) == 128
+        for index, row in enumerate(key):
+            block = index // 2
+            stream = index % 2
+            assert row.canonical_base_address == (
+                plane * 128 * 1024 + stream * 64 * 1024 + block * 1024
+            )
+            assert row.payload_bytes == 1024
+            assert row.source == (RESIDENT if stream == 0 and block < 16 else HBM)
+    for plane in range(4, 8):
+        resident, hbm = [row for row in rows if row.plane == plane]
         assert resident.plane == hbm.plane == plane
         assert resident.source == RESIDENT
         assert hbm.source == HBM
@@ -84,27 +95,45 @@ def test_consume_order_matches_group_major_wave_cadence() -> None:
     cursor = 0
     for group in range(4):
         for wave in range(8):
-            for plane in (group, 4 + group):
-                wave_destinations: set[int] = set()
-                for tile in range(wave * 16, wave * 16 + 16):
-                    expected_sources = 2 if tile == 2 else 1
-                    emitted = rows[cursor : cursor + expected_sources]
-                    assert {row.tile for row in emitted} == {tile}
-                    assert {row.plane for row in emitted} == {plane}
-                    assert [row.segment for row in emitted] == (
-                        [plane * 2, plane * 2 + 1]
-                        if tile == 2
-                        else [plane * 2]
-                    )
-                    wave_destinations.update(row.destination_cluster for row in emitted)
-                    cursor += expected_sources
-                assert wave_destinations == set(range(16))
+            tiles = list(range(wave * 16, wave * 16 + 16))
+            ordinary = [tile for tile in tiles if tile != 2]
+            emitted = rows[cursor : cursor + len(ordinary)]
+            assert [row.tile for row in emitted] == ordinary
+            assert {row.plane for row in emitted} == {group}
+            assert {row.payload_bytes for row in emitted} == {128 * 1024}
+            cursor += len(ordinary)
+            key_destinations = {row.destination_cluster for row in emitted}
+            if wave == 0:
+                special = rows[cursor : cursor + 128]
+                assert {row.tile for row in special} == {2}
+                assert {row.plane for row in special} == {group}
+                assert [row.canonical_base_address for row in special] == [
+                    group * 128 * 1024
+                    + stream * 64 * 1024
+                    + block * 1024
+                    for block in range(64)
+                    for stream in range(2)
+                ]
+                key_destinations.update(row.destination_cluster for row in special)
+                cursor += 128
+            assert key_destinations == set(range(16))
+
+            plane = 4 + group
+            value_destinations: set[int] = set()
+            for tile in tiles:
+                expected_sources = 2 if tile == 2 else 1
+                value_rows = rows[cursor : cursor + expected_sources]
+                assert {row.tile for row in value_rows} == {tile}
+                assert {row.plane for row in value_rows} == {plane}
+                value_destinations.update(row.destination_cluster for row in value_rows)
+                cursor += expected_sources
+            assert value_destinations == set(range(16))
     assert cursor == len(rows)
 
 
 def test_full_schedule_boundaries_and_addresses() -> None:
     rows = llama7b_descriptors()
-    assert len(rows) == LAYERS * 1042 == 33344
+    assert len(rows) == LAYERS * 1546 == 49472
     assert sum(row.last for row in rows) == 1
     assert rows[-1].last
     assert rows[0].operation == REFILL

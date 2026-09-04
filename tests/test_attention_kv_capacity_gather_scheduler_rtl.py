@@ -87,7 +87,7 @@ module tb;
     @(negedge clk); rst_n = 1; enable = 1;
     while (!done && cycle < 32'd100000) @(posedge clk);
     @(negedge clk);
-    if (!done || protocol_error || generated_descriptor_count != 16'd33344) begin
+    if (!done || protocol_error || generated_descriptor_count != 16'd49472) begin
       $display("FAIL done=%0d error=%0d count=%0d", done, protocol_error,
         generated_descriptor_count);
       $finish(1);
@@ -141,4 +141,4 @@ endmodule
         for row in llama7b_descriptors()
     ]
     assert observed == expected
-    assert "PASS count=33344" in result.stdout
+    assert "PASS count=49472" in result.stdout
