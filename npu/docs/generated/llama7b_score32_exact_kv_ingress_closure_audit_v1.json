@@ -77,9 +77,9 @@
     "direct_hbm_consume_bytes_per_layer": 131989504,
     "does_not_include": [
       "HBM controller or PHY",
-      "multi-source packet dispatch",
-      "shared-mesh transport",
-      "canonical K/V payload movement"
+      "per-cluster K/V transposer target-control adaptation",
+      "V fill/drain overlap",
+      "characterized SRAM macros"
     ],
     "full_model_descriptors": 4896,
     "hbm_source_endpoints": [
@@ -148,14 +148,19 @@
       "capacity-driven transient-refill and direct-HBM gather descriptor scheduler",
       "locality-aware balanced tile-to-cluster ownership",
       "four-corner HBM source selection and exact canonical span addresses",
-      "256-byte span packetization through the 4,096-packet full-tile boundary"
+      "256-byte span packetization through the 4,096-packet full-tile boundary",
+      "16-lane source-local span dispatch preserving four-corner concurrency",
+      "receive-before-transmit endpoint composition through the 4x4 XY mesh",
+      "resident-write and canonical-ingress payload ejection with metadata",
+      "payload-counted transient-refill, consume, and layer-transition barriers"
     ],
     "remaining_before_frontier_recost": [
-      "multi-source shared-mesh dispatch and canonical-ingress payload routing",
+      "per-cluster canonical-ejection target/control adapters into exact K/V transposers",
       "V transpose ping-pong or proven fill-drain overlap",
       "characterized SRAM macro substitution"
     ],
     "verified_counts": {
+      "canonical_consume_flits_per_layer": 4194304,
       "canonical_k_input_flits_per_head": 4096,
       "canonical_v_input_flits_per_head": 4096,
       "cluster_sram_v_rows_per_head": 2048,
@@ -166,8 +171,12 @@
       "gather_hbm_packets_full_model": 16777216,
       "gather_hbm_source_bytes_per_layer": 134217728,
       "gather_packets_full_model": 17055744,
+      "mesh_dispatch_full_tile_packets_verified": 16384,
+      "mesh_payload_flits_verified": 32,
+      "mesh_simultaneous_packet_commands_verified": 4,
       "pingpong_k_head_cycles_without_stall": 4160,
-      "producer_output_beats_per_head": 8192
+      "producer_output_beats_per_head": 8192,
+      "resident_refill_flits_per_layer": 69632
     }
   },
   "key_ingress_architecture_frontier": {
@@ -217,7 +226,7 @@
     "tiles": 128
   },
   "model": "llama7b_score32_exact_kv_ingress_closure_audit_v1",
-  "next_gate": "Dispatch exact gather packets through shared-mesh source routing into canonical K/V ingress and verify end-to-end backpressure; then measure V buffering parallelism and substitute characterized SRAM macros.",
+  "next_gate": "Connect per-cluster canonical ejection to exact K/V transposer target/control and verify backpressure through representative full K and V heads; then measure V buffering parallelism and substitute characterized SRAM macros.",
   "one_buffer_transpose_reference": {
     "key": {
       "input_flits": 64,
@@ -257,24 +266,54 @@
     "whole_kv_tile_packets_256B": 4096
   },
   "required_rtl_ownership": [
-    "external HBM-return ready/valid ingress boundary, excluding controller and PHY",
-    "multi-source packet dispatch and on-chip routing for HBM-return K/V bytes",
-    "composition of capacity/HBM source descriptors with canonical K/V payload ingress",
-    "backpressure from cluster SRAM and producers through ingress and mesh",
+    "per-cluster target/control adaptation from canonical ejection into K/V transposers",
+    "backpressure from exact K/V transposers through canonical ejection and mesh",
     "overlapped V transpose buffering selected from measured PPA",
     "physical cost of ping-pong K transpose and paired-dimension write control",
     "characterized SRAM macro substitution for inferred K/Q and cluster stores"
   ],
   "revision_effect": {
     "frontier_recost_allowed": false,
-    "reason": "Exact K/V endpoint paths, capacity/HBM source descriptors, and packetization are embodied, but shared-mesh payload composition, overlap selection, and physical memory costs are not yet closed for the complete score32 cluster path.",
+    "reason": "Exact K/V endpoint paths, capacity/HBM source descriptors, and packetization are embodied, and payload reaches canonical per-cluster ingress through the shared mesh. Target/control adaptation into the K/V transposers, overlap selection, and physical memory costs are not yet closed for the complete score32 cluster path.",
     "release_coupled_vc1_role": "exact_reduction_transport_timing_with_vc0_ingress_still_open",
     "shared_mesh_15769_cycle_result_role": "standalone_historical_traffic_capacity_bound_only"
+  },
+  "shared_mesh_ingress_composition": {
+    "canonical_consume_flits_per_layer": 4194304,
+    "canonical_metadata": [
+      "layer",
+      "tile",
+      "tile_byte_address"
+    ],
+    "destination_arbitration": "independent_round_robin",
+    "full_refill_mesh_replay_exclusion_reason": "production 69,632-flit Icarus replay exceeded the routine CI budget; full byte counts, packet expansion, phase barriers, and representative mesh payload paths are verified compositionally",
+    "full_refill_mesh_replay_in_ci": false,
+    "hbm_corner_lanes": [
+      0,
+      3,
+      12,
+      15
+    ],
+    "local_route_supported": true,
+    "phase_barriers_count_accepted_payload_flits": true,
+    "receive_before_transmit": true,
+    "resident_refill_flits_per_layer": 69632,
+    "source_lanes": 16,
+    "source_local_span_packetizers": 16,
+    "verified_concurrent_full_tile_packet_commands": 16384,
+    "verified_mesh_payload_flits": 32,
+    "verified_paths": [
+      "corner_to_corner_hbm",
+      "hbm_to_resident_cache",
+      "owner_local_resident_to_canonical_ingress",
+      "multihop_hbm_to_canonical_ingress"
+    ],
+    "verified_simultaneous_command_accepts": 4
   },
   "source_refs": [
     {
       "path": "npu/eval/audit_llama7b_score32_exact_kv_ingress_closure.py",
-      "sha256": "be1241c49ebab123d4af5e6a3ec536f426640fdb2cec90241e10bbb0c68bafea"
+      "sha256": "0d8e5b04886d40090f47be68d92b2b24beee49ce9d63097df52386d6ac27fdef"
     },
     {
       "path": "npu/sim/perf/attention_kv_tile_layout.py",
@@ -379,6 +418,46 @@
     {
       "path": "docs/proposals/prop_l1_attention_kv_gather_span_packetizer_v1/proposal.json",
       "sha256": "fb2989272e3413bbaba7b7d253d23b95e10426aac0d679c12eaffb0cfa8fd51b"
+    },
+    {
+      "path": "npu/sim/rtl/attention_kv_gather_span_dispatch16.sv",
+      "sha256": "81377ad5390117b91459879a1419819b260e7f84468748eb22908fe9d1e70510"
+    },
+    {
+      "path": "npu/sim/rtl/attention_kv_gather_packet_mesh4x4.sv",
+      "sha256": "c809aef56aed5953f7fbf30330497fd8402a7857bccdb75d89f34179ef5c5354"
+    },
+    {
+      "path": "npu/sim/rtl/attention_kv_gather_layer_barrier.sv",
+      "sha256": "7d05b17057a74aba91cdecfb5bd2f5e6a786c7539d34d96bcc301163f6d18fbc"
+    },
+    {
+      "path": "npu/sim/rtl/attention_kv_capacity_gather_mesh_ingress.sv",
+      "sha256": "e1a0324f4222263cf790756fccab52f62558d151fd8881456f60831fb4d91302"
+    },
+    {
+      "path": "tests/test_attention_kv_gather_span_dispatch16_rtl.py",
+      "sha256": "fdaa6ed7754e85099355310c04cd3fb88b15c7f8ceec47e1b98b236c8c3e3c0c"
+    },
+    {
+      "path": "tests/test_attention_kv_gather_packet_mesh4x4_rtl.py",
+      "sha256": "1c80da8623bb3b55333670fdbc2d7d3bc3ed795be4113b18aa2b9dfb0cb4d6f8"
+    },
+    {
+      "path": "tests/test_attention_kv_gather_layer_barrier_rtl.py",
+      "sha256": "cda3db2e838d09171c48045bd9db1b0b512309efdbc9da747888a40f9ffcd291"
+    },
+    {
+      "path": "tests/test_attention_kv_capacity_gather_mesh_ingress_elaboration.py",
+      "sha256": "71dabc912bea391cd2d98aa7295038896faf230f757b4069287f8d35b021f6f1"
+    },
+    {
+      "path": "npu/docs/attention_kv_capacity_gather_mesh_ingress_contract.md",
+      "sha256": "08a1be75f32e7ea5f5cc171df914243b6eb7d645a3ec3c090778e26244e1a09a"
+    },
+    {
+      "path": "docs/proposals/prop_l1_attention_kv_capacity_gather_mesh_ingress_v1/proposal.json",
+      "sha256": "f8230649b6060ffcdfb886acb82aa906468f0558d43cf1900e6cc2f3553daafb"
     }
   ],
   "version": 1

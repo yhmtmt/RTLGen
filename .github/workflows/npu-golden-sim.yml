@@ -11,7 +11,7 @@ on:
       - "npu/arch/**"
       - "npu/shell/**"
       - "tests/test_mapper_split.py"
-      - "tests/test_attention_kv_gather_span_packetizer_rtl.py"
+      - "tests/test_attention_kv_*.py"
   pull_request:
     paths:
       - ".github/workflows/npu-golden-sim.yml"
@@ -21,7 +21,7 @@ on:
       - "npu/arch/**"
       - "npu/shell/**"
       - "tests/test_mapper_split.py"
-      - "tests/test_attention_kv_gather_span_packetizer_rtl.py"
+      - "tests/test_attention_kv_*.py"
   workflow_dispatch:
 
 jobs:
@@ -111,6 +111,10 @@ jobs:
             tests/test_attention_score32_exact_kv_key_ingress_ppa_harness.py \
             tests/test_attention_kv_capacity_gather_scheduler_rtl.py \
             tests/test_attention_kv_gather_span_packetizer_rtl.py \
+            tests/test_attention_kv_gather_span_dispatch16_rtl.py \
+            tests/test_attention_kv_gather_layer_barrier_rtl.py \
+            tests/test_attention_kv_gather_packet_mesh4x4_rtl.py \
+            tests/test_attention_kv_capacity_gather_mesh_ingress_elaboration.py \
             tests/test_llm_decoder_attention_score32_noc_phase2_endpoint_rtl.py \
             tests/test_llm_decoder_attention_score32_noc_phase2_schedule.py
 

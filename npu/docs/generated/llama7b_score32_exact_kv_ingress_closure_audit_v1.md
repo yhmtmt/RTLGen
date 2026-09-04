@@ -33,16 +33,22 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 - exact packet expansion: `17055744` commands, `8` flits each
 - maximum span: `4096` packets, terminal index verified
 
+## Shared-Mesh Ingress Composition
+
+- source-local packetizers: `16`
+- simultaneous HBM command accepts verified: `4`
+- resident refill barrier: `69632` flits/layer
+- canonical consume barrier: `4194304` flits/layer
+- local, multi-hop, resident-write, and canonical payload paths: verified
+
 ## Required RTL Ownership
 
-- external HBM-return ready/valid ingress boundary, excluding controller and PHY
-- multi-source packet dispatch and on-chip routing for HBM-return K/V bytes
-- composition of capacity/HBM source descriptors with canonical K/V payload ingress
-- backpressure from cluster SRAM and producers through ingress and mesh
+- per-cluster target/control adaptation from canonical ejection into K/V transposers
+- backpressure from exact K/V transposers through canonical ejection and mesh
 - overlapped V transpose buffering selected from measured PPA
 - physical cost of ping-pong K transpose and paired-dimension write control
 - characterized SRAM macro substitution for inferred K/Q and cluster stores
 
 ## Next Gate
 
-Dispatch exact gather packets through shared-mesh source routing into canonical K/V ingress and verify end-to-end backpressure; then measure V buffering parallelism and substitute characterized SRAM macros.
+Connect per-cluster canonical ejection to exact K/V transposer target/control and verify backpressure through representative full K and V heads; then measure V buffering parallelism and substitute characterized SRAM macros.

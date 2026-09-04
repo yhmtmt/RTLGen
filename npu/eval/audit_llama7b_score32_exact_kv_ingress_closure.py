@@ -269,10 +269,37 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             },
             "does_not_include": [
                 "HBM controller or PHY",
-                "multi-source packet dispatch",
-                "shared-mesh transport",
-                "canonical K/V payload movement",
+                "per-cluster K/V transposer target-control adaptation",
+                "V fill/drain overlap",
+                "characterized SRAM macros",
             ],
+        },
+        "shared_mesh_ingress_composition": {
+            "source_lanes": 16,
+            "hbm_corner_lanes": list(HBM_CORNER_ENDPOINTS),
+            "source_local_span_packetizers": 16,
+            "receive_before_transmit": True,
+            "destination_arbitration": "independent_round_robin",
+            "local_route_supported": True,
+            "canonical_metadata": ["layer", "tile", "tile_byte_address"],
+            "resident_refill_flits_per_layer": resident_per_layer // 32,
+            "canonical_consume_flits_per_layer": layer_kv_bytes // 32,
+            "phase_barriers_count_accepted_payload_flits": True,
+            "verified_concurrent_full_tile_packet_commands": 16_384,
+            "verified_simultaneous_command_accepts": 4,
+            "verified_mesh_payload_flits": 32,
+            "verified_paths": [
+                "corner_to_corner_hbm",
+                "hbm_to_resident_cache",
+                "owner_local_resident_to_canonical_ingress",
+                "multihop_hbm_to_canonical_ingress",
+            ],
+            "full_refill_mesh_replay_in_ci": False,
+            "full_refill_mesh_replay_exclusion_reason": (
+                "production 69,632-flit Icarus replay exceeded the routine CI budget; "
+                "full byte counts, packet expansion, phase barriers, and representative "
+                "mesh payload paths are verified compositionally"
+            ),
         },
         "historical_phase2_vc0": {
             "policy": "fractional_smear",
@@ -375,6 +402,10 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "locality-aware balanced tile-to-cluster ownership",
                 "four-corner HBM source selection and exact canonical span addresses",
                 "256-byte span packetization through the 4,096-packet full-tile boundary",
+                "16-lane source-local span dispatch preserving four-corner concurrency",
+                "receive-before-transmit endpoint composition through the 4x4 XY mesh",
+                "resident-write and canonical-ingress payload ejection with metadata",
+                "payload-counted transient-refill, consume, and layer-transition barriers",
             ],
             "verified_counts": {
                 "canonical_k_input_flits_per_head": 4096,
@@ -393,18 +424,21 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "gather_hbm_packets_full_model": packet_summary[
                     "hbm_source_packet_count"
                 ],
+                "mesh_dispatch_full_tile_packets_verified": 16_384,
+                "mesh_simultaneous_packet_commands_verified": 4,
+                "mesh_payload_flits_verified": 32,
+                "resident_refill_flits_per_layer": resident_per_layer // 32,
+                "canonical_consume_flits_per_layer": layer_kv_bytes // 32,
             },
             "remaining_before_frontier_recost": [
-                "multi-source shared-mesh dispatch and canonical-ingress payload routing",
+                "per-cluster canonical-ejection target/control adapters into exact K/V transposers",
                 "V transpose ping-pong or proven fill-drain overlap",
                 "characterized SRAM macro substitution",
             ],
         },
         "required_rtl_ownership": [
-            "external HBM-return ready/valid ingress boundary, excluding controller and PHY",
-            "multi-source packet dispatch and on-chip routing for HBM-return K/V bytes",
-            "composition of capacity/HBM source descriptors with canonical K/V payload ingress",
-            "backpressure from cluster SRAM and producers through ingress and mesh",
+            "per-cluster target/control adaptation from canonical ejection into K/V transposers",
+            "backpressure from exact K/V transposers through canonical ejection and mesh",
             "overlapped V transpose buffering selected from measured PPA",
             "physical cost of ping-pong K transpose and paired-dimension write control",
             "characterized SRAM macro substitution for inferred K/Q and cluster stores",
@@ -415,15 +449,16 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "frontier_recost_allowed": False,
             "reason": (
                 "Exact K/V endpoint paths, capacity/HBM source descriptors, and packetization "
-                "are embodied, but shared-mesh payload composition, overlap selection, and "
-                "physical memory "
+                "are embodied, and payload reaches canonical per-cluster ingress through the "
+                "shared mesh. Target/control adaptation into the K/V transposers, overlap "
+                "selection, and physical memory "
                 "costs are not yet closed for the complete score32 cluster path."
             ),
         },
         "next_gate": (
-            "Dispatch exact gather packets through shared-mesh source routing into "
-            "canonical K/V ingress and verify end-to-end backpressure; then measure V buffering "
-            "parallelism and substitute characterized SRAM macros."
+            "Connect per-cluster canonical ejection to exact K/V transposer target/control and "
+            "verify backpressure through representative full K and V heads; then measure V "
+            "buffering parallelism and substitute characterized SRAM macros."
         ),
     }
 
@@ -437,6 +472,7 @@ def render_markdown(report: JsonDict) -> str:
     key_frontier = report["key_ingress_architecture_frontier"]
     gather = report["capacity_hbm_gather_scheduler"]
     packets = gather["packet_expansion"]
+    mesh_ingress = report["shared_mesh_ingress_composition"]
     lines = [
         "# Llama7B Exact K/V Ingress Closure Audit",
         "",
@@ -481,6 +517,15 @@ def render_markdown(report: JsonDict) -> str:
         f"- exact packet expansion: `{packets['packet_count']}` commands, "
         f"`{packets['flits_per_packet']}` flits each",
         f"- maximum span: `{packets['maximum_packets_per_span']}` packets, terminal index verified",
+        "",
+        "## Shared-Mesh Ingress Composition",
+        "",
+        f"- source-local packetizers: `{mesh_ingress['source_local_span_packetizers']}`",
+        f"- simultaneous HBM command accepts verified: "
+        f"`{mesh_ingress['verified_simultaneous_command_accepts']}`",
+        f"- resident refill barrier: `{mesh_ingress['resident_refill_flits_per_layer']}` flits/layer",
+        f"- canonical consume barrier: `{mesh_ingress['canonical_consume_flits_per_layer']}` flits/layer",
+        "- local, multi-hop, resident-write, and canonical payload paths: verified",
         "",
         "## Required RTL Ownership",
         "",
