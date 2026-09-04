@@ -285,6 +285,14 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "resident_refill_flits_per_layer": resident_per_layer // 32,
             "canonical_consume_flits_per_layer": layer_kv_bytes // 32,
             "phase_barriers_count_accepted_payload_flits": True,
+            "destination_descriptor_ordering": {
+                "locks": 16,
+                "scope": "one active gather descriptor per destination",
+                "release_event": "matching terminal packet completion at ejection",
+                "intra_descriptor_packet_pipelining": True,
+                "independent_destination_concurrency": True,
+                "submission_and_completion_telemetry_distinct": True,
+            },
             "verified_concurrent_full_tile_packet_commands": 16_384,
             "verified_simultaneous_command_accepts": 4,
             "verified_mesh_payload_flits": 32,
@@ -406,6 +414,7 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "receive-before-transmit endpoint composition through the 4x4 XY mesh",
                 "resident-write and canonical-ingress payload ejection with metadata",
                 "payload-counted transient-refill, consume, and layer-transition barriers",
+                "per-destination descriptor completion ordering across split resident/HBM planes",
             ],
             "verified_counts": {
                 "canonical_k_input_flits_per_head": 4096,
@@ -429,6 +438,7 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "mesh_payload_flits_verified": 32,
                 "resident_refill_flits_per_layer": resident_per_layer // 32,
                 "canonical_consume_flits_per_layer": layer_kv_bytes // 32,
+                "destination_descriptor_locks": 16,
             },
             "remaining_before_frontier_recost": [
                 "per-cluster canonical-ejection target/control adapters into exact K/V transposers",
@@ -525,6 +535,7 @@ def render_markdown(report: JsonDict) -> str:
         f"`{mesh_ingress['verified_simultaneous_command_accepts']}`",
         f"- resident refill barrier: `{mesh_ingress['resident_refill_flits_per_layer']}` flits/layer",
         f"- canonical consume barrier: `{mesh_ingress['canonical_consume_flits_per_layer']}` flits/layer",
+        "- split-plane order: one descriptor lock per destination, released on terminal completion",
         "- local, multi-hop, resident-write, and canonical payload paths: verified",
         "",
         "## Required RTL Ownership",

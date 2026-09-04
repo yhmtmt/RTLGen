@@ -152,7 +152,8 @@
       "16-lane source-local span dispatch preserving four-corner concurrency",
       "receive-before-transmit endpoint composition through the 4x4 XY mesh",
       "resident-write and canonical-ingress payload ejection with metadata",
-      "payload-counted transient-refill, consume, and layer-transition barriers"
+      "payload-counted transient-refill, consume, and layer-transition barriers",
+      "per-destination descriptor completion ordering across split resident/HBM planes"
     ],
     "remaining_before_frontier_recost": [
       "per-cluster canonical-ejection target/control adapters into exact K/V transposers",
@@ -165,6 +166,7 @@
       "canonical_v_input_flits_per_head": 4096,
       "cluster_sram_v_rows_per_head": 2048,
       "consecutive_pingpong_k_input_flits": 4096,
+      "destination_descriptor_locks": 16,
       "gather_consume_bytes_per_cluster": 8388608,
       "gather_descriptors_full_model": 4896,
       "gather_descriptors_per_layer": 153,
@@ -286,6 +288,14 @@
       "tile_byte_address"
     ],
     "destination_arbitration": "independent_round_robin",
+    "destination_descriptor_ordering": {
+      "independent_destination_concurrency": true,
+      "intra_descriptor_packet_pipelining": true,
+      "locks": 16,
+      "release_event": "matching terminal packet completion at ejection",
+      "scope": "one active gather descriptor per destination",
+      "submission_and_completion_telemetry_distinct": true
+    },
     "full_refill_mesh_replay_exclusion_reason": "production 69,632-flit Icarus replay exceeded the routine CI budget; full byte counts, packet expansion, phase barriers, and representative mesh payload paths are verified compositionally",
     "full_refill_mesh_replay_in_ci": false,
     "hbm_corner_lanes": [
@@ -313,7 +323,7 @@
   "source_refs": [
     {
       "path": "npu/eval/audit_llama7b_score32_exact_kv_ingress_closure.py",
-      "sha256": "0d8e5b04886d40090f47be68d92b2b24beee49ce9d63097df52386d6ac27fdef"
+      "sha256": "98bac2a29aea3e5cc9ad55b58d73931a2ccb5a85ceb8a3d5805f2b465bdabadc"
     },
     {
       "path": "npu/sim/perf/attention_kv_tile_layout.py",
@@ -425,7 +435,7 @@
     },
     {
       "path": "npu/sim/rtl/attention_kv_gather_packet_mesh4x4.sv",
-      "sha256": "c809aef56aed5953f7fbf30330497fd8402a7857bccdb75d89f34179ef5c5354"
+      "sha256": "59c3fba3222dc5d5c228282f5969cccf7e871ee4bd64d9cb11e4c4185fb04c81"
     },
     {
       "path": "npu/sim/rtl/attention_kv_gather_layer_barrier.sv",
@@ -433,7 +443,7 @@
     },
     {
       "path": "npu/sim/rtl/attention_kv_capacity_gather_mesh_ingress.sv",
-      "sha256": "e1a0324f4222263cf790756fccab52f62558d151fd8881456f60831fb4d91302"
+      "sha256": "65f7f0f19d0213105d3f9cea38bbac66d93a01036cdbac6dd95b3814fbcf9cf5"
     },
     {
       "path": "tests/test_attention_kv_gather_span_dispatch16_rtl.py",
@@ -449,15 +459,27 @@
     },
     {
       "path": "tests/test_attention_kv_capacity_gather_mesh_ingress_elaboration.py",
-      "sha256": "71dabc912bea391cd2d98aa7295038896faf230f757b4069287f8d35b021f6f1"
+      "sha256": "e5b097f217c9aa4a8cc19775273b862dc91fc432b899a7837dbd4dd8df8cc6e8"
     },
     {
       "path": "npu/docs/attention_kv_capacity_gather_mesh_ingress_contract.md",
-      "sha256": "08a1be75f32e7ea5f5cc171df914243b6eb7d645a3ec3c090778e26244e1a09a"
+      "sha256": "c4f53f7a961921e5e55761f6cb5d4f12266598dd4462715626b058da205a82e6"
     },
     {
       "path": "docs/proposals/prop_l1_attention_kv_capacity_gather_mesh_ingress_v1/proposal.json",
-      "sha256": "f8230649b6060ffcdfb886acb82aa906468f0558d43cf1900e6cc2f3553daafb"
+      "sha256": "bac4e22ddad636e1cc75c0251e08f357dd9ec9a2173091222797ae5c476d8742"
+    },
+    {
+      "path": "npu/sim/rtl/attention_kv_destination_descriptor_guard16.sv",
+      "sha256": "6ec93fb6220066917bbdbb7f990b8103fae9e5b6f2370765768dfe0d9a321398"
+    },
+    {
+      "path": "tests/test_attention_kv_destination_descriptor_guard16_rtl.py",
+      "sha256": "b53ecd05477be9dc3ae8260ff2f9fe9562db33299d003d0d84ce873c314826ee"
+    },
+    {
+      "path": "docs/proposals/prop_l1_attention_kv_destination_descriptor_guard_v1/proposal.json",
+      "sha256": "ba10503ac646bc4345a5d7ec603c58b3cb4cc2201c1a5ab5f2a45531ba4aec56"
     }
   ],
   "version": 1

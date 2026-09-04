@@ -13,6 +13,7 @@ RTL_FILES = [
     "npu/sim/rtl/attention_kv_gather_span_packetizer.sv",
     "npu/sim/rtl/attention_kv_gather_span_dispatch16.sv",
     "npu/sim/rtl/attention_kv_gather_layer_barrier.sv",
+    "npu/sim/rtl/attention_kv_destination_descriptor_guard16.sv",
     "npu/sim/rtl/attention_kv_gather_packet_mesh4x4.sv",
     "npu/sim/rtl/attention_kv_capacity_gather_mesh_ingress.sv",
     "npu/sim/rtl/noc_sram_packet_mesh4x4.sv",

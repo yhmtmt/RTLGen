@@ -58,7 +58,7 @@ module attention_kv_gather_packet_mesh4x4 (
   output wire [16*32-1:0] router_max_input_occupancy,
   output wire [16*5*32-1:0] router_route_flit_count,
   output reg [24:0] accepted_packet_command_count,
-  output reg [12:0] completed_descriptor_count,
+  output reg [12:0] submitted_descriptor_count,
   output reg schedule_packet_submitted,
   output reg command_protocol_error,
   output wire protocol_error
@@ -94,7 +94,7 @@ module attention_kv_gather_packet_mesh4x4 (
   reg [15:0] destination_candidate_valid_r;
   reg [3:0] destination_candidate_source_r [0:15];
   reg [4:0] accepted_command_count_r;
-  reg [4:0] completed_descriptor_count_r;
+  reg [4:0] submitted_descriptor_count_r;
   reg schedule_packet_submitted_r;
   integer source_i;
   integer destination_i;
@@ -223,14 +223,14 @@ module attention_kv_gather_packet_mesh4x4 (
 
   always @(*) begin
     accepted_command_count_r = 5'd0;
-    completed_descriptor_count_r = 5'd0;
+    submitted_descriptor_count_r = 5'd0;
     schedule_packet_submitted_r = 1'b0;
     for (accepted_source_i = 0; accepted_source_i < 16;
          accepted_source_i = accepted_source_i + 1) begin
       if (tx_desc_valid_r[accepted_source_i] && tx_desc_ready_w[accepted_source_i]) begin
         accepted_command_count_r = accepted_command_count_r + 1'b1;
         if (cmd_descriptor_last[accepted_source_i])
-          completed_descriptor_count_r = completed_descriptor_count_r + 1'b1;
+          submitted_descriptor_count_r = submitted_descriptor_count_r + 1'b1;
         if (cmd_schedule_last[accepted_source_i])
           schedule_packet_submitted_r = 1'b1;
       end
@@ -241,7 +241,7 @@ module attention_kv_gather_packet_mesh4x4 (
     if (!rst_n) begin
       receive_installed_q <= 16'd0;
       accepted_packet_command_count <= 25'd0;
-      completed_descriptor_count <= 13'd0;
+      submitted_descriptor_count <= 13'd0;
       schedule_packet_submitted <= 1'b0;
       command_protocol_error <= 1'b0;
       for (reset_i = 0; reset_i < 16; reset_i = reset_i + 1)
@@ -249,8 +249,8 @@ module attention_kv_gather_packet_mesh4x4 (
     end else begin
       accepted_packet_command_count <=
         accepted_packet_command_count + accepted_command_count_r;
-      completed_descriptor_count <=
-        completed_descriptor_count + completed_descriptor_count_r;
+      submitted_descriptor_count <=
+        submitted_descriptor_count + submitted_descriptor_count_r;
       if (schedule_packet_submitted_r)
         schedule_packet_submitted <= 1'b1;
       for (source_i = 0; source_i < 16; source_i = source_i + 1) begin

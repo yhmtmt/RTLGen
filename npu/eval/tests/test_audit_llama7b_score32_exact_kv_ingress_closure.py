@@ -197,6 +197,14 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     assert mesh_ingress["verified_concurrent_full_tile_packet_commands"] == 16_384
     assert mesh_ingress["verified_simultaneous_command_accepts"] == 4
     assert mesh_ingress["verified_mesh_payload_flits"] == 32
+    assert mesh_ingress["destination_descriptor_ordering"] == {
+        "locks": 16,
+        "scope": "one active gather descriptor per destination",
+        "release_event": "matching terminal packet completion at ejection",
+        "intra_descriptor_packet_pipelining": True,
+        "independent_destination_concurrency": True,
+        "submission_and_completion_telemetry_distinct": True,
+    }
     assert mesh_ingress["full_refill_mesh_replay_in_ci"] is False
     assert report["historical_phase2_vc0"]["remote_transport_bytes"] == 1_949_696
     assert report["historical_phase2_vc0"]["direct_cluster_fill_compatible"] is False
@@ -248,6 +256,7 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
         "mesh_payload_flits_verified": 32,
         "resident_refill_flits_per_layer": 69_632,
         "canonical_consume_flits_per_layer": 4_194_304,
+        "destination_descriptor_locks": 16,
     }
     ownership = "\n".join(report["required_rtl_ownership"])
     assert "future banked" not in ownership

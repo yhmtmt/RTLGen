@@ -39,6 +39,7 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 - simultaneous HBM command accepts verified: `4`
 - resident refill barrier: `69632` flits/layer
 - canonical consume barrier: `4194304` flits/layer
+- split-plane order: one descriptor lock per destination, released on terminal completion
 - local, multi-hop, resident-write, and canonical payload paths: verified
 
 ## Required RTL Ownership

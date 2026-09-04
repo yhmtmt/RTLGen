@@ -1,0 +1,49 @@
+{
+  "proposal_id": "prop_l1_attention_kv_destination_descriptor_guard_v1",
+  "created_utc": "2026-09-04T01:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Preserve exact K/V descriptor order at each mesh destination",
+  "hypothesis": "Per-destination ownership held through terminal packet completion preserves canonical split-plane order while retaining packet pipelining and concurrency across clusters.",
+  "direct_comparison": {
+    "primary_question": "Can resident-prefix and HBM-suffix descriptors from different source endpoints reach each cluster in scheduler order without globally serializing the mesh?",
+    "include": [
+      "sixteen independent destination ownership locks",
+      "terminal packet submission and destination completion tracking",
+      "all packets within one descriptor remaining pipelined",
+      "concurrent descriptors for different destinations",
+      "sticky fail-closed protocol checks"
+    ],
+    "exclude": [
+      "canonical K/V transposer target generation",
+      "V transpose overlap selection",
+      "new physical PPA",
+      "external HBM controller and PHY"
+    ]
+  },
+  "service_contract": {
+    "destination_locks": 16,
+    "maximum_active_descriptors": 16,
+    "lock_acquire_event": "descriptor ready/valid handshake",
+    "terminal_submission_event": "accepted packet command with descriptor_last",
+    "lock_release_event": "matching source and tag completion at destination",
+    "global_serialization": false
+  },
+  "required_evaluations": [],
+  "remaining_abstractions": [
+    "Ordered canonical ejection still requires automatic K/V target-control adaptation.",
+    "V fill/drain overlap and characterized SRAM macros remain open architecture dimensions.",
+    "The external HBM controller and PHY remain outside the RTL boundary."
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_attention_kv_capacity_gather_mesh_ingress_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_kv_capacity_gather_mesh_ingress_contract.md",
+    "npu/sim/rtl/attention_kv_destination_descriptor_guard16.sv",
+    "npu/sim/rtl/attention_kv_capacity_gather_mesh_ingress.sv",
+    "tests/test_attention_kv_destination_descriptor_guard16_rtl.py"
+  ]
+}
