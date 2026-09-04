@@ -187,6 +187,17 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
         "representative_rtl_packets_verified": 4608,
         "maximum_span_terminal_index_verified": True,
     }
+    mesh_ingress = report["shared_mesh_ingress_composition"]
+    assert mesh_ingress["source_lanes"] == 16
+    assert mesh_ingress["hbm_corner_lanes"] == [0, 3, 12, 15]
+    assert mesh_ingress["receive_before_transmit"] is True
+    assert mesh_ingress["local_route_supported"] is True
+    assert mesh_ingress["resident_refill_flits_per_layer"] == 69_632
+    assert mesh_ingress["canonical_consume_flits_per_layer"] == 4_194_304
+    assert mesh_ingress["verified_concurrent_full_tile_packet_commands"] == 16_384
+    assert mesh_ingress["verified_simultaneous_command_accepts"] == 4
+    assert mesh_ingress["verified_mesh_payload_flits"] == 32
+    assert mesh_ingress["full_refill_mesh_replay_in_ci"] is False
     assert report["historical_phase2_vc0"]["remote_transport_bytes"] == 1_949_696
     assert report["historical_phase2_vc0"]["direct_cluster_fill_compatible"] is False
     assert report["port_gap"]["whole_kv_tile_packets_256B"] == 4096
@@ -232,6 +243,11 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
         "gather_consume_bytes_per_cluster": 8 * 1024 * 1024,
         "gather_packets_full_model": 17_055_744,
         "gather_hbm_packets_full_model": 16_777_216,
+        "mesh_dispatch_full_tile_packets_verified": 16_384,
+        "mesh_simultaneous_packet_commands_verified": 4,
+        "mesh_payload_flits_verified": 32,
+        "resident_refill_flits_per_layer": 69_632,
+        "canonical_consume_flits_per_layer": 4_194_304,
     }
     ownership = "\n".join(report["required_rtl_ownership"])
     assert "future banked" not in ownership
@@ -241,10 +257,13 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     assert "capacity-driven resident-range descriptor" not in ownership
     assert "locality-aware tile-to-cluster scheduler" not in ownership
     assert "span-to-packet expansion" not in ownership
-    assert "shared-mesh source routing" in report["next_gate"]
+    assert "multi-source packet dispatch" not in ownership
+    assert "target/control adaptation" in ownership
+    assert "per-cluster canonical ejection" in report["next_gate"]
     assert report["revision_effect"]["frontier_recost_allowed"] is False
     assert "cannot be wired directly" in render_markdown(report)
     assert "p53/p54 parallel readout is verified" in render_markdown(report)
     assert "4,896" not in render_markdown(report)
     assert "`4896` over 32 layers" in render_markdown(report)
     assert "`17055744` commands" in render_markdown(report)
+    assert "`69632` flits/layer" in render_markdown(report)
