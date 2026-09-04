@@ -33,6 +33,21 @@ refill to resident SRAM, owner-local resident transfer, and a multi-hop HBM
 transfer. It verifies all 32 ejected flits, source response data, addresses,
 canonical metadata, local routing, and downstream backpressure.
 
+## Destination Descriptor Ordering
+
+The partial tile splits each K/V plane into a resident prefix and an HBM
+suffix, so packetizers at different source endpoints can be active for the
+same destination. A destination ownership guard admits only one complete
+gather descriptor per cluster at a time. It retains that lock after the
+terminal packet command is submitted and releases it only when the matching
+terminal packet completion is observed at the destination endpoint.
+
+All packets within the active descriptor remain pipelined through the endpoint
+queues and mesh. Descriptors targeting different clusters remain independent.
+This preserves the scheduler's canonical descriptor order without reducing
+the whole design to one global in-flight descriptor. Telemetry distinguishes
+terminal packet submission from actual destination completion.
+
 ## Layer Barriers
 
 Descriptor admission does not imply payload completion. The transient policy
@@ -52,7 +67,7 @@ Icarus CI budget, so it is not used as a routine regression.
 
 ## Remaining Boundary
 
-Canonical ejection now reaches an explicit per-cluster ready/valid flit port.
+Canonical ejection now reaches an ordered per-cluster ready/valid flit port.
 The next RTL must derive K/V head and V block/fill targets and connect those
 ports to the existing exact K ping-pong and V cluster-SRAM ingress modules.
 V fill/drain overlap and characterized SRAM macros remain architecture

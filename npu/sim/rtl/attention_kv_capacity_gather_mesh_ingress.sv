@@ -37,8 +37,13 @@ module attention_kv_capacity_gather_mesh_ingress (
   output wire [16*13-1:0] lane_accepted_descriptor_count,
   output wire [16*25-1:0] lane_generated_packet_count,
   output wire [24:0] accepted_packet_command_count,
+  output wire [12:0] guarded_descriptor_count,
+  output wire [12:0] submitted_descriptor_count,
   output wire [12:0] completed_descriptor_count,
   output wire schedule_packet_submitted,
+  output wire [15:0] destination_descriptor_locked,
+  output wire [15:0] descriptor_final_pending,
+  output wire [16*4-1:0] locked_descriptor_source,
   output wire [16*4-1:0] active_packet_segment,
   output wire [16*4-1:0] active_packet_plane,
   output wire [15:0] packet_completion_valid,
@@ -58,6 +63,7 @@ module attention_kv_capacity_gather_mesh_ingress (
   output wire [15:0] packetizer_protocol_error,
   output wire scheduler_protocol_error,
   output wire barrier_protocol_error,
+  output wire descriptor_guard_protocol_error,
   output wire mesh_command_protocol_error,
   output wire protocol_error
 );
@@ -81,6 +87,8 @@ module attention_kv_capacity_gather_mesh_ingress (
 
   wire released_desc_valid;
   wire released_desc_ready;
+  wire guarded_desc_valid;
+  wire guarded_desc_ready;
   reg [4:0] accepted_refill_flits_r;
   reg [4:0] accepted_consume_flits_r;
 
@@ -102,10 +110,13 @@ module attention_kv_capacity_gather_mesh_ingress (
   wire [15:0] cmd_descriptor_last;
   wire [15:0] cmd_schedule_last;
   wire mesh_protocol_error;
+  wire [15:0] packet_command_accept = cmd_valid & cmd_ready;
   integer count_i;
 
-  assign done = scheduler_done && schedule_packet_submitted && consume_complete;
+  assign done = scheduler_done && schedule_packet_submitted && consume_complete &&
+    completed_descriptor_count == generated_descriptor_count;
   assign protocol_error = scheduler_protocol_error | barrier_protocol_error |
+    descriptor_guard_protocol_error |
     mesh_command_protocol_error | mesh_protocol_error |
     (|packetizer_protocol_error);
 
@@ -158,7 +169,7 @@ module attention_kv_capacity_gather_mesh_ingress (
 
   attention_kv_gather_span_dispatch16 u_dispatch (
     .clk(clk), .rst_n(rst_n),
-    .desc_valid(released_desc_valid), .desc_ready(released_desc_ready),
+    .desc_valid(guarded_desc_valid), .desc_ready(guarded_desc_ready),
     .desc_layer(scheduler_desc_layer), .desc_tile(scheduler_desc_tile),
     .desc_segment(scheduler_desc_segment),
     .desc_operation_consume(scheduler_desc_operation_consume),
@@ -189,6 +200,28 @@ module attention_kv_capacity_gather_mesh_ingress (
     .accepted_descriptor_count(lane_accepted_descriptor_count),
     .generated_packet_count(lane_generated_packet_count),
     .packetizer_protocol_error(packetizer_protocol_error)
+  );
+
+  attention_kv_destination_descriptor_guard16 u_descriptor_guard (
+    .clk(clk), .rst_n(rst_n),
+    .descriptor_valid(released_desc_valid), .descriptor_ready(released_desc_ready),
+    .descriptor_source(scheduler_desc_source_endpoint),
+    .descriptor_destination(scheduler_desc_destination_cluster),
+    .guarded_valid(guarded_desc_valid), .guarded_ready(guarded_desc_ready),
+    .packet_command_accept(packet_command_accept),
+    .packet_command_source(cmd_source_endpoint),
+    .packet_command_destination(cmd_destination_cluster),
+    .packet_command_tag(cmd_tag),
+    .packet_command_descriptor_last(cmd_descriptor_last),
+    .packet_completion_valid(packet_completion_valid),
+    .packet_completion_source(packet_completion_source),
+    .packet_completion_tag(packet_completion_tag),
+    .destination_locked(destination_descriptor_locked),
+    .descriptor_final_pending(descriptor_final_pending),
+    .locked_descriptor_source(locked_descriptor_source),
+    .accepted_descriptor_count(guarded_descriptor_count),
+    .completed_descriptor_count(completed_descriptor_count),
+    .protocol_error(descriptor_guard_protocol_error)
   );
 
   attention_kv_gather_packet_mesh4x4 u_packet_mesh (
@@ -233,7 +266,7 @@ module attention_kv_capacity_gather_mesh_ingress (
     .router_max_input_occupancy(router_max_input_occupancy),
     .router_route_flit_count(router_route_flit_count),
     .accepted_packet_command_count(accepted_packet_command_count),
-    .completed_descriptor_count(completed_descriptor_count),
+    .submitted_descriptor_count(submitted_descriptor_count),
     .schedule_packet_submitted(schedule_packet_submitted),
     .command_protocol_error(mesh_command_protocol_error),
     .protocol_error(mesh_protocol_error)
