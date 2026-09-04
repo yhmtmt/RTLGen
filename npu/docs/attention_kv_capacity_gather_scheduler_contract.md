@@ -16,17 +16,25 @@ separate policy and is not selected by this RTL.
 
 ## Descriptor Sequence
 
-Each layer emits 153 descriptors in two ordered phases:
+Each layer emits 1,042 descriptors in two ordered phases:
 
 - 10 refill descriptors: two contiguous 1 MiB tiles and eight 16 KiB planar
   spans for the 128-token tail;
-- 143 consume descriptors: two resident full tiles, sixteen alternating
-  resident/HBM spans for tile 2, and 125 direct-HBM full tiles.
+- 1,032 consume descriptors ordered by head group, wave, K/V plane, then tile.
+  Every ordinary plane uses one 128 KiB descriptor; each of tile 2's eight
+  planes uses a 16 KiB resident prefix followed by a 112 KiB HBM suffix.
 
-The tile-2 consume order is monotonically planar. For each of eight K/V head
-planes, a 16 KiB resident prefix is immediately followed by its 112 KiB HBM
-suffix. The 32-layer schedule therefore contains 4,896 descriptors. `last` is
-set only on the final consume descriptor.
+For each of four GQA head groups, waves 0 through 7 deliver one K plane and one
+V plane to each of the 16 destination clusters. This matches the embodied
+cluster-SRAM command cadence and its one-`{head_base,wave}`-per-buffer
+residency contract. The 32-layer schedule therefore contains 33,344
+descriptors. `last` is set only on the final V descriptor of group 3, wave 7.
+
+The superseded 153-descriptor tile-major order had correct aggregate byte
+counts but could not drive the cluster SRAM: after `V0,wave0`, it requested
+`V1,wave0` in the same buffer while the compute hierarchy required
+`V0,wave1`. It remains historical traffic accounting, not executable
+scheduling evidence.
 
 Every descriptor identifies the layer, tile, tile-local segment, operation,
 source kind and endpoint, destination cluster, K/V plane, canonical tile
@@ -49,13 +57,13 @@ Per layer, the scheduler accounts for:
 - 134,217,728 canonical consume bytes.
 
 The Python model checks these conservation identities. The RTL test compares
-all 4,896 emitted descriptors against the model under backpressure and checks
+all 33,344 emitted descriptors against the model under backpressure and checks
 that stalled descriptors remain stable.
 
 ## Remaining Boundary
 
-Descriptors represent contiguous spans, not NoC packets. Span-to-packet
-expansion, shared-mesh routing, returned payload movement into canonical K/V
-ingress, and end-to-end backpressure remain to be composed. The external HBM
-controller and PHY are intentionally outside the design boundary.
-
+Packetization, shared-mesh routing, payload movement, and per-destination
+descriptor ordering are composed. Ordered canonical ejection still requires
+automatic target/control adaptation into the exact K/V transposers. V
+fill/drain overlap and characterized SRAM substitution remain open. The
+external HBM controller and PHY are intentionally outside the design boundary.

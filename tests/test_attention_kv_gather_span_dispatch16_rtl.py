@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 import shutil
 import subprocess
@@ -7,6 +8,7 @@ import subprocess
 import pytest
 
 from npu.sim.perf.attention_kv_capacity_gather_scheduler import layer_descriptors
+from npu.sim.perf.attention_kv_tile_layout import BYTES_PER_KV_TILE
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,7 +42,21 @@ def _drive(row: object) -> str:
 def test_four_hbm_sources_expand_full_tiles_concurrently(tmp_path: Path) -> None:
     if shutil.which("iverilog") is None or shutil.which("vvp") is None:
         pytest.skip("iverilog and vvp are required")
-    rows = layer_descriptors(0)[28:32]
+    base = next(row for row in layer_descriptors(0) if row.source == "hbm")
+    rows = [
+        replace(
+            base,
+            tile=index,
+            source_endpoint=endpoint,
+            destination_cluster=index,
+            plane=8,
+            canonical_base_address=0,
+            source_byte_address=(index + 1) * BYTES_PER_KV_TILE,
+            destination_byte_address=0,
+            payload_bytes=BYTES_PER_KV_TILE,
+        )
+        for index, endpoint in enumerate((0, 3, 12, 15))
+    ]
     assert {row.source_endpoint for row in rows} == {0, 3, 12, 15}
     initialization = "\n".join(
         f"    expected_base[{row.source_endpoint}] = 34'd{row.source_byte_address};\n"
@@ -90,7 +106,7 @@ module tb;
   wire [16*4-1:0] cmd_flit_count;
   wire [15:0] cmd_descriptor_last;
   wire [15:0] cmd_schedule_last;
-  wire [16*13-1:0] accepted_descriptor_count;
+  wire [16*14-1:0] accepted_descriptor_count;
   wire [16*25-1:0] generated_packet_count;
   wire [15:0] packetizer_protocol_error;
   integer count [0:15];

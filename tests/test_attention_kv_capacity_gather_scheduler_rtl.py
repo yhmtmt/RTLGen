@@ -45,7 +45,7 @@ module tb;
   wire [20:0] desc_payload_bytes;
   wire desc_last;
   wire done;
-  wire [12:0] generated_descriptor_count;
+  wire [15:0] generated_descriptor_count;
   wire protocol_error;
   wire [140:0] desc_bundle = {
     desc_layer, desc_tile, desc_segment, desc_operation_consume,
@@ -85,9 +85,9 @@ module tb;
   initial begin
     repeat (3) @(posedge clk);
     @(negedge clk); rst_n = 1; enable = 1;
-    while (!done && cycle < 32'd10000) @(posedge clk);
+    while (!done && cycle < 32'd100000) @(posedge clk);
     @(negedge clk);
-    if (!done || protocol_error || generated_descriptor_count != 13'd4896) begin
+    if (!done || protocol_error || generated_descriptor_count != 16'd33344) begin
       $display("FAIL done=%0d error=%0d count=%0d", done, protocol_error,
         generated_descriptor_count);
       $finish(1);
@@ -141,4 +141,4 @@ endmodule
         for row in llama7b_descriptors()
     ]
     assert observed == expected
-    assert "PASS count=4896" in result.stdout
+    assert "PASS count=33344" in result.stdout

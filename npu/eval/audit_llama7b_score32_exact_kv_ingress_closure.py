@@ -132,6 +132,10 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
         )
         for cluster in range(CLUSTERS)
     }
+    descriptors_by_source = {
+        source: sum(row.source_endpoint == source for row in gather_full)
+        for source in range(CLUSTERS)
+    }
     if sum(row.payload_bytes for row in refill_descriptors) != resident_per_layer:
         raise AssertionError("gather refill bytes differ from transient resident capacity")
     if sum(row.payload_bytes for row in resident_consume) != resident_per_layer:
@@ -253,6 +257,15 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "consume_bytes_per_cluster": consume_bytes_by_cluster,
             "hbm_source_endpoints": list(HBM_CORNER_ENDPOINTS),
             "owner_cluster_rule": "(layer*3+tile)%16",
+            "consume_order": "head_group_then_wave_then_k_v_then_tile",
+            "head_groups": 4,
+            "waves_per_head_group": 8,
+            "tiles_per_wave": 16,
+            "superseded_tile_major_descriptor_count": 4896,
+            "superseded_tile_major_role": "byte_accounting_only_buffer_incompatible",
+            "descriptors_by_source": descriptors_by_source,
+            "maximum_descriptors_per_source": max(descriptors_by_source.values()),
+            "per_source_descriptor_counter_bits": 14,
             "partial_tile_policy": (
                 "eight ordered planes, each consuming a 16KiB resident prefix followed "
                 "by a 112KiB direct-HBM suffix"
@@ -415,6 +428,7 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "resident-write and canonical-ingress payload ejection with metadata",
                 "payload-counted transient-refill, consume, and layer-transition barriers",
                 "per-destination descriptor completion ordering across split resident/HBM planes",
+                "group-major wave-ordered plane delivery compatible with cluster SRAM residency",
             ],
             "verified_counts": {
                 "canonical_k_input_flits_per_head": 4096,
@@ -518,6 +532,7 @@ def render_markdown(report: JsonDict) -> str:
         f"- persistence: `{gather['persistence_mode']}`",
         f"- descriptors: `{gather['descriptors_per_layer']}` per layer, "
         f"`{gather['full_model_descriptors']}` over 32 layers",
+        f"- executable order: `{gather['consume_order']}`",
         f"- HBM source bytes per layer: `{gather['total_hbm_source_bytes_per_layer']}`",
         f"- canonical bytes delivered per layer: "
         f"`{gather['total_canonical_consume_bytes_per_layer']}`",

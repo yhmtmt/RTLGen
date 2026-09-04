@@ -25,7 +25,8 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 ## Capacity/HBM Gather Scheduler
 
 - persistence: `transient`
-- descriptors: `153` per layer, `4896` over 32 layers
+- descriptors: `1042` per layer, `33344` over 32 layers
+- executable order: `head_group_then_wave_then_k_v_then_tile`
 - HBM source bytes per layer: `134217728`
 - canonical bytes delivered per layer: `134217728`
 - balanced delivery: `8388608` bytes per cluster

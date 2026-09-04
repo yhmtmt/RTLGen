@@ -30,7 +30,7 @@ schedule descriptor. Commands and metadata remain stable while downstream
 
 The exact transient-residency schedule expands as follows:
 
-- 4,896 gather spans;
+- 33,344 gather spans in executable group-major wave order;
 - 17,055,744 total packet commands;
 - 16,777,216 HBM-source packets;
 - 16,777,216 canonical-consume packets;
@@ -44,8 +44,8 @@ a 17-million-command RTL simulation.
 
 ## Remaining Boundary
 
-The packetizer emits commands, not payload flits. Receive-before-transmit
-descriptor installation, concurrent dispatch across HBM sources and local
-owners, shared-mesh movement, and canonical K/V ingress ejection remain in the
-next composition step. The external HBM controller and PHY remain outside the
-design boundary.
+Receive-before-transmit installation, concurrent dispatch, shared-mesh
+movement, canonical ejection, and per-destination descriptor ordering are now
+composed. Automatic target/control adaptation into the exact K/V transposers
+remains next. The external HBM controller and PHY remain outside the design
+boundary.

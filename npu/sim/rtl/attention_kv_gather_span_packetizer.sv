@@ -44,7 +44,7 @@ module attention_kv_gather_span_packetizer (
   output wire cmd_descriptor_last,
   output wire cmd_schedule_last,
 
-  output reg [12:0] accepted_descriptor_count,
+  output reg [13:0] accepted_descriptor_count,
   output reg [24:0] generated_packet_count,
   output reg protocol_error
 );
@@ -127,7 +127,7 @@ module attention_kv_gather_span_packetizer (
       packet_count_q <= 13'd0;
       packet_index_q <= 12'd0;
       schedule_last_q <= 1'b0;
-      accepted_descriptor_count <= 13'd0;
+      accepted_descriptor_count <= 14'd0;
       generated_packet_count <= 25'd0;
       protocol_error <= 1'b0;
     end else begin
