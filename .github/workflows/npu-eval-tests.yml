@@ -51,5 +51,6 @@ jobs:
             npu/eval/tests/test_run_llama7b_score32_exact_shared_mesh_release_replay.py \
             npu/eval/tests/test_audit_llama7b_score32_exact_kv_ingress_closure.py \
             npu/eval/tests/test_attention_kv_capacity_gather_scheduler.py \
+            npu/eval/tests/test_attention_kv_gather_packetizer.py \
             npu/eval/tests/test_check_attention_score32_exact_kv_key_ingress_ppa_guard.py \
             npu/eval/tests/test_check_attention_score32_exact_kv_key_ingress_ppa_metrics.py

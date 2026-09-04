@@ -30,11 +30,13 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 - canonical bytes delivered per layer: `134217728`
 - balanced delivery: `8388608` bytes per cluster
 - Python/RTL descriptors and ready-valid stall stability: verified
+- exact packet expansion: `17055744` commands, `8` flits each
+- maximum span: `4096` packets, terminal index verified
 
 ## Required RTL Ownership
 
 - external HBM-return ready/valid ingress boundary, excluding controller and PHY
-- span-to-packet expansion and on-chip routing for HBM-return K/V bytes
+- multi-source packet dispatch and on-chip routing for HBM-return K/V bytes
 - composition of capacity/HBM source descriptors with canonical K/V payload ingress
 - backpressure from cluster SRAM and producers through ingress and mesh
 - overlapped V transpose buffering selected from measured PPA
@@ -43,4 +45,4 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 
 ## Next Gate
 
-Compose the exact gather descriptors through shared-mesh source routing into canonical K/V ingress and verify end-to-end backpressure; then measure V buffering parallelism and substitute characterized SRAM macros.
+Dispatch exact gather packets through shared-mesh source routing into canonical K/V ingress and verify end-to-end backpressure; then measure V buffering parallelism and substitute characterized SRAM macros.

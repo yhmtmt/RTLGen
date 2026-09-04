@@ -40,6 +40,11 @@ from npu.sim.perf.attention_kv_capacity_gather_scheduler import (
     layer_descriptors,
     llama7b_descriptors,
 )
+from npu.sim.perf.attention_kv_gather_packetizer import (
+    FLITS_PER_PACKET,
+    PACKET_BYTES,
+    full_schedule_packet_summary,
+)
 
 
 JsonDict = dict[str, Any]
@@ -137,6 +142,15 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
         raise AssertionError("transient refill plus direct HBM bytes must cover the layer")
     if set(consume_bytes_by_cluster.values()) != {layer_kv_bytes // CLUSTERS}:
         raise AssertionError("locality-aware tile ownership is not cluster balanced")
+    packet_summary = full_schedule_packet_summary()
+    if packet_summary["hbm_source_packet_count"] * PACKET_BYTES != (
+        LAYERS * layer_kv_bytes
+    ):
+        raise AssertionError("packetized HBM bytes differ from the complete model K/V")
+    if packet_summary["canonical_consume_packet_count"] * PACKET_BYTES != (
+        LAYERS * layer_kv_bytes
+    ):
+        raise AssertionError("packetized canonical consume bytes differ from complete K/V")
 
     whole_contexts = residency["residency"]["context_payload_distribution"]
     return {
@@ -245,9 +259,17 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             ),
             "ready_valid_stall_stability_verified": True,
             "python_rtl_descriptor_equivalence_verified": True,
+            "packet_expansion": {
+                "packet_bytes": PACKET_BYTES,
+                "flits_per_packet": FLITS_PER_PACKET,
+                **packet_summary,
+                "maximum_packets_per_span": BYTES_PER_KV_TILE // PACKET_BYTES,
+                "representative_rtl_packets_verified": 4608,
+                "maximum_span_terminal_index_verified": True,
+            },
             "does_not_include": [
                 "HBM controller or PHY",
-                "span-to-packet expansion",
+                "multi-source packet dispatch",
                 "shared-mesh transport",
                 "canonical K/V payload movement",
             ],
@@ -352,6 +374,7 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "capacity-driven transient-refill and direct-HBM gather descriptor scheduler",
                 "locality-aware balanced tile-to-cluster ownership",
                 "four-corner HBM source selection and exact canonical span addresses",
+                "256-byte span packetization through the 4,096-packet full-tile boundary",
             ],
             "verified_counts": {
                 "canonical_k_input_flits_per_head": 4096,
@@ -366,16 +389,20 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                     row.payload_bytes for row in hbm_source
                 ),
                 "gather_consume_bytes_per_cluster": layer_kv_bytes // CLUSTERS,
+                "gather_packets_full_model": packet_summary["packet_count"],
+                "gather_hbm_packets_full_model": packet_summary[
+                    "hbm_source_packet_count"
+                ],
             },
             "remaining_before_frontier_recost": [
-                "shared-mesh packetization and source-to-canonical-ingress routing",
+                "multi-source shared-mesh dispatch and canonical-ingress payload routing",
                 "V transpose ping-pong or proven fill-drain overlap",
                 "characterized SRAM macro substitution",
             ],
         },
         "required_rtl_ownership": [
             "external HBM-return ready/valid ingress boundary, excluding controller and PHY",
-            "span-to-packet expansion and on-chip routing for HBM-return K/V bytes",
+            "multi-source packet dispatch and on-chip routing for HBM-return K/V bytes",
             "composition of capacity/HBM source descriptors with canonical K/V payload ingress",
             "backpressure from cluster SRAM and producers through ingress and mesh",
             "overlapped V transpose buffering selected from measured PPA",
@@ -387,13 +414,14 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "release_coupled_vc1_role": "exact_reduction_transport_timing_with_vc0_ingress_still_open",
             "frontier_recost_allowed": False,
             "reason": (
-                "Exact K and V endpoint paths and capacity/HBM source descriptors are embodied, "
-                "but shared-mesh payload composition, overlap selection, and physical memory "
+                "Exact K/V endpoint paths, capacity/HBM source descriptors, and packetization "
+                "are embodied, but shared-mesh payload composition, overlap selection, and "
+                "physical memory "
                 "costs are not yet closed for the complete score32 cluster path."
             ),
         },
         "next_gate": (
-            "Compose the exact gather descriptors through shared-mesh source routing into "
+            "Dispatch exact gather packets through shared-mesh source routing into "
             "canonical K/V ingress and verify end-to-end backpressure; then measure V buffering "
             "parallelism and substitute characterized SRAM macros."
         ),
@@ -408,6 +436,7 @@ def render_markdown(report: JsonDict) -> str:
     transpose = report["one_buffer_transpose_reference"]
     key_frontier = report["key_ingress_architecture_frontier"]
     gather = report["capacity_hbm_gather_scheduler"]
+    packets = gather["packet_expansion"]
     lines = [
         "# Llama7B Exact K/V Ingress Closure Audit",
         "",
@@ -449,6 +478,9 @@ def render_markdown(report: JsonDict) -> str:
         f"- balanced delivery: `{next(iter(gather['consume_bytes_per_cluster'].values()))}` "
         "bytes per cluster",
         "- Python/RTL descriptors and ready-valid stall stability: verified",
+        f"- exact packet expansion: `{packets['packet_count']}` commands, "
+        f"`{packets['flits_per_packet']}` flits each",
+        f"- maximum span: `{packets['maximum_packets_per_span']}` packets, terminal index verified",
         "",
         "## Required RTL Ownership",
         "",

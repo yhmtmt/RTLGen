@@ -1,0 +1,53 @@
+{
+  "proposal_id": "prop_l1_attention_kv_gather_span_packetizer_v1",
+  "created_utc": "2026-09-03T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Expand exact K/V gather spans into bounded mesh packets",
+  "hypothesis": "A small ready-valid RTL packetizer can replace abstract span packetization while preserving all tensor and placement metadata across the 4,096-packet full-tile boundary.",
+  "direct_comparison": {
+    "primary_question": "Can every exact gather span be expanded into ordered 256-byte, eight-flit packet commands without losing canonical addresses or terminal markers under backpressure?",
+    "include": [
+      "positive aligned spans from 256 bytes through 1 MiB",
+      "source, destination, canonical address, tensor-plane, and placement metadata",
+      "4,096-packet full-tile terminal boundary",
+      "same-cycle descriptor replacement after the final accepted packet",
+      "full Llama7B analytical packet-count conservation"
+    ],
+    "exclude": [
+      "multi-source packet dispatch",
+      "receive-before-transmit descriptor installation",
+      "shared-mesh payload transport",
+      "canonical K/V ingress ejection",
+      "external HBM controller and PHY"
+    ]
+  },
+  "service_contract": {
+    "packet_bytes": 256,
+    "flits_per_packet": 8,
+    "maximum_packets_per_span": 4096,
+    "full_model_span_count": 4896,
+    "full_model_packet_count": 17055744,
+    "full_model_hbm_source_packet_count": 16777216,
+    "full_model_canonical_consume_packet_count": 16777216,
+    "full_model_resident_refill_packet_count": 278528
+  },
+  "required_evaluations": [],
+  "remaining_abstractions": [
+    "Packet commands still require concurrent endpoint dispatch and receive-before-transmit installation.",
+    "Shared-mesh payload movement and canonical K/V ingress ejection remain uncomposed.",
+    "The external HBM controller and PHY remain outside the RTL boundary."
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_attention_kv_capacity_gather_scheduler_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_kv_gather_span_packetizer_contract.md",
+    "npu/sim/perf/attention_kv_gather_packetizer.py",
+    "npu/sim/rtl/attention_kv_gather_span_packetizer.sv",
+    "npu/eval/tests/test_attention_kv_gather_packetizer.py",
+    "tests/test_attention_kv_gather_span_packetizer_rtl.py"
+  ]
+}

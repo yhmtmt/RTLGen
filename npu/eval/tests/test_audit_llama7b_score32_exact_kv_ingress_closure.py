@@ -175,6 +175,18 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     assert set(gather["consume_bytes_per_cluster"].values()) == {8 * 1024 * 1024}
     assert gather["hbm_source_endpoints"] == [0, 3, 12, 15]
     assert gather["python_rtl_descriptor_equivalence_verified"] is True
+    assert gather["packet_expansion"] == {
+        "packet_bytes": 256,
+        "flits_per_packet": 8,
+        "descriptor_count": 4896,
+        "packet_count": 17_055_744,
+        "hbm_source_packet_count": 16_777_216,
+        "canonical_consume_packet_count": 16_777_216,
+        "resident_refill_packet_count": 278_528,
+        "maximum_packets_per_span": 4096,
+        "representative_rtl_packets_verified": 4608,
+        "maximum_span_terminal_index_verified": True,
+    }
     assert report["historical_phase2_vc0"]["remote_transport_bytes"] == 1_949_696
     assert report["historical_phase2_vc0"]["direct_cluster_fill_compatible"] is False
     assert report["port_gap"]["whole_kv_tile_packets_256B"] == 4096
@@ -218,6 +230,8 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
         "gather_descriptors_full_model": 4896,
         "gather_hbm_source_bytes_per_layer": 128 * 1024 * 1024,
         "gather_consume_bytes_per_cluster": 8 * 1024 * 1024,
+        "gather_packets_full_model": 17_055_744,
+        "gather_hbm_packets_full_model": 16_777_216,
     }
     ownership = "\n".join(report["required_rtl_ownership"])
     assert "future banked" not in ownership
@@ -226,9 +240,11 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     assert "1KiB token-major-to-fill-row V transpose buffer" not in ownership
     assert "capacity-driven resident-range descriptor" not in ownership
     assert "locality-aware tile-to-cluster scheduler" not in ownership
+    assert "span-to-packet expansion" not in ownership
     assert "shared-mesh source routing" in report["next_gate"]
     assert report["revision_effect"]["frontier_recost_allowed"] is False
     assert "cannot be wired directly" in render_markdown(report)
     assert "p53/p54 parallel readout is verified" in render_markdown(report)
     assert "4,896" not in render_markdown(report)
     assert "`4896` over 32 layers" in render_markdown(report)
+    assert "`17055744` commands" in render_markdown(report)
