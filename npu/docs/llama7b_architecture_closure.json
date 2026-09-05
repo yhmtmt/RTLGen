@@ -631,8 +631,8 @@
           "summary": "Endpoint-router anchors and the promoted segmented 4x4 mesh r7 physical result provide measured NoC component PPA."
         },
         "activity": {
-          "status": "measured_component",
-          "summary": "Dedicated NoC traffic profiling exists and already informs the attention model."
+          "status": "open",
+          "summary": "Exact traffic profiling exists, but hierarchy-matched post-route router activity power is still blocked on a promoted bare-router PPA anchor; traffic counts alone are not activity-backed energy."
         },
         "composition": {
           "status": "open",
@@ -668,7 +668,7 @@
           "dimensions": [
             "activity"
           ],
-          "note": "Captures the traffic profile already used to remove the old free-NoC assumption."
+          "note": "Captures traffic quantities used to remove the old free-NoC assumption, but does not provide VCD/SAIF-backed routed power."
         },
         {
           "path": "docs/proposals/prop_l2_decoder_attention_kv_noc_scheduler_selected_v1/analysis_report.md",
@@ -690,9 +690,10 @@
       ],
       "caveats": [
         "NoC costs are no longer free and a complete segmented-mesh physical anchor exists, but the final architecture still depends on a partially analytic topology/scheduler choice.",
+        "The exact hierarchy-matched router activity job remains pending behind the bare-router routed anchor; current traffic profiling must not be labeled measured NoC energy.",
         "The current frontier can still move if the selected pair changes under stricter physical constraints."
       ],
-      "next_gate": "Fix the final topology/scheduler pair under measured endpoint costs and then rerun the clustered frontier with that pair frozen."
+      "next_gate": "Measure the bare-router routed anchor, run exact hierarchy-matched post-route activity power, then fix the final topology/scheduler pair and rerun the clustered frontier."
     },
     {
       "id": "sram",
@@ -714,8 +715,8 @@
           "summary": "Promoted shared-SRAM read-adapter and k-round-scheduler rows now provide routed component evidence, while the final composed memory hierarchy remains unmeasured."
         },
         "activity": {
-          "status": "measured_component",
-          "summary": "Dedicated SRAM profiling already feeds the current architecture model."
+          "status": "open",
+          "summary": "SRAM access and CACTI profile evidence feeds the model, but workload-annotated activity on routed SRAM macro/proxy pins is not yet measured."
         },
         "composition": {
           "status": "measured_component",
@@ -733,7 +734,7 @@
           "dimensions": [
             "activity"
           ],
-          "note": "Provides the promoted local SRAM profile evidence used by the attention model."
+          "note": "Provides the local SRAM access/profile evidence used by the attention model; it is not post-route activity-power evidence."
         },
         {
           "path": "docs/proposals/prop_l1_attention_shared_sram_read_group_adapter_ppa_v1/analysis_report.md",
@@ -775,9 +776,10 @@
       ],
       "caveats": [
         "The SRAM model is materially better than a free-memory assumption, but it is still not a final top-level macro-floorplan closure.",
+        "CACTI/access-profile energy must remain distinct from workload-annotated routed macro or proxy-pin activity power.",
         "The final clustered memory hierarchy can still change with the chosen NoC/scheduler pair."
       ],
-      "next_gate": "Freeze SRAM together with the final NoC/scheduler pair and then rerun the frontier under the chosen clustered hierarchy."
+      "next_gate": "Measure workload-annotated SRAM macro/proxy activity, freeze SRAM with the final NoC/scheduler pair, and rerun the frontier under the chosen clustered hierarchy."
     },
     {
       "id": "scheduler_cdc",

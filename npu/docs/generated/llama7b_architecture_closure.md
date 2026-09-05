@@ -24,8 +24,8 @@
 | Multivalue Service | routed_with_caveat | medium | closed | closed | routed_with_caveat | measured_component | measured_component | rtl_unmeasured |
 | Reducer | measured_component | medium | closed | closed | measured_component | open | measured_component | rtl_unmeasured |
 | Producer-Service-Reducer Composition | rtl_unmeasured | low | closed | measured_component | open | open | measured_component | measured_component |
-| NoC | open | medium | measured_component | open | measured_component | measured_component | open | open |
-| SRAM | measured_component | medium | measured_component | measured_component | measured_component | measured_component | measured_component | measured_component |
+| NoC | open | medium | measured_component | open | measured_component | open | open | open |
+| SRAM | measured_component | medium | measured_component | measured_component | measured_component | open | measured_component | measured_component |
 | Scheduler/CDC | open | low | closed | open | measured_component | measured_component | rtl_unmeasured | open |
 | External Memory Boundary | abstract_external | high | abstract_external | abstract_external | abstract_external | abstract_external | abstract_external | abstract_external |
 | Full Llama7B Recost | measured_component | medium | open | open | measured_component | measured_component | measured_component | measured_component |
@@ -226,25 +226,26 @@ Evidence:
 - status: `open`
 - confidence: `medium`
 - summary: The repo has moved beyond a free NoC: the segmented 4x4 mesh now has promoted physical evidence, alongside endpoint-router anchors, traffic profiles, and exact shared-mesh arbitration/replay RTL. What is still missing is a promoted end-to-end equivalence gate and a frozen topology/scheduler pair for the final Llama7B claim.
-- next gate: Fix the final topology/scheduler pair under measured endpoint costs and then rerun the clustered frontier with that pair frozen.
+- next gate: Measure the bare-router routed anchor, run exact hierarchy-matched post-route activity power, then fix the final topology/scheduler pair and rerun the clustered frontier.
 
 | Dimension | Status | Summary |
 | --- | --- | --- |
 | `rtl` | `measured_component` | Endpoint-router primitives, the segmented 4x4 mesh, and exact shared-mesh arbitration/replay are represented in RTL-backed work. |
 | `equivalence` | `open` | No single promoted equivalence gate closes the final selected NoC behavior against the end-to-end attention contract. |
 | `routed_ppa` | `measured_component` | Endpoint-router anchors and the promoted segmented 4x4 mesh r7 physical result provide measured NoC component PPA. |
-| `activity` | `measured_component` | Dedicated NoC traffic profiling exists and already informs the attention model. |
+| `activity` | `open` | Exact traffic profiling exists, but hierarchy-matched post-route router activity power is still blocked on a promoted bare-router PPA anchor; traffic counts alone are not activity-backed energy. |
 | `composition` | `open` | The final topology/scheduler composition at Llama7B scale is still under study rather than promoted as fixed. |
 | `scale_validation` | `open` | Topology/scheduler pair studies exist, but a final selected pair is not yet closed as the architecture-level standard. |
 
 Caveats:
 - NoC costs are no longer free and a complete segmented-mesh physical anchor exists, but the final architecture still depends on a partially analytic topology/scheduler choice.
+- The exact hierarchy-matched router activity job remains pending behind the bare-router routed anchor; current traffic profiling must not be labeled measured NoC energy.
 - The current frontier can still move if the selected pair changes under stricter physical constraints.
 
 Evidence:
 - `docs/proposals/prop_l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1/analysis_report.md` (proposal_analysis; `rtl`, `routed_ppa`): Provides a routed PPA anchor for one endpoint-router NoC primitive family.
 - `docs/proposals/prop_l1_segmented_xy_mesh_noc_phase1_v1/analysis_report.md` (proposal_analysis; `rtl`, `routed_ppa`): Provides the promoted r7 physical anchor for the complete segmented 4x4 mesh; it is component evidence, not final topology closure.
-- `docs/proposals/prop_l2_decoder_attention_noc_profile_v1/analysis_report.md` (proposal_analysis; `activity`): Captures the traffic profile already used to remove the old free-NoC assumption.
+- `docs/proposals/prop_l2_decoder_attention_noc_profile_v1/analysis_report.md` (proposal_analysis; `activity`): Captures traffic quantities used to remove the old free-NoC assumption, but does not provide VCD/SAIF-backed routed power.
 - `docs/proposals/prop_l2_decoder_attention_kv_noc_scheduler_selected_v1/analysis_report.md` (proposal_analysis; `composition`, `scale_validation`): Documents a selected scheduler branch, but not yet a final physically closed architecture commitment.
 - `docs/proposals/prop_l2_decoder_attention_kv_dense_tile_topology_scheduler_pairs_llama7b_v1/analysis_report.md` (proposal_analysis; `scale_validation`): Shows that topology/scheduler pairing work exists at Llama7B scale, but the pair space is not yet closed.
 
@@ -253,23 +254,24 @@ Evidence:
 - status: `measured_component`
 - confidence: `medium`
 - summary: SRAM is on firmer ground than NoC: there are profile measurements, hierarchy-envelope studies, and bounded cluster-SRAM equivalence work. It is still a measured component, not a final memory-macro signoff across the full architecture.
-- next gate: Freeze SRAM together with the final NoC/scheduler pair and then rerun the frontier under the chosen clustered hierarchy.
+- next gate: Measure workload-annotated SRAM macro/proxy activity, freeze SRAM with the final NoC/scheduler pair, and rerun the frontier under the chosen clustered hierarchy.
 
 | Dimension | Status | Summary |
 | --- | --- | --- |
 | `rtl` | `measured_component` | Cluster-SRAM and local-SRAM structures are represented in the promoted attention hierarchy work. |
 | `equivalence` | `measured_component` | Cluster-SRAM composition is bounded by the local16/global-tree GQA8 equivalence gate. |
 | `routed_ppa` | `measured_component` | Promoted shared-SRAM read-adapter and k-round-scheduler rows now provide routed component evidence, while the final composed memory hierarchy remains unmeasured. |
-| `activity` | `measured_component` | Dedicated SRAM profiling already feeds the current architecture model. |
+| `activity` | `open` | SRAM access and CACTI profile evidence feeds the model, but workload-annotated activity on routed SRAM macro/proxy pins is not yet measured. |
 | `composition` | `measured_component` | The score32 SRAM hierarchy envelope and cluster-SRAM equivalence gates are already consumed by the selected frontier. |
 | `scale_validation` | `measured_component` | The SRAM hierarchy envelope indicates that conservative placement alone does not rerank the score32 frontier. |
 
 Caveats:
 - The SRAM model is materially better than a free-memory assumption, but it is still not a final top-level macro-floorplan closure.
+- CACTI/access-profile energy must remain distinct from workload-annotated routed macro or proxy-pin activity power.
 - The final clustered memory hierarchy can still change with the chosen NoC/scheduler pair.
 
 Evidence:
-- `docs/proposals/prop_l2_decoder_attention_sram_profile_v1/analysis_report.md` (proposal_analysis; `activity`): Provides the promoted local SRAM profile evidence used by the attention model.
+- `docs/proposals/prop_l2_decoder_attention_sram_profile_v1/analysis_report.md` (proposal_analysis; `activity`): Provides the local SRAM access/profile evidence used by the attention model; it is not post-route activity-power evidence.
 - `docs/proposals/prop_l1_attention_shared_sram_read_group_adapter_ppa_v1/analysis_report.md` (proposal_analysis; `rtl`, `routed_ppa`): Provides promoted PPA measurements for the shared-SRAM read-group adapter frontier.
 - `docs/proposals/prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1/analysis_report.md` (proposal_analysis; `rtl`, `routed_ppa`): Provides promoted PPA measurements for the exact shared-SRAM K-round scheduler.
 - `docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1/analysis_report.md` (proposal_analysis; `rtl`, `equivalence`, `composition`): Anchors the bounded cluster-SRAM exact composition gate for the score32 hierarchy.

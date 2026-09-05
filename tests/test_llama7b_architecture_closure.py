@@ -99,6 +99,8 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
         self.assertEqual(noc["confidence"], "medium")
         self.assertEqual(noc["dimensions"]["routed_ppa"]["status"], "measured_component")
         self.assertEqual(noc["dimensions"]["equivalence"]["status"], "open")
+        self.assertEqual(noc["dimensions"]["activity"]["status"], "open")
+        self.assertIn("not activity-backed energy", noc["dimensions"]["activity"]["summary"])
         noc_evidence = {entry["path"] for entry in noc["evidence"]}
         self.assertIn(
             "docs/proposals/prop_l1_segmented_xy_mesh_noc_phase1_v1/analysis_report.md",
@@ -107,6 +109,8 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
 
         sram = next(item for item in self.matrix["components"] if item["id"] == "sram")
         self.assertEqual(sram["dimensions"]["routed_ppa"]["status"], "measured_component")
+        self.assertEqual(sram["dimensions"]["activity"]["status"], "open")
+        self.assertIn("macro/proxy pins", sram["dimensions"]["activity"]["summary"])
         sram_evidence = {entry["path"] for entry in sram["evidence"]}
         self.assertIn(
             "docs/proposals/prop_l1_attention_shared_sram_read_group_adapter_ppa_v1/analysis_report.md",
