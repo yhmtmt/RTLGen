@@ -85,8 +85,8 @@ Evidence:
 
 - status: `open`
 - confidence: `low`
-- summary: Normalization remains the weakest physical datapath block, but it is no longer merely proposed: exact Phase-3 BF16 RMSNorm RTL passes bounded ready/valid equivalence. Its first LANES=16 physical attempt produced two synthesis failures near 12 GB peak memory because the complete row and gamma state were inferred as registers, so the current embodiment is explicit boundary evidence rather than a Pareto candidate.
-- next gate: Replace full-row and gamma inferred registers with an explicitly banked SRAM interface while preserving the passing Phase-3 arithmetic and ready/valid contract; then obtain routed PPA, matched activity power, and direct Llama7B recost integration.
+- summary: Normalization remains the weakest physical datapath block, but it is no longer merely proposed: exact Phase-3 BF16 RMSNorm RTL passes bounded ready/valid equivalence. Its first LANES=16 physical attempt produced two synthesis failures near 12 GB peak memory because the complete row and gamma state were inferred as registers. A concrete 64-macro banked row/gamma store now fixes the replacement memory organization and latency, but it is not yet integrated into the Phase-3 controller.
+- next gate: Integrate the exact 64-macro banked row/gamma store into both Phase-3 replay paths while preserving arithmetic and ready/valid equivalence; then obtain routed PPA, matched activity power, and direct Llama7B recost integration.
 
 | Dimension | Status | Summary |
 | --- | --- | --- |
@@ -104,6 +104,7 @@ Caveats:
 
 Evidence:
 - `docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1/analysis_report.md` (proposal_analysis; `rtl`, `equivalence`, `routed_ppa`): Records the exact Phase-3 implementation and the merged two-row synthesis-resource boundary for its inferred-register storage embodiment.
+- `npu/docs/llama7b_rmsnorm_banked_storage_contract.md` (rtl_contract; `rtl`, `composition`): Fixes the successor storage organization at 16 lane banks by four depth shards, exactly 64 available 64x32 proxy macros, with explicit two-cycle read latency and integration obligations.
 - `docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/quality_gate.md` (proposal_gate; `rtl`): Shows that normalization calibration work exists, but is not yet promoted as a closed measured component.
 - `docs/proposals/prop_l1_decoder_bf16_recip_norm_datapath_v1/quality_gate.md` (proposal_gate; `rtl`): Tracks the BF16 reciprocal norm path that remains future work rather than a merged closure result.
 - `docs/proposals/prop_l1_decoder_q12_pwl_recip_norm_datapath_v1/quality_gate.md` (proposal_gate; `rtl`): Shows that a fixed-point reciprocal norm path was explored but not promoted into the final frontier.
