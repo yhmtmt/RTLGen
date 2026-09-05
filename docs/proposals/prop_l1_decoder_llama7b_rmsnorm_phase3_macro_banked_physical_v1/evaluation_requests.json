@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1",
-  "source_commit": "pending_merge",
-  "source_commit_note": "After merge, pin the exact origin/master commit containing generator, macro store, equivalence probe, guard, config, sweep, and task plumbing. Do not dispatch from this local branch.",
+  "source_commit": "09a9854c357a419a70bc04417509b451de235c2a",
+  "source_commit_note": "Pinned to the exact clean origin/master merge commit containing generator, macro store, both equivalence probes, guard, configs, sweep, and task plumbing. Dispatch still requires the human Evaluation Gate.",
   "requested_items": [
     {
       "item_id": "l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1_r1",
@@ -22,7 +22,7 @@
         "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_macro_banked_pipelined_l16_ng45/metrics.csv",
         "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_macro_banked_pipelined_l16_ng45/timing_debug_report.md"
       ],
-      "status": "pending_implementation_merge",
+      "status": "ready_to_queue",
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "acceptance_notes": "Require both seven-row macro-backed equivalence profiles to pass, the three-credit candidate's additional twelve-cycle burst-backpressure row to pass without exhausting response credit, exact 64-macro inventory and zero inferred row/gamma memories in each candidate, complete routed rows or explicit retained failures, direct PPA comparison at matched clock/floorplan settings, and no activity-power or foundry-SRAM claim from vectorless FakeRAM evidence."

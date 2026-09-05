@@ -4,7 +4,7 @@
   "model": "llama7b",
   "scope": "Decoder-attention architecture exploration with persistent closure tracking",
   "as_of": "2026-09-05",
-  "source_commit_floor": "36cc69c9aa182f898d4f45b0944db669c3ed88c7",
+  "source_commit_floor": "09a9854c357a419a70bc04417509b451de235c2a",
   "generated_markdown": "npu/docs/generated/llama7b_architecture_closure.md",
   "component_order": [
     "precision",
@@ -331,7 +331,7 @@
         "The failed register-array implementation must not be generalized into evidence against an explicitly banked SRAM-backed RMSNorm design.",
         "BF16 and fixed-point norm options are both still unresolved."
       ],
-      "next_gate": "After merge and human approval, run matched guarded 10/14/18 ns routed sweeps for both exact 64-macro controllers; use routed PPA to decide whether the 42.5 percent cycle reduction is Pareto-beneficial, then measure overlap and matched workload activity power before replacing the sensitivity envelope with a measured Llama7B recost."
+      "next_gate": "After human approval, run matched guarded 10/14/18 ns routed sweeps for both exact 64-macro controllers from pinned merge commit 09a9854c; use routed PPA to decide whether the 42.5 percent cycle reduction is Pareto-beneficial, then measure overlap and matched workload activity power before replacing the sensitivity envelope with a measured Llama7B recost."
     },
     {
       "id": "score_softmax",

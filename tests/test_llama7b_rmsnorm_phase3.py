@@ -539,3 +539,37 @@ def test_llama7b_rmsnorm_phase3_pipelined_macro_banked_physical_guard(tmp_path: 
     manifest = json.loads((rtl_dir / "llama7b_rmsnorm_manifest.json").read_text(encoding="utf-8"))
     assert manifest["macro_inventory"] == {"fakeram45_64x32": 64}
     assert manifest["no_stall_cycles"] == 1035
+
+
+def test_llama7b_rmsnorm_macro_banked_evaluation_is_merge_pinned_and_human_gated() -> None:
+    proposal_dir = (
+        REPO_ROOT
+        / "docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1"
+    )
+    proposal = json.loads((proposal_dir / "proposal.json").read_text(encoding="utf-8"))
+    requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
+    expected_commit = "09a9854c357a419a70bc04417509b451de235c2a"
+    assert requests["source_commit"] == expected_commit
+    assert proposal["required_evaluations"][0]["status"] == "ready_to_queue"
+    assert requests["requested_items"][0]["status"] == "ready_to_queue"
+    assert len(requests["requested_items"][0]["config_paths"]) == 2
+    gate = (proposal_dir / "evaluation_gate.md").read_text(encoding="utf-8")
+    assert "pending human approval" in gate
+    assert expected_commit in gate
+
+    subprocess.run(
+        ["git", "cat-file", "-e", f"{expected_commit}^{{commit}}"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=10,
+    )
+    subprocess.run(
+        ["git", "merge-base", "--is-ancestor", expected_commit, "HEAD"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=10,
+    )

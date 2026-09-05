@@ -1,8 +1,8 @@
 # Evaluation Gate
 
-- Status: pending human approval and implementation merge.
+- Status: implementation merged; pending human approval.
 - Do not dispatch from the local development branch.
-- Before queueing, pin `source_commit` to the exact clean `origin/master` commit.
+- Source is pinned to clean merged commit `09a9854c357a419a70bc04417509b451de235c2a`.
 - Require conservative and three-credit-pipelined Phase-3 equivalence probes to
   pass all seven rows.
 - Require the three-credit candidate to pass the additional twelve-cycle burst
