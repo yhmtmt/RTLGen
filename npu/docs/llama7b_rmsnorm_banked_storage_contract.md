@@ -35,6 +35,9 @@ outstanding read and measures 1800 no-stall cycles per row. The pipelined policy
 uses the three slots of the existing elastic arithmetic pipeline as explicit
 response credits; it never allows occupied slots plus in-flight reads to exceed
 three and measures 1035 cycles. Both policies retain the same 64 macros.
+The three-credit policy is additionally checked with twelve-cycle downstream
+stall bursts against an independent cycle model; the store response must never
+arrive without a reserved arithmetic-pipeline slot.
 
 Equivalence must retain the existing full-row BF16 result, framing-error replay,
 exponent-255 canonicalization, row counters, and output-backpressure checks. A

@@ -217,7 +217,7 @@
         },
         "equivalence": {
           "status": "measured_component",
-          "summary": "Both macro-backed deterministic probes pass seven rows spanning finite data, framing and exponent-255 errors, always-ready operation, and periodic output backpressure with exact data and independent schedule checks: 1800 cycles for conservative control and 1035 for three-credit control."
+          "summary": "Both macro-backed deterministic probes pass seven rows spanning finite data, framing and exponent-255 errors, always-ready operation, and periodic output backpressure with exact data and independent schedule checks: 1800 cycles for conservative control and 1035 for three-credit control. The three-credit controller also passes a twelve-cycle burst-stall row without exhausting its response credits."
         },
         "routed_ppa": {
           "status": "open",
@@ -263,7 +263,7 @@
             "rtl",
             "equivalence"
           ],
-          "note": "Checks both macro-backed controllers against the Phase-2 oracle and independent 1800- and 1035-cycle schedule models across seven functional/protocol/backpressure rows."
+          "note": "Checks both macro-backed controllers against the Phase-2 oracle and independent 1800- and 1035-cycle schedule models across seven functional/protocol/backpressure rows, plus a twelve-cycle burst-stall stress row for the three-credit controller."
         },
         {
           "path": "docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1/evaluation_requests.json",

@@ -22,6 +22,7 @@
       "two-cycle registered macro reads with one outstanding request",
       "three-credit pipelined reads bounded by the existing elastic arithmetic pipeline",
       "full Phase-3 arithmetic, framing, exponent-255, row accounting, and backpressure equivalence",
+      "twelve-cycle burst-backpressure stress for the three-credit response invariant",
       "separate macro and standard-cell area plus routed timing and vectorless power"
     ],
     "exclude": [

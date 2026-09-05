@@ -136,6 +136,8 @@ def _ready_expr(scenario: str) -> str:
         return "1'b1"
     if scenario == "periodic_backpressure":
         return "((cycle % 4) != 2)"
+    if scenario == "burst_backpressure":
+        return "((cycle % 29) >= 12)"
     raise ValueError(f"unknown scenario: {scenario}")
 
 
@@ -368,25 +370,62 @@ def _simulate_macro_banked_output_cycles(
 def _simulate_pipelined_macro_output_cycles(
     *, metadata: RMSNormPhase2Metadata, scenario: str
 ) -> list[int]:
-    """Independent closed form for the three-credit pipelined macro controller."""
-    first_output = (
+    """Independent cycle model for two-cycle reads and three response credits."""
+    emit_start = (
         metadata.input_accept_cycles
         + metadata.accumulation_replay_cycles
         + metadata.finalize_cycles
-        + 8
+        + 3
     )
-    if scenario == "always_ready":
-        return [first_output + 6 * (beat // 3) + (beat % 3) for beat in range(metadata.beats_per_row)]
-    if scenario == "periodic_backpressure":
-        return [
-            (
-                first_output
-                if beat == 0
-                else (first_output + 2 if beat == 1 else (first_output + 3 if beat == 2 else first_output + 2 * beat))
-            )
-            for beat in range(metadata.beats_per_row)
-        ]
-    raise ValueError(f"unknown scenario: {scenario}")
+
+    def ready(cycle: int) -> bool:
+        if scenario == "always_ready":
+            return True
+        if scenario == "periodic_backpressure":
+            return (cycle % 4) != 2
+        if scenario == "burst_backpressure":
+            return (cycle % 29) >= 12
+        raise ValueError(f"unknown scenario: {scenario}")
+
+    issued = 0
+    inflight = 0
+    response_q1: int | None = None
+    response_q2: int | None = None
+    pipeline: list[int | None] = [None, None, None]
+    outputs: list[int] = []
+    cycle = emit_start
+    while len(outputs) < metadata.beats_per_row:
+        out_ready = ready(cycle)
+        s2_ready = pipeline[2] is None or out_ready
+        s1_ready = pipeline[1] is None or s2_ready
+        s0_ready = pipeline[0] is None or s1_ready
+        occupancy = sum(item is not None for item in pipeline)
+        issue = issued < metadata.beats_per_row and occupancy + inflight < 3
+
+        if pipeline[2] is not None and out_ready:
+            outputs.append(cycle)
+        if response_q2 is not None and not s0_ready:
+            raise RuntimeError("independent model exhausted a response credit")
+
+        next_pipeline = list(pipeline)
+        if s2_ready:
+            next_pipeline[2] = pipeline[1]
+        if s1_ready:
+            next_pipeline[1] = pipeline[0]
+        if s0_ready:
+            next_pipeline[0] = response_q2
+        pipeline = next_pipeline
+
+        issued_before = issued
+        if issue:
+            issued += 1
+        inflight += int(issue) - int(response_q2 is not None)
+        response_q2 = response_q1
+        response_q1 = issued_before if issue else None
+        cycle += 1
+        if cycle - emit_start > 20000:
+            raise RuntimeError("pipelined macro schedule model timed out")
+    return outputs
 
 
 def _run_rtl(

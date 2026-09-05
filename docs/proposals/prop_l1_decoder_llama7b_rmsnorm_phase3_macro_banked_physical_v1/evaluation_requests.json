@@ -25,7 +25,7 @@
       "status": "pending_implementation_merge",
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "acceptance_notes": "Require both macro-backed equivalence profiles to pass, exact 64-macro inventory and zero inferred row/gamma memories in each candidate, complete routed rows or explicit retained failures, direct PPA comparison at matched clock/floorplan settings, and no activity-power or foundry-SRAM claim from vectorless FakeRAM evidence."
+      "acceptance_notes": "Require both seven-row macro-backed equivalence profiles to pass, the three-credit candidate's additional twelve-cycle burst-backpressure row to pass without exhausting response credit, exact 64-macro inventory and zero inferred row/gamma memories in each candidate, complete routed rows or explicit retained failures, direct PPA comparison at matched clock/floorplan settings, and no activity-power or foundry-SRAM claim from vectorless FakeRAM evidence."
     }
   ]
 }
