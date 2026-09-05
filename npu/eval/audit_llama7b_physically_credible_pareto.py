@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -71,8 +72,13 @@ def build_report(
             "energy_mj_per_token": float(raw.get("energy_mj_per_token") or 0.0),
             "component_area_mm2": float(raw.get("compute_area_mm2") or 0.0),
         }
-        if not candidate_id or metrics["latency_us"] <= 0.0 or metrics["energy_mj_per_token"] <= 0.0:
-            raise ValueError(f"candidate has missing/non-positive latency or energy: {candidate_id}")
+        if not candidate_id or any(
+            not math.isfinite(metrics[key]) or metrics[key] <= 0.0
+            for key in ("latency_us", "energy_mj_per_token")
+        ):
+            raise ValueError(
+                f"candidate has missing/non-positive/non-finite latency or energy: {candidate_id}"
+            )
         record = {
             "candidate_id": candidate_id,
             **metrics,
@@ -84,8 +90,13 @@ def build_report(
             "remaining_abstractions": list(raw.get("remaining_abstractions") or []),
         }
         if bool(raw.get("promotable")) and bool(raw.get("quality_backed")):
-            if metrics["component_area_mm2"] <= 0.0:
-                raise ValueError(f"eligible candidate has missing/non-positive component area: {candidate_id}")
+            if (
+                not math.isfinite(metrics["component_area_mm2"])
+                or metrics["component_area_mm2"] <= 0.0
+            ):
+                raise ValueError(
+                    f"eligible candidate has missing/non-positive/non-finite component area: {candidate_id}"
+                )
             eligible.append(record)
         else:
             reasons = []
@@ -105,6 +116,10 @@ def build_report(
     scope = norm.get("attention_scope_proof")
     if not isinstance(scope, dict) or scope.get("status") != "verified_attention_only_excludes_transformer_rmsnorm":
         raise ValueError("RMSNorm scope exclusion is not proven")
+    if len(pareto) != 2:
+        raise ValueError(
+            f"expected exactly two credible Pareto points for pairwise audit, got {len(pareto)}"
+        )
     norm_candidates = norm.get("rmsnorm_candidates")
     if not isinstance(norm_candidates, list) or not norm_candidates:
         raise ValueError("RMSNorm composition has no candidates")

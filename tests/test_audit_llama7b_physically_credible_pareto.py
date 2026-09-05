@@ -12,6 +12,57 @@ def _write(path: Path, value: dict) -> None:
     path.write_text(json.dumps(value), encoding="utf-8")
 
 
+def _valid_pairwise_inputs() -> tuple[dict, dict]:
+    frontier = {
+        "model": "llm_decoder_attention_score32_integrated_frontier_ranking_v1",
+        "inputs": {"score32_activity_power_json": None},
+        "rows": [
+            {
+                "candidate_id": "fast_quality_safe",
+                "promotable": True,
+                "quality_backed": True,
+                "latency_us": 10,
+                "energy_mj_per_token": 100,
+                "compute_area_mm2": 8,
+                "die_area_mm2": 8,
+                "token_throughput_per_s": 100000,
+            },
+            {
+                "candidate_id": "efficient_quality_safe",
+                "promotable": True,
+                "quality_backed": True,
+                "latency_us": 50,
+                "energy_mj_per_token": 20,
+                "compute_area_mm2": 12,
+                "die_area_mm2": 12,
+                "token_throughput_per_s": 20000,
+            },
+        ],
+    }
+    norm = {
+        "model": "llama7b_rmsnorm_macro_banked_latency_composition_v2",
+        "baseline": {"candidate_id": "fast_quality_safe", "latency_us": 10},
+        "attention_scope_proof": {
+            "status": "verified_attention_only_excludes_transformer_rmsnorm",
+            "excluded_terms": ["pre_attention_rmsnorm", "pre_mlp_rmsnorm", "final_rmsnorm"],
+        },
+        "rmsnorm_scope": {"rows_per_token": 65},
+        "rmsnorm_candidates": [{"candidate_id": "macro_banked_three_credit", "row_cycles": 1035}],
+        "rows": [
+            {
+                "rmsnorm_candidate_id": "macro_banked_three_credit",
+                "clock_period_ns": clock,
+                "hidden_fraction": 0.0,
+                "composed_latency_us": latency,
+                "composed_token_throughput_per_s": 1.0e6 / latency,
+            }
+            for clock, latency in ((10.0, 11.0), (14.0, 12.0), (18.0, 13.0))
+        ],
+        "promotion_gate_pass": False,
+    }
+    return frontier, norm
+
+
 def test_pareto_audit_excludes_noncredible_dominators(tmp_path: Path) -> None:
     frontier_path = tmp_path / "frontier.json"
     frontier = {
@@ -168,6 +219,61 @@ def test_pareto_audit_requires_proven_norm_scope(tmp_path: Path) -> None:
     }
     _write(norm_path, norm)
     with pytest.raises(ValueError, match="scope exclusion"):
+        build_report(
+            frontier,
+            frontier_path=frontier_path,
+            norm=norm,
+            norm_path=norm_path,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("latency_us", float("nan")),
+        ("energy_mj_per_token", float("inf")),
+        ("compute_area_mm2", float("inf")),
+    ],
+)
+def test_pareto_audit_rejects_nonfinite_objectives(
+    tmp_path: Path, field: str, value: float
+) -> None:
+    frontier, norm = _valid_pairwise_inputs()
+    frontier["rows"][0][field] = value
+    frontier_path = tmp_path / "frontier.json"
+    norm_path = tmp_path / "norm.json"
+    _write(frontier_path, frontier)
+    _write(norm_path, norm)
+
+    with pytest.raises(ValueError, match="non-finite"):
+        build_report(
+            frontier,
+            frontier_path=frontier_path,
+            norm=norm,
+            norm_path=norm_path,
+        )
+
+
+def test_pairwise_audit_rejects_a_three_point_frontier(tmp_path: Path) -> None:
+    frontier, norm = _valid_pairwise_inputs()
+    frontier["rows"].append(
+        {
+            "candidate_id": "balanced_quality_safe",
+            "promotable": True,
+            "quality_backed": True,
+            "latency_us": 20,
+            "energy_mj_per_token": 50,
+            "compute_area_mm2": 10,
+            "die_area_mm2": 10,
+            "token_throughput_per_s": 50000,
+        }
+    )
+    frontier_path = tmp_path / "frontier.json"
+    norm_path = tmp_path / "norm.json"
+    _write(frontier_path, frontier)
+    _write(norm_path, norm)
+
+    with pytest.raises(ValueError, match="exactly two credible Pareto points"):
         build_report(
             frontier,
             frontier_path=frontier_path,
