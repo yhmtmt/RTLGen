@@ -37,6 +37,48 @@ def test_phase3_equivalence_probe_passes_representative_cases() -> None:
 
 
 @pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
+def test_macro_banked_phase3_equivalence_probe_passes() -> None:
+    report = build_report(
+        cases=["unity_identity", "framing_error", "row_exponent_255", "gamma_exponent_255"],
+        scenarios=["always_ready", "periodic_backpressure"],
+        storage_backend="fakeram45_64x32_banked",
+    )
+
+    assert report["decision"] == "llama7b_rmsnorm_phase3_equivalence_pass"
+    assert report["equivalence_pass"] is True
+    assert report["storage_backend"] == "fakeram45_64x32_banked"
+    assert report["semantic_profile"] == "llama7b_bf16_rmsnorm_phase3_macro_banked_ready_valid_v1"
+    assert all(row["equivalence_pass"] for row in report["rows"])
+
+
+@pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
+def test_pipelined_macro_banked_phase3_equivalence_probe_passes() -> None:
+    report = build_report(storage_backend="fakeram45_64x32_banked_pipelined")
+
+    assert report["decision"] == "llama7b_rmsnorm_phase3_equivalence_pass"
+    assert report["semantic_profile"] == (
+        "llama7b_bf16_rmsnorm_phase3_macro_banked_pipelined_ready_valid_v1"
+    )
+    assert report["storage_backend"] == "fakeram45_64x32_banked_pipelined"
+    assert all(row["equivalence_pass"] for row in report["rows"])
+    always_ready = [row for row in report["rows"] if row["scenario"] == "always_ready"]
+    assert {row["last_output_cycle"] for row in always_ready} == {1035}
+
+
+@pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
+def test_pipelined_macro_banked_phase3_survives_burst_backpressure() -> None:
+    report = build_report(
+        cases=["signed_pattern"],
+        scenarios=["burst_backpressure"],
+        storage_backend="fakeram45_64x32_banked_pipelined",
+    )
+
+    assert report["equivalence_pass"] is True
+    assert report["rows"][0]["scenario"] == "burst_backpressure"
+    assert report["rows"][0]["last_output_cycle"] == 1352
+
+
+@pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
 def test_phase3_equivalence_probe_cli_writes_json(tmp_path: Path) -> None:
     out_path = tmp_path / "phase3_equivalence.json"
     subprocess.run(

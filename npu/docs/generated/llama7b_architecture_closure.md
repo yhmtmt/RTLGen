@@ -2,7 +2,7 @@
 
 - source JSON: `npu/docs/llama7b_architecture_closure.json`
 - generated Markdown: `npu/docs/generated/llama7b_architecture_closure.md`
-- as_of: `2026-08-06`
+- as_of: `2026-09-05`
 
 ## Headline
 
@@ -10,6 +10,7 @@
 - provisional recommendation: `INT8 dense compute` + `score32 + exp-LUT`, `hierarchical c1/c2 service islands`, `dual producer/reducer clocks`
 - provisional because: The accepted c1 multivalue-service route is exploratory only: it is timing-clean but still carries 142 max-cap violations with worst slack -17.81 fF.
 - provisional because: Producer-service-reducer composition is only bounded by partial equivalence and cadence audits, not by a full end-to-end measured composed implementation.
+- provisional because: Two exact 64-macro RMSNorm controllers now bound normalization latency at 1800 and 1035 cycles per row, but matched routed PPA and workload-backed activity are still absent.
 - provisional because: NoC, SRAM, and scheduler evidence are still mixed between measured primitives and analytic composition, so the final Llama7B recost is not yet a fully embodied chip closure.
 - provisional because: External DRAM controller and PHY remain an intentional abstract boundary, so full-system signoff is outside the current on-chip closure claim.
 
@@ -17,18 +18,18 @@
 
 | Component | Status | Confidence | RTL | Equivalence | Routed PPA | Activity | Composition | Scale |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Precision | measured_component | medium | closed | measured_component | measured_component | measured_component | measured_component | measured_component |
+| Precision | measured_component | medium | closed | measured_component | measured_component | open | measured_component | measured_component |
 | Dense Compute | measured_component | medium | closed | closed | measured_component | open | measured_component | measured_component |
-| Norm | open | low | rtl_unmeasured | open | open | open | open | open |
-| Score/Softmax | measured_component | medium | closed | measured_component | measured_component | measured_component | measured_component | measured_component |
+| Norm | open | low | closed | measured_component | open | open | open | open |
+| Score/Softmax | measured_component | medium | closed | measured_component | measured_component | open | measured_component | measured_component |
 | Multivalue Service | routed_with_caveat | medium | closed | closed | routed_with_caveat | measured_component | measured_component | rtl_unmeasured |
 | Reducer | measured_component | medium | closed | closed | measured_component | open | measured_component | rtl_unmeasured |
 | Producer-Service-Reducer Composition | rtl_unmeasured | low | closed | measured_component | open | open | measured_component | measured_component |
-| NoC | open | low | measured_component | open | measured_component | measured_component | open | open |
-| SRAM | measured_component | medium | measured_component | measured_component | open | measured_component | measured_component | measured_component |
-| Scheduler/CDC | open | low | closed | open | measured_component | measured_component | rtl_unmeasured | open |
+| NoC | open | medium | measured_component | open | measured_component | open | open | open |
+| SRAM | measured_component | medium | measured_component | measured_component | measured_component | open | measured_component | measured_component |
+| Scheduler/CDC | open | low | closed | open | measured_component | open | rtl_unmeasured | open |
 | External Memory Boundary | abstract_external | high | abstract_external | abstract_external | abstract_external | abstract_external | abstract_external | abstract_external |
-| Full Llama7B Recost | measured_component | medium | open | open | measured_component | measured_component | measured_component | measured_component |
+| Integrated Llama7B Recost | measured_component | medium | open | open | measured_component | open | measured_component | measured_component |
 
 ## Precision
 
@@ -42,7 +43,7 @@
 | `rtl` | `closed` | Score32 exp-LUT, exact-div, reciprocal-LUT, and replacement softmax paths all exist as RTL-backed candidate branches. |
 | `equivalence` | `measured_component` | Behavior is bounded by generation-quality and replacement checks against the software reference, but not by a single full-hierarchy hash-equivalence proof. |
 | `routed_ppa` | `measured_component` | Precision-sensitive wrapper cost is backed by measured composed-wrapper and schedule-wrapper rows rather than pure heuristics. |
-| `activity` | `measured_component` | The promoted score32 schedule-wrapper activity audit provides a measured active-duty correction for the selected precision path. |
+| `activity` | `open` | A score32 schedule-wrapper activity audit is specified, but its promotion record and analysis remain pending and its expected dataset is absent; no active-duty correction is folded into the current precision ranking. |
 | `composition` | `measured_component` | The score32 exp-LUT service closure and integrated frontier ranking consume the measured wrapper path as the current precision-safe branch. |
 | `scale_validation` | `measured_component` | The Llama7B ranking has been recosted around the selected score32 branch, but future FP formats and recovery flows can still move the frontier. |
 
@@ -51,10 +52,10 @@ Caveats:
 - Equivalence evidence is still mixed between RTL/reference functional comparison and composed wrapper recost rather than one full-system tensor-hash proof.
 
 Evidence:
-- `docs/proposals/prop_l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1/analysis_report.md` (proposal_analysis; `rtl`, `equivalence`, `composition`): Records the passing score32 exp-LUT generation-quality branch used as the current precision recommendation.
+- `docs/proposals/prop_l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1/analysis_report.md` (proposal_gate; `rtl`, `equivalence`, `composition`): Records the passing score32 exp-LUT generation-quality branch used as the current precision recommendation.
 - `docs/proposals/prop_l2_decoder_attention_mixed_int8_score32_w16_recip_lut_q16_generation_quality_llama7b_v1/analysis_report.md` (proposal_analysis; `equivalence`, `scale_validation`): Shows that the q16 reciprocal-LUT branch fails the Llama7B quality gate and cannot be promoted.
 - `docs/proposals/prop_l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1/analysis_report.md` (proposal_analysis; `equivalence`, `scale_validation`): Shows that exact-div shares the same quality failure mode as the reciprocal-LUT branch.
-- `docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1/analysis_report.md` (proposal_analysis; `activity`, `routed_ppa`, `composition`): Captures the promoted activity-aware ranking used in the current precision-safe Llama7B frontier.
+- `docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1/analysis_report.md` (proposal_analysis; `activity`, `routed_ppa`, `composition`): Tracks the pending activity-aware rerank; its analysis report still says Pending initial evaluation and is not evidence of a promoted result.
 
 ## Dense Compute
 
@@ -85,23 +86,29 @@ Evidence:
 
 - status: `open`
 - confidence: `low`
-- summary: Normalization remains the weakest embodied datapath block. There are proposal tracks for arithmetic calibration and reciprocal datapaths, but the current Llama7B frontier still carries this area/energy contribution as an incompletely measured term.
-- next gate: Promote one norm datapath with RTL equivalence, routed PPA, and direct integration into the Llama7B recost.
+- summary: Normalization remains the weakest physically measured datapath block, but its implementation ambiguity is substantially reduced: exact Phase-3 BF16 RMSNorm RTL now integrates a concrete 64-macro row/gamma store with conservative and three-credit controllers. Both pass seven bounded arithmetic, protocol, schedule, and backpressure equivalence rows; the three-credit schedule reduces exact service from 1800 to 1035 cycles per row, while matched routed PPA remains open.
+- next gate: After merge and human approval, run matched guarded 10/14/18 ns routed sweeps for both exact 64-macro controllers; use routed PPA to decide whether the 42.5 percent cycle reduction is Pareto-beneficial, then measure overlap and matched workload activity power before replacing the sensitivity envelope with a measured Llama7B recost.
 
 | Dimension | Status | Summary |
 | --- | --- | --- |
-| `rtl` | `rtl_unmeasured` | Reciprocal and normalization datapath proposals exist, but they are not yet promoted as the measured norm block used by the frontier. |
-| `equivalence` | `open` | No full promoted norm equivalence record closes the behavior against the final frontier contract. |
-| `routed_ppa` | `open` | The frontier still lacks an accepted routed normalization primitive replacing the remaining cost heuristics. |
+| `rtl` | `closed` | Exact Phase-3 Llama7B BF16 RMSNorm RTL integrates the 64-macro row/gamma store with fixed two-cycle reads. It provides both lossless single-outstanding replay control and a three-response-credit controller bounded by the existing elastic arithmetic pipeline. |
+| `equivalence` | `measured_component` | Both macro-backed deterministic probes pass seven rows spanning finite data, framing and exponent-255 errors, always-ready operation, and periodic output backpressure with exact data and independent schedule checks: 1800 cycles for conservative control and 1035 for three-credit control. The three-credit controller also passes a twelve-cycle burst-stall row without exhausting its response credits. |
+| `routed_ppa` | `open` | The LANES=16 register-storage embodiment failed synthesis at both 16 ns and 20 ns after roughly 18--20 minutes and about 12 GB peak memory. The two 64-macro successors pass source/manifest physical guards, but neither has a routed norm PPA row yet. |
 | `activity` | `open` | No promoted activity-backed norm measurement is feeding the Llama7B recost. |
-| `composition` | `open` | The norm path is not yet composed into the selected architecture with the same strength as score, reducer, or service. |
+| `composition` | `open` | A machine-checked provenance equation reconstructs the strongest current quality-aware score32/HBM-controller-PPA baseline at 192 + 8x986 + 0 + 141 + 10 = 8231 cycles/layer and proves that it excludes transformer RMSNorm. The 65-row/token audit compares both exact controllers across serialized and overlap bounds; the 1035-cycle controller is performance-preferred at matched assumptions, but routed clock/PPA and measured overlap remain pending. |
 | `scale_validation` | `open` | There is no scale sweep proving that the chosen normalization structure remains valid across the intended architecture range. |
 
 Caveats:
-- Current norm accounting is not yet on the same measurement footing as dense compute, service, or the selected score32 softmax branch.
+- Exact block behavior and two controller schedules are bounded, but current norm accounting is not yet on the same physical-measurement footing as dense compute, service, or the selected score32 softmax branch.
+- The failed register-array implementation must not be generalized into evidence against an explicitly banked SRAM-backed RMSNorm design.
 - BF16 and fixed-point norm options are both still unresolved.
 
 Evidence:
+- `docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1/analysis_report.md` (proposal_analysis; `rtl`, `equivalence`, `routed_ppa`): Records the exact Phase-3 implementation and the merged two-row synthesis-resource boundary for its inferred-register storage embodiment.
+- `npu/docs/llama7b_rmsnorm_banked_storage_contract.md` (rtl_contract; `rtl`, `composition`): Fixes the successor storage organization at 16 lane banks by four depth shards, exactly 64 available 64x32 proxy macros, and defines both conservative and three-credit two-cycle-read policies.
+- `npu/eval/probe_llama7b_rmsnorm_phase3_equivalence.py` (equivalence_probe; `rtl`, `equivalence`): Checks both macro-backed controllers against the Phase-2 oracle and independent 1800- and 1035-cycle schedule models across seven functional/protocol/backpressure rows, plus a twelve-cycle burst-stall stress row for the three-credit controller.
+- `docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1/evaluation_requests.json` (proposal_gate; `routed_ppa`, `activity`): Defines a matched guarded routed-PPA comparison of the conservative and three-credit exact 64-macro hierarchies; dispatch remains pending merge and human approval.
+- `npu/docs/generated/llama7b_rmsnorm_macro_banked_latency_composition.json` (generated_audit; `composition`, `scale_validation`): Reconstructs the attention-only source cycle equation, proves transformer RMSNorm is excluded, and compares 1800- and 1035-cycle controllers for 65 rows per token across 10/14/18 ns clocks and 0/50/100 percent hidden-service bounds without claiming PPA closure.
 - `docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/quality_gate.md` (proposal_gate; `rtl`): Shows that normalization calibration work exists, but is not yet promoted as a closed measured component.
 - `docs/proposals/prop_l1_decoder_bf16_recip_norm_datapath_v1/quality_gate.md` (proposal_gate; `rtl`): Tracks the BF16 reciprocal norm path that remains future work rather than a merged closure result.
 - `docs/proposals/prop_l1_decoder_q12_pwl_recip_norm_datapath_v1/quality_gate.md` (proposal_gate; `rtl`): Shows that a fixed-point reciprocal norm path was explored but not promoted into the final frontier.
@@ -119,7 +126,7 @@ Evidence:
 | `rtl` | `closed` | The promoted score32 exp-LUT dual-stream datapath exists in RTL and is the current selected branch. |
 | `equivalence` | `measured_component` | The branch is bounded by functional replacement and generation-quality checks, not by a single monolithic full-hierarchy tensor-hash equivalence gate. |
 | `routed_ppa` | `measured_component` | Measured composed-wrapper and schedule-wrapper rows replace the old heuristic cost for the selected score path. |
-| `activity` | `measured_component` | Activity-aware recost exists for the selected score32 schedule-wrapper family. |
+| `activity` | `open` | The selected score32 schedule-wrapper family has an activity-power proposal, but the activity result and downstream activity-aware rerank remain pending. |
 | `composition` | `measured_component` | The score32 path has service closure, SRAM-envelope closure, HBM-service closure, and integrated frontier ranking consumers. |
 | `scale_validation` | `measured_component` | The score32 path has been replicated into the Llama7B ranking, but full hierarchy rotation and final system signoff are still pending. |
 
@@ -128,10 +135,10 @@ Caveats:
 - The one-group exact hierarchy proof is not enough to treat the full score hierarchy as completely closed.
 
 Evidence:
-- `docs/proposals/prop_l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_v1/analysis_report.md` (proposal_analysis; `rtl`, `routed_ppa`): Captures the promoted L1 score32 exp-LUT composed datapath row.
+- `docs/proposals/prop_l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_v1/analysis_report.md` (proposal_gate; `rtl`, `routed_ppa`): Captures the promoted L1 score32 exp-LUT composed datapath row.
 - `docs/proposals/prop_l2_decoder_attention_score32_exp_lut_measured_wrapper_promotion_llama7b_v1/analysis_report.md` (proposal_analysis; `routed_ppa`, `composition`, `scale_validation`): Records that the selected L2 row is backed by the measured dual-stream wrapper metrics.
 - `docs/proposals/prop_l2_decoder_attention_score32_exp_lut_service_closure_llama7b_v1/analysis_report.md` (proposal_analysis; `equivalence`, `composition`): Defines the promoted service-closure record for the selected score32 branch.
-- `docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1/analysis_report.md` (proposal_analysis; `activity`, `composition`, `scale_validation`): Provides the activity-aware integrated ranking for the selected score32 schedule-wrapper family.
+- `docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1/analysis_report.md` (proposal_analysis; `activity`, `composition`, `scale_validation`): Records the still-pending activity-aware integrated-ranking gate for the selected score32 schedule-wrapper family.
 
 ## Multivalue Service
 
@@ -181,7 +188,7 @@ Evidence:
 | `rtl` | `closed` | Local temporal reducer and folded reducer branches exist in RTL. |
 | `equivalence` | `closed` | Reducer functionality is already represented in the exact local-tree and local-reducer equivalence work. |
 | `routed_ppa` | `measured_component` | Physical harness rows exist for the promoted score32 local temporal reducer family. |
-| `activity` | `open` | There is no separate reducer-only promoted activity-power closure at the same level as the selected wrapper activity run. |
+| `activity` | `open` | There is no promoted reducer-only activity-power closure, and the broader selected-wrapper activity run is also still pending. |
 | `composition` | `measured_component` | The local reducer is already consumed in the score32 hierarchy and Llama7B local-reducer recost work. |
 | `scale_validation` | `rtl_unmeasured` | The reducer is validated on bounded local structures, not yet on the full rotated hierarchy as a standalone scale closure. |
 
@@ -224,26 +231,28 @@ Evidence:
 ## NoC
 
 - status: `open`
-- confidence: `low`
-- summary: The repo has moved beyond a free NoC: there are profile measurements, endpoint-router PPA anchors, and topology/scheduler studies. What is still missing is a stable, physically grounded topology/scheduler pair that the final Llama7B claim can rely on without qualification.
-- next gate: Fix the final topology/scheduler pair under measured endpoint costs and then rerun the clustered frontier with that pair frozen.
+- confidence: `medium`
+- summary: The repo has moved beyond a free NoC: the segmented 4x4 mesh now has promoted physical evidence, alongside endpoint-router anchors, traffic profiles, and exact shared-mesh arbitration/replay RTL. What is still missing is a promoted end-to-end equivalence gate and a frozen topology/scheduler pair for the final Llama7B claim.
+- next gate: Measure the bare-router routed anchor, run exact hierarchy-matched post-route activity power, then fix the final topology/scheduler pair and rerun the clustered frontier.
 
 | Dimension | Status | Summary |
 | --- | --- | --- |
-| `rtl` | `measured_component` | Endpoint-router primitives and candidate NoC structures are represented in RTL-backed proposal work. |
+| `rtl` | `measured_component` | Endpoint-router primitives, the segmented 4x4 mesh, and exact shared-mesh arbitration/replay are represented in RTL-backed work. |
 | `equivalence` | `open` | No single promoted equivalence gate closes the final selected NoC behavior against the end-to-end attention contract. |
-| `routed_ppa` | `measured_component` | Endpoint router PPA anchors exist for the segmented and wide router families. |
-| `activity` | `measured_component` | Dedicated NoC traffic profiling exists and already informs the attention model. |
+| `routed_ppa` | `measured_component` | Endpoint-router anchors and the promoted segmented 4x4 mesh r7 physical result provide measured NoC component PPA. |
+| `activity` | `open` | Exact traffic profiling exists, but hierarchy-matched post-route router activity power is still blocked on a promoted bare-router PPA anchor; traffic counts alone are not activity-backed energy. |
 | `composition` | `open` | The final topology/scheduler composition at Llama7B scale is still under study rather than promoted as fixed. |
 | `scale_validation` | `open` | Topology/scheduler pair studies exist, but a final selected pair is not yet closed as the architecture-level standard. |
 
 Caveats:
-- NoC costs are no longer free, but the final architecture still depends on a partially analytic topology/scheduler choice.
+- NoC costs are no longer free and a complete segmented-mesh physical anchor exists, but the final architecture still depends on a partially analytic topology/scheduler choice.
+- The exact hierarchy-matched router activity job remains pending behind the bare-router routed anchor; current traffic profiling must not be labeled measured NoC energy.
 - The current frontier can still move if the selected pair changes under stricter physical constraints.
 
 Evidence:
 - `docs/proposals/prop_l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1/analysis_report.md` (proposal_analysis; `rtl`, `routed_ppa`): Provides a routed PPA anchor for one endpoint-router NoC primitive family.
-- `docs/proposals/prop_l2_decoder_attention_noc_profile_v1/analysis_report.md` (proposal_analysis; `activity`): Captures the traffic profile already used to remove the old free-NoC assumption.
+- `docs/proposals/prop_l1_segmented_xy_mesh_noc_phase1_v1/analysis_report.md` (proposal_analysis; `rtl`, `routed_ppa`): Provides the promoted r7 physical anchor for the complete segmented 4x4 mesh; it is component evidence, not final topology closure.
+- `docs/proposals/prop_l2_decoder_attention_noc_profile_v1/analysis_report.md` (proposal_analysis; `activity`): Captures traffic quantities used to remove the old free-NoC assumption, but does not provide VCD/SAIF-backed routed power.
 - `docs/proposals/prop_l2_decoder_attention_kv_noc_scheduler_selected_v1/analysis_report.md` (proposal_analysis; `composition`, `scale_validation`): Documents a selected scheduler branch, but not yet a final physically closed architecture commitment.
 - `docs/proposals/prop_l2_decoder_attention_kv_dense_tile_topology_scheduler_pairs_llama7b_v1/analysis_report.md` (proposal_analysis; `scale_validation`): Shows that topology/scheduler pairing work exists at Llama7B scale, but the pair space is not yet closed.
 
@@ -251,24 +260,29 @@ Evidence:
 
 - status: `measured_component`
 - confidence: `medium`
-- summary: SRAM is on firmer ground than NoC: there are profile measurements, hierarchy-envelope studies, and bounded cluster-SRAM equivalence work. It is still a measured component, not a final memory-macro signoff across the full architecture.
-- next gate: Freeze SRAM together with the final NoC/scheduler pair and then rerun the frontier under the chosen clustered hierarchy.
+- summary: SRAM is on firmer ground than NoC: there are profile measurements, hierarchy-envelope studies, bounded cluster-SRAM equivalence work, and promoted routed logic for the read adapter and K-round scheduler. An older shared-score FakeRAM pin-activity flow exists, but its latest exact activity item is prerequisite-blocked and does not embody the selected read-adapter plus 17-bank scheduler hierarchy; it therefore cannot close current SRAM power.
+- next gate: Build a hierarchy-matched workload replay around the promoted 512-bit/two-slot read adapter and 17-bank K-round scheduler; bind VCD/SAIF to the same routed netlist, SDC, clock, ODB/SPEF, and macro/proxy instance identity; require finite post-route power plus explicit sequential and macro-pin coverage; then freeze it with the final NoC/scheduler pair and rerun the frontier.
 
 | Dimension | Status | Summary |
 | --- | --- | --- |
 | `rtl` | `measured_component` | Cluster-SRAM and local-SRAM structures are represented in the promoted attention hierarchy work. |
 | `equivalence` | `measured_component` | Cluster-SRAM composition is bounded by the local16/global-tree GQA8 equivalence gate. |
-| `routed_ppa` | `open` | The SRAM contribution is still primarily consumed through measured profile/envelope data rather than a final routed memory hierarchy. |
-| `activity` | `measured_component` | Dedicated SRAM profiling already feeds the current architecture model. |
+| `routed_ppa` | `measured_component` | Promoted shared-SRAM read-adapter and k-round-scheduler rows now provide routed component evidence, while the final composed memory hierarchy remains unmeasured. |
+| `activity` | `open` | SRAM access and CACTI profiles feed the model. The older shared-score FakeRAM flow demonstrates structural VCD pin extraction, but its latest exact item is blocked and targets a different hierarchy; no accepted workload replay currently annotates the selected read-adapter, 17-bank scheduler, and matched routed macro/proxy pins. |
 | `composition` | `measured_component` | The score32 SRAM hierarchy envelope and cluster-SRAM equivalence gates are already consumed by the selected frontier. |
 | `scale_validation` | `measured_component` | The SRAM hierarchy envelope indicates that conservative placement alone does not rerank the score32 frontier. |
 
 Caveats:
 - The SRAM model is materially better than a free-memory assumption, but it is still not a final top-level macro-floorplan closure.
+- CACTI/access-profile energy must remain distinct from workload-annotated routed macro or proxy-pin activity power.
+- The shared-score multivalue-cluster FakeRAM activity lineage must not be relabeled as activity closure for the separately promoted shared-SRAM read adapter and K-round scheduler.
 - The final clustered memory hierarchy can still change with the chosen NoC/scheduler pair.
 
 Evidence:
-- `docs/proposals/prop_l2_decoder_attention_sram_profile_v1/analysis_report.md` (proposal_analysis; `activity`): Provides the promoted local SRAM profile evidence used by the attention model.
+- `docs/proposals/prop_l2_decoder_attention_sram_profile_v1/analysis_report.md` (proposal_analysis; `activity`): Provides the local SRAM access/profile evidence used by the attention model; it is not post-route activity-power evidence.
+- `docs/proposals/prop_l1_attention_shared_sram_read_group_adapter_ppa_v1/analysis_report.md` (proposal_analysis; `rtl`, `routed_ppa`): Provides promoted PPA measurements for the shared-SRAM read-group adapter frontier.
+- `docs/proposals/prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1/analysis_report.md` (proposal_analysis; `rtl`, `routed_ppa`): Provides promoted PPA measurements for the exact shared-SRAM K-round scheduler.
+- `docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1/evaluation_requests.json` (proposal_gate; `activity`): Records the older FakeRAM macro-pin activity lineage and its prerequisite-blocked v16 gate. This proves reusable measurement machinery exists, but it is not evidence for the selected shared-SRAM hierarchy.
 - `docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1/analysis_report.md` (proposal_analysis; `rtl`, `equivalence`, `composition`): Anchors the bounded cluster-SRAM exact composition gate for the score32 hierarchy.
 - `docs/proposals/prop_l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1/analysis_report.md` (proposal_analysis; `composition`, `scale_validation`): Shows that the SRAM placement envelope does not materially rerank the selected score32 branch.
 
@@ -284,7 +298,7 @@ Evidence:
 | `rtl` | `closed` | Schedule-wrapper and command-control RTL exist for the promoted score32 branch. |
 | `equivalence` | `open` | No promoted gate closes the final dual-clock scheduler and CDC behavior end to end. |
 | `routed_ppa` | `measured_component` | Measured schedule-wrapper rows exist for bounded c2/c4 wrappers. |
-| `activity` | `measured_component` | The schedule-wrapper activity ranking already adjusts the current score32 frontier. |
+| `activity` | `open` | The schedule-wrapper activity-power run and its integrated rerank are both pending, so the current score32 frontier is not activity-adjusted. |
 | `composition` | `rtl_unmeasured` | The dual producer/reducer clock plan is architecturally selected, but the final CDC/buffer composition is not yet promoted as one measured implementation. |
 | `scale_validation` | `open` | The final scheduler remains sensitive to array hierarchy and memory service assumptions, so the larger-scale validity is still open. |
 
@@ -293,9 +307,9 @@ Caveats:
 - The scheduler result is still entangled with unresolved NoC and external-memory service assumptions.
 
 Evidence:
-- `docs/proposals/prop_l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_v1/analysis_report.md` (proposal_analysis; `rtl`, `routed_ppa`): Provides the bounded schedule-wrapper PPA anchor for the selected score32 branch.
+- `docs/proposals/prop_l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_v1/analysis_report.md` (proposal_gate; `rtl`, `routed_ppa`): Provides the bounded schedule-wrapper PPA anchor for the selected score32 branch.
 - `docs/proposals/prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_measured_command_control_llama7b_v1/analysis_report.md` (proposal_analysis; `routed_ppa`, `composition`): Documents the command-control recost consumed by the Llama7B score32 branch.
-- `docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1/analysis_report.md` (proposal_analysis; `activity`, `scale_validation`): Shows that measured schedule-wrapper activity already changes the integrated frontier numbers.
+- `docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1/analysis_report.md` (proposal_analysis; `activity`, `scale_validation`): Tracks the pending schedule-wrapper activity rerank; it does not yet change the integrated frontier numbers.
 - `docs/proposals/prop_l2_decoder_attention_kv_onchip_service_schedule_llama7b_v1/analysis_report.md` (proposal_analysis; `composition`, `scale_validation`): Captures the still-open on-chip service scheduling problem at Llama7B scale.
 
 ## External Memory Boundary
@@ -322,11 +336,11 @@ Evidence:
 - `docs/proposals/prop_l2_decoder_attention_score32_exp_lut_hbm_dram_service_closure_llama7b_v1/analysis_report.md` (proposal_analysis; `rtl`, `equivalence`, `routed_ppa`, `activity`, `composition`, `scale_validation`): States that the remaining abstractions are cycle-accurate HBM controller RTL and vendor HBM current signoff.
 - `docs/proposals/prop_l2_decoder_attention_score32_hbm_controller_replay_rtl_ppa_integrated_frontier_ranking_llama7b_v1/analysis_report.md` (proposal_analysis; `composition`, `scale_validation`): Shows that controller replay work exists as a boundary study rather than as a merged signoff controller implementation.
 
-## Full Llama7B Recost
+## Integrated Llama7B Recost
 
 - status: `measured_component`
 - confidence: `medium`
-- summary: The full Llama7B frontier is no longer heuristic-only. It is recosted from measured compute, score/wrapper, service, SRAM, and activity anchors. The result is still a provisional architecture-level conclusion because several subsystem closures remain partial and external memory stays abstract.
+- summary: The attention-centered Llama7B frontier is no longer heuristic-only. Among quality-backed promotable rows, it contains two non-dominated component-composed points: score32 is the latency/area anchor, while measured exact FP16 is the energy anchor. It is not yet a full-model or activity-backed frontier because transformer RMSNorm is excluded from the source latency equation, the schedule-wrapper activity rerank is pending, several subsystem closures remain partial, and external memory stays abstract.
 - next gate: After the remaining on-chip component gates close, rerun the integrated ranking one more time and freeze the provisional best architecture as the project conclusion.
 
 | Dimension | Status | Summary |
@@ -334,16 +348,19 @@ Evidence:
 | `rtl` | `open` | The full Llama7B architecture is still a recosted composition, not a single full-chip RTL/PnR closure. |
 | `equivalence` | `open` | There is no whole-system tensor-hash equivalence proof for the full recosted architecture. |
 | `routed_ppa` | `measured_component` | The recost consumes multiple measured routed or wrapper-level PPA anchors instead of using a free abstract core. |
-| `activity` | `measured_component` | The score32 schedule-wrapper activity run is already folded into the integrated frontier. |
+| `activity` | `open` | The score32 schedule-wrapper post-route activity run and its downstream rerank are pending; current frontier energy must not be described as activity-backed. |
 | `composition` | `measured_component` | Integrated ranking combines measured compute, selected score32 service closure, SRAM envelope, and HBM service models. |
 | `scale_validation` | `measured_component` | The frontier has been reranked repeatedly under measured-component substitutions, but some key subsystem closures remain provisional. |
 
 Caveats:
-- This is an architecture-level recost, not a full-chip physical implementation.
+- This is an attention-centered architecture recost, not a complete Llama7B workload model or full-chip physical implementation.
+- The current source latency excludes 65 transformer RMSNorm rows per token; exact latency sensitivity exists, but routed norm PPA, energy, and measured overlap are still open.
+- The schedule-wrapper activity proposal and activity-aware rerank are pending, so current energy numbers are not the final activity-backed Pareto objective.
 - The result remains provisional until producer-service-reducer composition, scheduler/CDC, and the c1 service electrical caveat are tightened further.
 
 Evidence:
-- `docs/proposals/prop_l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1/analysis_report.md` (proposal_analysis; `composition`, `scale_validation`): Records the conservative quality-backed HBM service frontier used as one baseline for the Llama7B recost.
+- `npu/docs/generated/llama7b_physically_credible_pareto.json` (generated_audit; `routed_ppa`, `composition`, `scale_validation`): Computes three-objective dominance only among quality-backed promotable rows, identifies separate score32 latency/area and exact-FP16 energy anchors, excludes abstract/quality-invalid dominators, and fail-closes full-model and activity-backed promotion.
+- `docs/proposals/prop_l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1/analysis_report.md` (proposal_gate; `composition`, `scale_validation`): Records the conservative quality-backed HBM service frontier used as one baseline for the Llama7B recost.
 - `docs/proposals/prop_l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/analysis_report.md` (proposal_analysis; `routed_ppa`, `composition`, `scale_validation`): Replaces the abstract compute density with measured dense-tile data in the Llama7B architecture ranking.
-- `docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1/analysis_report.md` (proposal_analysis; `activity`, `composition`, `scale_validation`): Provides the current activity-aware integrated ranking for the selected score32 branch.
+- `docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1/analysis_report.md` (proposal_analysis; `activity`, `composition`, `scale_validation`): Defines the pending activity-aware integrated-ranking request; the checked analysis report contains no evaluated result.
 - `docs/proposals/prop_l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1/analysis_report.md` (proposal_analysis; `routed_ppa`, `composition`, `scale_validation`): Summarizes the integrated score32 ranking that now replaces the older heuristic-heavy frontier.

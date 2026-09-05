@@ -5,11 +5,11 @@
   "source_refs": [
     {
       "path": "tests/attention_score32_exact_dual_producer_shared_mesh4x4_full_tb.sv",
-      "sha256": "543085a6676d6fb16fbae028df7b8c6eb5cd011ca39b89299a8d058f3aaf9d7e"
+      "sha256": "bc6214a38ac9f2785363374445abea6fa83c969f73552fb31eecb1e5389523d0"
     },
     {
       "path": "tests/test_attention_score32_exact_dual_producer_shared_mesh4x4_full.py",
-      "sha256": "42254c9c727d83e72a8a92408cb86a519a079df0373e3c8c85ca6fbc9d046e75"
+      "sha256": "2b390e2c93a4988c774ca47ae680c3fc78ffdb17df610eeb3f1c094d07a932c5"
     },
     {
       "path": "npu/sim/rtl/attention_score32_exact_dual_producer_shared_mesh4x4.sv",

@@ -3,8 +3,8 @@
   "title": "Llama7B Architecture Closure Matrix",
   "model": "llama7b",
   "scope": "Decoder-attention architecture exploration with persistent closure tracking",
-  "as_of": "2026-08-06",
-  "source_commit_floor": "1e8cdd767e7767a9b07393ea9945eb7d5315b069",
+  "as_of": "2026-09-05",
+  "source_commit_floor": "36cc69c9aa182f898d4f45b0944db669c3ed88c7",
   "generated_markdown": "npu/docs/generated/llama7b_architecture_closure.md",
   "component_order": [
     "precision",
@@ -47,9 +47,20 @@
     "score_path": "score32 + exp-LUT",
     "service_topology": "hierarchical c1/c2 service islands",
     "clocking": "dual producer/reducer clocks",
+    "credible_pareto_points": [
+      {
+        "role": "latency_and_area_anchor",
+        "candidate_id": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best"
+      },
+      {
+        "role": "energy_anchor",
+        "candidate_id": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512"
+      }
+    ],
     "why_provisional": [
       "The accepted c1 multivalue-service route is exploratory only: it is timing-clean but still carries 142 max-cap violations with worst slack -17.81 fF.",
       "Producer-service-reducer composition is only bounded by partial equivalence and cadence audits, not by a full end-to-end measured composed implementation.",
+      "Two exact 64-macro RMSNorm controllers now bound normalization latency at 1800 and 1035 cycles per row, but matched routed PPA and workload-backed activity are still absent.",
       "NoC, SRAM, and scheduler evidence are still mixed between measured primitives and analytic composition, so the final Llama7B recost is not yet a fully embodied chip closure.",
       "External DRAM controller and PHY remain an intentional abstract boundary, so full-system signoff is outside the current on-chip closure claim."
     ]
@@ -75,8 +86,8 @@
           "summary": "Precision-sensitive wrapper cost is backed by measured composed-wrapper and schedule-wrapper rows rather than pure heuristics."
         },
         "activity": {
-          "status": "measured_component",
-          "summary": "The promoted score32 schedule-wrapper activity audit provides a measured active-duty correction for the selected precision path."
+          "status": "open",
+          "summary": "A score32 schedule-wrapper activity audit is specified, but its promotion record and analysis remain pending and its expected dataset is absent; no active-duty correction is folded into the current precision ranking."
         },
         "composition": {
           "status": "measured_component",
@@ -90,7 +101,7 @@
       "evidence": [
         {
           "path": "docs/proposals/prop_l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1/analysis_report.md",
-          "kind": "proposal_analysis",
+          "kind": "proposal_gate",
           "dimensions": [
             "rtl",
             "equivalence",
@@ -124,7 +135,7 @@
             "routed_ppa",
             "composition"
           ],
-          "note": "Captures the promoted activity-aware ranking used in the current precision-safe Llama7B frontier."
+          "note": "Tracks the pending activity-aware rerank; its analysis report still says Pending initial evaluation and is not evidence of a promoted result."
         }
       ],
       "caveats": [
@@ -208,19 +219,19 @@
       "label": "Norm",
       "status": "open",
       "confidence": "low",
-      "summary": "Normalization remains the weakest embodied datapath block. There are proposal tracks for arithmetic calibration and reciprocal datapaths, but the current Llama7B frontier still carries this area/energy contribution as an incompletely measured term.",
+      "summary": "Normalization remains the weakest physically measured datapath block, but its implementation ambiguity is substantially reduced: exact Phase-3 BF16 RMSNorm RTL now integrates a concrete 64-macro row/gamma store with conservative and three-credit controllers. Both pass seven bounded arithmetic, protocol, schedule, and backpressure equivalence rows; the three-credit schedule reduces exact service from 1800 to 1035 cycles per row, while matched routed PPA remains open.",
       "dimensions": {
         "rtl": {
-          "status": "rtl_unmeasured",
-          "summary": "Reciprocal and normalization datapath proposals exist, but they are not yet promoted as the measured norm block used by the frontier."
+          "status": "closed",
+          "summary": "Exact Phase-3 Llama7B BF16 RMSNorm RTL integrates the 64-macro row/gamma store with fixed two-cycle reads. It provides both lossless single-outstanding replay control and a three-response-credit controller bounded by the existing elastic arithmetic pipeline."
         },
         "equivalence": {
-          "status": "open",
-          "summary": "No full promoted norm equivalence record closes the behavior against the final frontier contract."
+          "status": "measured_component",
+          "summary": "Both macro-backed deterministic probes pass seven rows spanning finite data, framing and exponent-255 errors, always-ready operation, and periodic output backpressure with exact data and independent schedule checks: 1800 cycles for conservative control and 1035 for three-credit control. The three-credit controller also passes a twelve-cycle burst-stall row without exhausting its response credits."
         },
         "routed_ppa": {
           "status": "open",
-          "summary": "The frontier still lacks an accepted routed normalization primitive replacing the remaining cost heuristics."
+          "summary": "The LANES=16 register-storage embodiment failed synthesis at both 16 ns and 20 ns after roughly 18--20 minutes and about 12 GB peak memory. The two 64-macro successors pass source/manifest physical guards, but neither has a routed norm PPA row yet."
         },
         "activity": {
           "status": "open",
@@ -228,7 +239,7 @@
         },
         "composition": {
           "status": "open",
-          "summary": "The norm path is not yet composed into the selected architecture with the same strength as score, reducer, or service."
+          "summary": "A machine-checked provenance equation reconstructs the strongest current quality-aware score32/HBM-controller-PPA baseline at 192 + 8x986 + 0 + 141 + 10 = 8231 cycles/layer and proves that it excludes transformer RMSNorm. The 65-row/token audit compares both exact controllers across serialized and overlap bounds; the 1035-cycle controller is performance-preferred at matched assumptions, but routed clock/PPA and measured overlap remain pending."
         },
         "scale_validation": {
           "status": "open",
@@ -236,6 +247,52 @@
         }
       },
       "evidence": [
+        {
+          "path": "docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1/analysis_report.md",
+          "kind": "proposal_analysis",
+          "dimensions": [
+            "rtl",
+            "equivalence",
+            "routed_ppa"
+          ],
+          "note": "Records the exact Phase-3 implementation and the merged two-row synthesis-resource boundary for its inferred-register storage embodiment."
+        },
+        {
+          "path": "npu/docs/llama7b_rmsnorm_banked_storage_contract.md",
+          "kind": "rtl_contract",
+          "dimensions": [
+            "rtl",
+            "composition"
+          ],
+          "note": "Fixes the successor storage organization at 16 lane banks by four depth shards, exactly 64 available 64x32 proxy macros, and defines both conservative and three-credit two-cycle-read policies."
+        },
+        {
+          "path": "npu/eval/probe_llama7b_rmsnorm_phase3_equivalence.py",
+          "kind": "equivalence_probe",
+          "dimensions": [
+            "rtl",
+            "equivalence"
+          ],
+          "note": "Checks both macro-backed controllers against the Phase-2 oracle and independent 1800- and 1035-cycle schedule models across seven functional/protocol/backpressure rows, plus a twelve-cycle burst-stall stress row for the three-credit controller."
+        },
+        {
+          "path": "docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1/evaluation_requests.json",
+          "kind": "proposal_gate",
+          "dimensions": [
+            "routed_ppa",
+            "activity"
+          ],
+          "note": "Defines a matched guarded routed-PPA comparison of the conservative and three-credit exact 64-macro hierarchies; dispatch remains pending merge and human approval."
+        },
+        {
+          "path": "npu/docs/generated/llama7b_rmsnorm_macro_banked_latency_composition.json",
+          "kind": "generated_audit",
+          "dimensions": [
+            "composition",
+            "scale_validation"
+          ],
+          "note": "Reconstructs the attention-only source cycle equation, proves transformer RMSNorm is excluded, and compares 1800- and 1035-cycle controllers for 65 rows per token across 10/14/18 ns clocks and 0/50/100 percent hidden-service bounds without claiming PPA closure."
+        },
         {
           "path": "docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/quality_gate.md",
           "kind": "proposal_gate",
@@ -270,10 +327,11 @@
         }
       ],
       "caveats": [
-        "Current norm accounting is not yet on the same measurement footing as dense compute, service, or the selected score32 softmax branch.",
+        "Exact block behavior and two controller schedules are bounded, but current norm accounting is not yet on the same physical-measurement footing as dense compute, service, or the selected score32 softmax branch.",
+        "The failed register-array implementation must not be generalized into evidence against an explicitly banked SRAM-backed RMSNorm design.",
         "BF16 and fixed-point norm options are both still unresolved."
       ],
-      "next_gate": "Promote one norm datapath with RTL equivalence, routed PPA, and direct integration into the Llama7B recost."
+      "next_gate": "After merge and human approval, run matched guarded 10/14/18 ns routed sweeps for both exact 64-macro controllers; use routed PPA to decide whether the 42.5 percent cycle reduction is Pareto-beneficial, then measure overlap and matched workload activity power before replacing the sensitivity envelope with a measured Llama7B recost."
     },
     {
       "id": "score_softmax",
@@ -295,8 +353,8 @@
           "summary": "Measured composed-wrapper and schedule-wrapper rows replace the old heuristic cost for the selected score path."
         },
         "activity": {
-          "status": "measured_component",
-          "summary": "Activity-aware recost exists for the selected score32 schedule-wrapper family."
+          "status": "open",
+          "summary": "The selected score32 schedule-wrapper family has an activity-power proposal, but the activity result and downstream activity-aware rerank remain pending."
         },
         "composition": {
           "status": "measured_component",
@@ -310,7 +368,7 @@
       "evidence": [
         {
           "path": "docs/proposals/prop_l1_decoder_attention_dual_stream_composed_score32_exp_lut_div_b20_v1/analysis_report.md",
-          "kind": "proposal_analysis",
+          "kind": "proposal_gate",
           "dimensions": [
             "rtl",
             "routed_ppa"
@@ -344,7 +402,7 @@
             "composition",
             "scale_validation"
           ],
-          "note": "Provides the activity-aware integrated ranking for the selected score32 schedule-wrapper family."
+          "note": "Records the still-pending activity-aware integrated-ranking gate for the selected score32 schedule-wrapper family."
         }
       ],
       "caveats": [
@@ -481,7 +539,7 @@
         },
         "activity": {
           "status": "open",
-          "summary": "There is no separate reducer-only promoted activity-power closure at the same level as the selected wrapper activity run."
+          "summary": "There is no promoted reducer-only activity-power closure, and the broader selected-wrapper activity run is also still pending."
         },
         "composition": {
           "status": "measured_component",
@@ -615,12 +673,12 @@
       "id": "noc",
       "label": "NoC",
       "status": "open",
-      "confidence": "low",
-      "summary": "The repo has moved beyond a free NoC: there are profile measurements, endpoint-router PPA anchors, and topology/scheduler studies. What is still missing is a stable, physically grounded topology/scheduler pair that the final Llama7B claim can rely on without qualification.",
+      "confidence": "medium",
+      "summary": "The repo has moved beyond a free NoC: the segmented 4x4 mesh now has promoted physical evidence, alongside endpoint-router anchors, traffic profiles, and exact shared-mesh arbitration/replay RTL. What is still missing is a promoted end-to-end equivalence gate and a frozen topology/scheduler pair for the final Llama7B claim.",
       "dimensions": {
         "rtl": {
           "status": "measured_component",
-          "summary": "Endpoint-router primitives and candidate NoC structures are represented in RTL-backed proposal work."
+          "summary": "Endpoint-router primitives, the segmented 4x4 mesh, and exact shared-mesh arbitration/replay are represented in RTL-backed work."
         },
         "equivalence": {
           "status": "open",
@@ -628,11 +686,11 @@
         },
         "routed_ppa": {
           "status": "measured_component",
-          "summary": "Endpoint router PPA anchors exist for the segmented and wide router families."
+          "summary": "Endpoint-router anchors and the promoted segmented 4x4 mesh r7 physical result provide measured NoC component PPA."
         },
         "activity": {
-          "status": "measured_component",
-          "summary": "Dedicated NoC traffic profiling exists and already informs the attention model."
+          "status": "open",
+          "summary": "Exact traffic profiling exists, but hierarchy-matched post-route router activity power is still blocked on a promoted bare-router PPA anchor; traffic counts alone are not activity-backed energy."
         },
         "composition": {
           "status": "open",
@@ -654,12 +712,21 @@
           "note": "Provides a routed PPA anchor for one endpoint-router NoC primitive family."
         },
         {
+          "path": "docs/proposals/prop_l1_segmented_xy_mesh_noc_phase1_v1/analysis_report.md",
+          "kind": "proposal_analysis",
+          "dimensions": [
+            "rtl",
+            "routed_ppa"
+          ],
+          "note": "Provides the promoted r7 physical anchor for the complete segmented 4x4 mesh; it is component evidence, not final topology closure."
+        },
+        {
           "path": "docs/proposals/prop_l2_decoder_attention_noc_profile_v1/analysis_report.md",
           "kind": "proposal_analysis",
           "dimensions": [
             "activity"
           ],
-          "note": "Captures the traffic profile already used to remove the old free-NoC assumption."
+          "note": "Captures traffic quantities used to remove the old free-NoC assumption, but does not provide VCD/SAIF-backed routed power."
         },
         {
           "path": "docs/proposals/prop_l2_decoder_attention_kv_noc_scheduler_selected_v1/analysis_report.md",
@@ -680,17 +747,18 @@
         }
       ],
       "caveats": [
-        "NoC costs are no longer free, but the final architecture still depends on a partially analytic topology/scheduler choice.",
+        "NoC costs are no longer free and a complete segmented-mesh physical anchor exists, but the final architecture still depends on a partially analytic topology/scheduler choice.",
+        "The exact hierarchy-matched router activity job remains pending behind the bare-router routed anchor; current traffic profiling must not be labeled measured NoC energy.",
         "The current frontier can still move if the selected pair changes under stricter physical constraints."
       ],
-      "next_gate": "Fix the final topology/scheduler pair under measured endpoint costs and then rerun the clustered frontier with that pair frozen."
+      "next_gate": "Measure the bare-router routed anchor, run exact hierarchy-matched post-route activity power, then fix the final topology/scheduler pair and rerun the clustered frontier."
     },
     {
       "id": "sram",
       "label": "SRAM",
       "status": "measured_component",
       "confidence": "medium",
-      "summary": "SRAM is on firmer ground than NoC: there are profile measurements, hierarchy-envelope studies, and bounded cluster-SRAM equivalence work. It is still a measured component, not a final memory-macro signoff across the full architecture.",
+      "summary": "SRAM is on firmer ground than NoC: there are profile measurements, hierarchy-envelope studies, bounded cluster-SRAM equivalence work, and promoted routed logic for the read adapter and K-round scheduler. An older shared-score FakeRAM pin-activity flow exists, but its latest exact activity item is prerequisite-blocked and does not embody the selected read-adapter plus 17-bank scheduler hierarchy; it therefore cannot close current SRAM power.",
       "dimensions": {
         "rtl": {
           "status": "measured_component",
@@ -701,12 +769,12 @@
           "summary": "Cluster-SRAM composition is bounded by the local16/global-tree GQA8 equivalence gate."
         },
         "routed_ppa": {
-          "status": "open",
-          "summary": "The SRAM contribution is still primarily consumed through measured profile/envelope data rather than a final routed memory hierarchy."
-        },
-        "activity": {
           "status": "measured_component",
-          "summary": "Dedicated SRAM profiling already feeds the current architecture model."
+          "summary": "Promoted shared-SRAM read-adapter and k-round-scheduler rows now provide routed component evidence, while the final composed memory hierarchy remains unmeasured."
+        },
+      "activity": {
+        "status": "open",
+        "summary": "SRAM access and CACTI profiles feed the model. The older shared-score FakeRAM flow demonstrates structural VCD pin extraction, but its latest exact item is blocked and targets a different hierarchy; no accepted workload replay currently annotates the selected read-adapter, 17-bank scheduler, and matched routed macro/proxy pins."
         },
         "composition": {
           "status": "measured_component",
@@ -724,7 +792,33 @@
           "dimensions": [
             "activity"
           ],
-          "note": "Provides the promoted local SRAM profile evidence used by the attention model."
+          "note": "Provides the local SRAM access/profile evidence used by the attention model; it is not post-route activity-power evidence."
+        },
+        {
+          "path": "docs/proposals/prop_l1_attention_shared_sram_read_group_adapter_ppa_v1/analysis_report.md",
+          "kind": "proposal_analysis",
+          "dimensions": [
+            "rtl",
+            "routed_ppa"
+          ],
+          "note": "Provides promoted PPA measurements for the shared-SRAM read-group adapter frontier."
+        },
+        {
+          "path": "docs/proposals/prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1/analysis_report.md",
+          "kind": "proposal_analysis",
+          "dimensions": [
+            "rtl",
+            "routed_ppa"
+          ],
+          "note": "Provides promoted PPA measurements for the exact shared-SRAM K-round scheduler."
+        },
+        {
+          "path": "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1/evaluation_requests.json",
+          "kind": "proposal_gate",
+          "dimensions": [
+            "activity"
+          ],
+          "note": "Records the older FakeRAM macro-pin activity lineage and its prerequisite-blocked v16 gate. This proves reusable measurement machinery exists, but it is not evidence for the selected shared-SRAM hierarchy."
         },
         {
           "path": "docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1/analysis_report.md",
@@ -748,9 +842,11 @@
       ],
       "caveats": [
         "The SRAM model is materially better than a free-memory assumption, but it is still not a final top-level macro-floorplan closure.",
+        "CACTI/access-profile energy must remain distinct from workload-annotated routed macro or proxy-pin activity power.",
+        "The shared-score multivalue-cluster FakeRAM activity lineage must not be relabeled as activity closure for the separately promoted shared-SRAM read adapter and K-round scheduler.",
         "The final clustered memory hierarchy can still change with the chosen NoC/scheduler pair."
       ],
-      "next_gate": "Freeze SRAM together with the final NoC/scheduler pair and then rerun the frontier under the chosen clustered hierarchy."
+      "next_gate": "Build a hierarchy-matched workload replay around the promoted 512-bit/two-slot read adapter and 17-bank K-round scheduler; bind VCD/SAIF to the same routed netlist, SDC, clock, ODB/SPEF, and macro/proxy instance identity; require finite post-route power plus explicit sequential and macro-pin coverage; then freeze it with the final NoC/scheduler pair and rerun the frontier."
     },
     {
       "id": "scheduler_cdc",
@@ -772,8 +868,8 @@
           "summary": "Measured schedule-wrapper rows exist for bounded c2/c4 wrappers."
         },
         "activity": {
-          "status": "measured_component",
-          "summary": "The schedule-wrapper activity ranking already adjusts the current score32 frontier."
+          "status": "open",
+          "summary": "The schedule-wrapper activity-power run and its integrated rerank are both pending, so the current score32 frontier is not activity-adjusted."
         },
         "composition": {
           "status": "rtl_unmeasured",
@@ -787,7 +883,7 @@
       "evidence": [
         {
           "path": "docs/proposals/prop_l1_decoder_attention_dual_stream_schedule_wrapper_score32_exp_lut_v1/analysis_report.md",
-          "kind": "proposal_analysis",
+          "kind": "proposal_gate",
           "dimensions": [
             "rtl",
             "routed_ppa"
@@ -810,7 +906,7 @@
             "activity",
             "scale_validation"
           ],
-          "note": "Shows that measured schedule-wrapper activity already changes the integrated frontier numbers."
+          "note": "Tracks the pending schedule-wrapper activity rerank; it does not yet change the integrated frontier numbers."
         },
         {
           "path": "docs/proposals/prop_l2_decoder_attention_kv_onchip_service_schedule_llama7b_v1/analysis_report.md",
@@ -892,10 +988,10 @@
     },
     {
       "id": "full_llama7b_recost",
-      "label": "Full Llama7B Recost",
+      "label": "Integrated Llama7B Recost",
       "status": "measured_component",
       "confidence": "medium",
-      "summary": "The full Llama7B frontier is no longer heuristic-only. It is recosted from measured compute, score/wrapper, service, SRAM, and activity anchors. The result is still a provisional architecture-level conclusion because several subsystem closures remain partial and external memory stays abstract.",
+      "summary": "The attention-centered Llama7B frontier is no longer heuristic-only. Among quality-backed promotable rows, it contains two non-dominated component-composed points: score32 is the latency/area anchor, while measured exact FP16 is the energy anchor. It is not yet a full-model or activity-backed frontier because transformer RMSNorm is excluded from the source latency equation, the schedule-wrapper activity rerank is pending, several subsystem closures remain partial, and external memory stays abstract.",
       "dimensions": {
         "rtl": {
           "status": "open",
@@ -910,8 +1006,8 @@
           "summary": "The recost consumes multiple measured routed or wrapper-level PPA anchors instead of using a free abstract core."
         },
         "activity": {
-          "status": "measured_component",
-          "summary": "The score32 schedule-wrapper activity run is already folded into the integrated frontier."
+          "status": "open",
+          "summary": "The score32 schedule-wrapper post-route activity run and its downstream rerank are pending; current frontier energy must not be described as activity-backed."
         },
         "composition": {
           "status": "measured_component",
@@ -924,8 +1020,18 @@
       },
       "evidence": [
         {
+          "path": "npu/docs/generated/llama7b_physically_credible_pareto.json",
+          "kind": "generated_audit",
+          "dimensions": [
+            "routed_ppa",
+            "composition",
+            "scale_validation"
+          ],
+          "note": "Computes three-objective dominance only among quality-backed promotable rows, identifies separate score32 latency/area and exact-FP16 energy anchors, excludes abstract/quality-invalid dominators, and fail-closes full-model and activity-backed promotion."
+        },
+        {
           "path": "docs/proposals/prop_l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1/analysis_report.md",
-          "kind": "proposal_analysis",
+          "kind": "proposal_gate",
           "dimensions": [
             "composition",
             "scale_validation"
@@ -950,7 +1056,7 @@
             "composition",
             "scale_validation"
           ],
-          "note": "Provides the current activity-aware integrated ranking for the selected score32 branch."
+          "note": "Defines the pending activity-aware integrated-ranking request; the checked analysis report contains no evaluated result."
         },
         {
           "path": "docs/proposals/prop_l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1/analysis_report.md",
@@ -964,7 +1070,9 @@
         }
       ],
       "caveats": [
-        "This is an architecture-level recost, not a full-chip physical implementation.",
+        "This is an attention-centered architecture recost, not a complete Llama7B workload model or full-chip physical implementation.",
+        "The current source latency excludes 65 transformer RMSNorm rows per token; exact latency sensitivity exists, but routed norm PPA, energy, and measured overlap are still open.",
+        "The schedule-wrapper activity proposal and activity-aware rerank are pending, so current energy numbers are not the final activity-backed Pareto objective.",
         "The result remains provisional until producer-service-reducer composition, scheduler/CDC, and the c1 service electrical caveat are tightened further."
       ],
       "next_gate": "After the remaining on-chip component gates close, rerun the integrated ranking one more time and freeze the provisional best architecture as the project conclusion."

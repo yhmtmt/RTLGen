@@ -75,7 +75,7 @@
         "direction": "measure_phase3_rmsnorm_physical_anchor",
         "reason": "This converts the merged exact RMSNorm datapath into a bounded Nangate45 timing, area, and generic power anchor."
       },
-      "status": "pending"
+      "status": "merged_boundary_no_feasible_points"
     }
   ],
   "remaining_abstractions": [

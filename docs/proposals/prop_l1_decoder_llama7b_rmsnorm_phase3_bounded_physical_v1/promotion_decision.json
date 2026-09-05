@@ -2,8 +2,11 @@
   "proposal_id": "prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1",
   "candidate_id": "l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1",
   "decision": "iterate",
-  "reason": "Await the first bounded remote physical anchor before promotion.",
-  "evidence_refs": [],
-  "next_action": "dispatch the bounded LANES=16 physical request after merge",
+  "reason": "The completed 16 ns and 20 ns rows both failed at synthesis, so the current full-row/full-gamma inferred-register embodiment is boundary evidence and cannot be promoted as routed PPA.",
+  "evidence_refs": [
+    "runs/designs/npu_blocks/llama7b_rmsnorm_phase3_bounded_l16_ng45/metrics.csv",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1_r1.json"
+  ],
+  "next_action": "replace inferred row/gamma register arrays with an explicitly banked SRAM-backed interface, preserve the passing Phase-3 equivalence contract, and submit a new bounded physical item",
   "requires_human_approval": false
 }

@@ -257,10 +257,13 @@ def _run_case(
     expect_protocol_error: bool,
     wrong_last: bool,
     stall_output: bool,
+    storage_backend: str = "register_arrays",
 ) -> None:
     top_name = "llama7b_rmsnorm_bf16_l16"
     rtl_dir = tmp_path / "rtl"
-    generate(_config(top_name), rtl_dir)
+    config = _config(top_name)
+    config["llama7b_rmsnorm"]["storage_backend"] = storage_backend
+    generate(config, rtl_dir)
 
     row_path = tmp_path / "row.mem"
     gamma_path = tmp_path / "gamma.mem"
@@ -284,6 +287,13 @@ def _run_case(
         encoding="ascii",
     )
 
+    rtl_inputs = [str(rtl_dir / "top.v")]
+    if storage_backend.startswith("fakeram45_64x32_banked"):
+        rtl_inputs = [
+            str(REPO_ROOT / "npu/sim/rtl/fakeram45_64x32_model.sv"),
+            str(rtl_dir / "llama7b_rmsnorm_banked_row_gamma_store.v"),
+            *rtl_inputs,
+        ]
     subprocess.run(
         [
             _tool("iverilog"),
@@ -292,7 +302,7 @@ def _run_case(
             "tb",
             "-o",
             str(sim_path),
-            str(rtl_dir / "top.v"),
+            *rtl_inputs,
             str(tb_path),
         ],
         capture_output=True,
@@ -308,6 +318,46 @@ def _run_case(
         timeout=60,
     )
     assert "PASS" in run.stdout
+
+
+@pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
+def test_llama7b_rmsnorm_phase3_macro_banked_matches_phase2_with_backpressure(tmp_path: Path) -> None:
+    row, gamma, expected, expect_protocol_error, wrong_last = _finite_random_case()
+    _run_case(
+        tmp_path,
+        row=row,
+        gamma=gamma,
+        expected=expected,
+        expect_protocol_error=expect_protocol_error,
+        wrong_last=wrong_last,
+        stall_output=True,
+        storage_backend="fakeram45_64x32_banked",
+    )
+    manifest = json.loads(
+        (tmp_path / "rtl/llama7b_rmsnorm_manifest.json").read_text(encoding="utf-8")
+    )
+    assert manifest["macro_inventory"] == {"fakeram45_64x32": 64}
+    assert manifest["storage_read_latency_cycles"] == 2
+
+
+@pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
+def test_llama7b_rmsnorm_phase3_pipelined_macro_banked_matches_phase2(tmp_path: Path) -> None:
+    row, gamma, expected, expect_protocol_error, wrong_last = _finite_random_case()
+    _run_case(
+        tmp_path,
+        row=row,
+        gamma=gamma,
+        expected=expected,
+        expect_protocol_error=expect_protocol_error,
+        wrong_last=wrong_last,
+        stall_output=True,
+        storage_backend="fakeram45_64x32_banked_pipelined",
+    )
+    manifest = json.loads(
+        (tmp_path / "rtl/llama7b_rmsnorm_manifest.json").read_text(encoding="utf-8")
+    )
+    assert manifest["macro_inventory"] == {"fakeram45_64x32": 64}
+    assert manifest["no_stall_cycles"] == 1035
 
 
 @pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
@@ -422,3 +472,70 @@ def test_llama7b_rmsnorm_phase3_physical_guard_passes_for_generated_design(tmp_p
         check=True,
         timeout=30,
     )
+
+
+def test_llama7b_rmsnorm_phase3_macro_banked_physical_guard(tmp_path: Path) -> None:
+    design_dir = tmp_path / "llama7b_rmsnorm_phase3_macro_banked_l16_ng45"
+    rtl_dir = design_dir / "verilog"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config = _config(top_name="llama7b_rmsnorm_phase3_macro_banked_l16_ng45")
+    config["llama7b_rmsnorm"]["storage_backend"] = "fakeram45_64x32_banked"
+    config["report_links"] = {
+        "proposal_id": "prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1",
+        "proposal_path": (
+            "docs/proposals/"
+            "prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1/proposal.json"
+        ),
+    }
+    (design_dir / "config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    generate(config, rtl_dir)
+
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "npu/eval/check_llama7b_rmsnorm_phase3_physical_guard.py"),
+            "--design-dir",
+            str(design_dir),
+        ],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    )
+    manifest = json.loads((rtl_dir / "macro_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["manifest_params"]["macro_count"] == 64
+
+
+def test_llama7b_rmsnorm_phase3_pipelined_macro_banked_physical_guard(tmp_path: Path) -> None:
+    design_dir = tmp_path / "llama7b_rmsnorm_phase3_macro_banked_pipelined_l16_ng45"
+    rtl_dir = design_dir / "verilog"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config = _config(top_name=design_dir.name)
+    config["llama7b_rmsnorm"]["storage_backend"] = "fakeram45_64x32_banked_pipelined"
+    config["report_links"] = {
+        "proposal_id": "prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1",
+        "proposal_path": (
+            "docs/proposals/"
+            "prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1/proposal.json"
+        ),
+    }
+    (design_dir / "config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    generate(config, rtl_dir)
+
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "npu/eval/check_llama7b_rmsnorm_phase3_physical_guard.py"),
+            "--design-dir",
+            str(design_dir),
+        ],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    )
+    manifest = json.loads((rtl_dir / "llama7b_rmsnorm_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["macro_inventory"] == {"fakeram45_64x32": 64}
+    assert manifest["no_stall_cycles"] == 1035

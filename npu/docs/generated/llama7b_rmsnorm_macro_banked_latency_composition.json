@@ -1,0 +1,263 @@
+{
+  "attention_scope_proof": {
+    "excluded_terms": [
+      "pre_attention_rmsnorm",
+      "pre_mlp_rmsnorm",
+      "final_rmsnorm"
+    ],
+    "layer_cycle_terms": {
+      "command_dispatch_cycles": 0,
+      "cross_tile_reduction_cycles": 141,
+      "kv_write_cycles": 10,
+      "qkv_cycles": 192,
+      "tile_service_cycles": 986,
+      "tile_waves": 8
+    },
+    "layers": 32,
+    "reconstructed_layer_cycles": 8231,
+    "recorded_layer_cycles": 8231,
+    "recorded_total_cycles": 263392,
+    "source_path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_recost_llama7b_v1.json",
+    "source_sha256": "34ab51abb4e3f30af0e827a8ea8fc1ec008039e2ddbdbce3de81713173fe08d6",
+    "status": "verified_attention_only_excludes_transformer_rmsnorm"
+  },
+  "baseline": {
+    "candidate_id": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+    "latency_us": 12814.257853,
+    "source_path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1.json",
+    "source_sha256": "dc0aba3112e2f13995ff4fa2707d12eb063d68be9f5010c9ce4d4a00fa020949",
+    "token_throughput_per_s": 78.038073798
+  },
+  "blockers": [
+    "routed timing, area, and power for the macro-backed RMSNorm are pending",
+    "the amount of RMSNorm overlap with attention/MLP execution is not measured",
+    "activity-backed RMSNorm energy is unavailable"
+  ],
+  "decision": "latency_sensitivity_only_pending_routed_ppa",
+  "interpretation": "The source equation proves the attention baseline excludes transformer RMSNorm, so the zero-hidden row is a non-double-counted serialized increment and the fully hidden row is the overlap lower bound. The three-credit candidate is performance-preferred at every matched clock/overlap point, but this does not establish PPA dominance. Do not rerank PPA or claim final full-model latency until routed clock, overlap, area, and activity evidence are available.",
+  "model": "llama7b_rmsnorm_macro_banked_latency_composition_v2",
+  "promotion_gate_pass": false,
+  "rmsnorm_candidates": [
+    {
+      "candidate_id": "macro_banked_conservative",
+      "macro_count": 64,
+      "row_cycles": 1800,
+      "service_cycles_per_token": 117000,
+      "storage_backend": "fakeram45_64x32_banked"
+    },
+    {
+      "candidate_id": "macro_banked_three_credit",
+      "macro_count": 64,
+      "row_cycles": 1035,
+      "service_cycles_per_token": 67275,
+      "storage_backend": "fakeram45_64x32_banked_pipelined"
+    }
+  ],
+  "rmsnorm_scope": {
+    "final_rows": 1,
+    "rows_per_layer": 2,
+    "rows_per_token": 65,
+    "transformer_layers": 32
+  },
+  "rows": [
+    {
+      "clock_period_ns": 10.0,
+      "composed_latency_us": 13984.257853,
+      "composed_token_throughput_per_s": 71.508978918,
+      "exposed_rmsnorm_latency_us": 1170.0,
+      "hidden_fraction": 0.0,
+      "latency_increase_pct": 9.130454634,
+      "raw_rmsnorm_latency_us": 1170.0,
+      "rmsnorm_candidate_id": "macro_banked_conservative",
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 10.0,
+      "composed_latency_us": 13399.257853,
+      "composed_token_throughput_per_s": 74.630999043,
+      "exposed_rmsnorm_latency_us": 585.0,
+      "hidden_fraction": 0.5,
+      "latency_increase_pct": 4.565227317,
+      "raw_rmsnorm_latency_us": 1170.0,
+      "rmsnorm_candidate_id": "macro_banked_conservative",
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 10.0,
+      "composed_latency_us": 12814.257853,
+      "composed_token_throughput_per_s": 78.038073798,
+      "exposed_rmsnorm_latency_us": 0.0,
+      "hidden_fraction": 1.0,
+      "latency_increase_pct": 0.0,
+      "raw_rmsnorm_latency_us": 1170.0,
+      "rmsnorm_candidate_id": "macro_banked_conservative",
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 14.0,
+      "composed_latency_us": 14452.257853,
+      "composed_token_throughput_per_s": 69.193340596,
+      "exposed_rmsnorm_latency_us": 1638.0,
+      "hidden_fraction": 0.0,
+      "latency_increase_pct": 12.782636488,
+      "raw_rmsnorm_latency_us": 1638.0,
+      "rmsnorm_candidate_id": "macro_banked_conservative",
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 14.0,
+      "composed_latency_us": 13633.257853,
+      "composed_token_throughput_per_s": 73.350039351,
+      "exposed_rmsnorm_latency_us": 819.0,
+      "hidden_fraction": 0.5,
+      "latency_increase_pct": 6.391318244,
+      "raw_rmsnorm_latency_us": 1638.0,
+      "rmsnorm_candidate_id": "macro_banked_conservative",
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 14.0,
+      "composed_latency_us": 12814.257853,
+      "composed_token_throughput_per_s": 78.038073798,
+      "exposed_rmsnorm_latency_us": 0.0,
+      "hidden_fraction": 1.0,
+      "latency_increase_pct": 0.0,
+      "raw_rmsnorm_latency_us": 1638.0,
+      "rmsnorm_candidate_id": "macro_banked_conservative",
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 18.0,
+      "composed_latency_us": 14920.257853,
+      "composed_token_throughput_per_s": 67.02297037,
+      "exposed_rmsnorm_latency_us": 2106.0,
+      "hidden_fraction": 0.0,
+      "latency_increase_pct": 16.434818342,
+      "raw_rmsnorm_latency_us": 2106.0,
+      "rmsnorm_candidate_id": "macro_banked_conservative",
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 18.0,
+      "composed_latency_us": 13867.257853,
+      "composed_token_throughput_per_s": 72.112310206,
+      "exposed_rmsnorm_latency_us": 1053.0,
+      "hidden_fraction": 0.5,
+      "latency_increase_pct": 8.217409171,
+      "raw_rmsnorm_latency_us": 2106.0,
+      "rmsnorm_candidate_id": "macro_banked_conservative",
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 18.0,
+      "composed_latency_us": 12814.257853,
+      "composed_token_throughput_per_s": 78.038073798,
+      "exposed_rmsnorm_latency_us": 0.0,
+      "hidden_fraction": 1.0,
+      "latency_increase_pct": 0.0,
+      "raw_rmsnorm_latency_us": 2106.0,
+      "rmsnorm_candidate_id": "macro_banked_conservative",
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 10.0,
+      "composed_latency_us": 13487.007853,
+      "composed_token_throughput_per_s": 74.145430247,
+      "exposed_rmsnorm_latency_us": 672.75,
+      "hidden_fraction": 0.0,
+      "latency_increase_pct": 5.250011415,
+      "raw_rmsnorm_latency_us": 672.75,
+      "rmsnorm_candidate_id": "macro_banked_three_credit",
+      "rmsnorm_service_cycles_per_token": 67275
+    },
+    {
+      "clock_period_ns": 10.0,
+      "composed_latency_us": 13150.632853,
+      "composed_token_throughput_per_s": 76.041967803,
+      "exposed_rmsnorm_latency_us": 336.375,
+      "hidden_fraction": 0.5,
+      "latency_increase_pct": 2.625005707,
+      "raw_rmsnorm_latency_us": 672.75,
+      "rmsnorm_candidate_id": "macro_banked_three_credit",
+      "rmsnorm_service_cycles_per_token": 67275
+    },
+    {
+      "clock_period_ns": 10.0,
+      "composed_latency_us": 12814.257853,
+      "composed_token_throughput_per_s": 78.038073798,
+      "exposed_rmsnorm_latency_us": 0.0,
+      "hidden_fraction": 1.0,
+      "latency_increase_pct": 0.0,
+      "raw_rmsnorm_latency_us": 672.75,
+      "rmsnorm_candidate_id": "macro_banked_three_credit",
+      "rmsnorm_service_cycles_per_token": 67275
+    },
+    {
+      "clock_period_ns": 14.0,
+      "composed_latency_us": 13756.107853,
+      "composed_token_throughput_per_s": 72.694981072,
+      "exposed_rmsnorm_latency_us": 941.85,
+      "hidden_fraction": 0.0,
+      "latency_increase_pct": 7.350015981,
+      "raw_rmsnorm_latency_us": 941.85,
+      "rmsnorm_candidate_id": "macro_banked_three_credit",
+      "rmsnorm_service_cycles_per_token": 67275
+    },
+    {
+      "clock_period_ns": 14.0,
+      "composed_latency_us": 13285.182853,
+      "composed_token_throughput_per_s": 75.271828101,
+      "exposed_rmsnorm_latency_us": 470.925,
+      "hidden_fraction": 0.5,
+      "latency_increase_pct": 3.67500799,
+      "raw_rmsnorm_latency_us": 941.85,
+      "rmsnorm_candidate_id": "macro_banked_three_credit",
+      "rmsnorm_service_cycles_per_token": 67275
+    },
+    {
+      "clock_period_ns": 14.0,
+      "composed_latency_us": 12814.257853,
+      "composed_token_throughput_per_s": 78.038073798,
+      "exposed_rmsnorm_latency_us": 0.0,
+      "hidden_fraction": 1.0,
+      "latency_increase_pct": 0.0,
+      "raw_rmsnorm_latency_us": 941.85,
+      "rmsnorm_candidate_id": "macro_banked_three_credit",
+      "rmsnorm_service_cycles_per_token": 67275
+    },
+    {
+      "clock_period_ns": 18.0,
+      "composed_latency_us": 14025.207853,
+      "composed_token_throughput_per_s": 71.30019109,
+      "exposed_rmsnorm_latency_us": 1210.95,
+      "hidden_fraction": 0.0,
+      "latency_increase_pct": 9.450020547,
+      "raw_rmsnorm_latency_us": 1210.95,
+      "rmsnorm_candidate_id": "macro_banked_three_credit",
+      "rmsnorm_service_cycles_per_token": 67275
+    },
+    {
+      "clock_period_ns": 18.0,
+      "composed_latency_us": 13419.732853,
+      "composed_token_throughput_per_s": 74.517131671,
+      "exposed_rmsnorm_latency_us": 605.475,
+      "hidden_fraction": 0.5,
+      "latency_increase_pct": 4.725010273,
+      "raw_rmsnorm_latency_us": 1210.95,
+      "rmsnorm_candidate_id": "macro_banked_three_credit",
+      "rmsnorm_service_cycles_per_token": 67275
+    },
+    {
+      "clock_period_ns": 18.0,
+      "composed_latency_us": 12814.257853,
+      "composed_token_throughput_per_s": 78.038073798,
+      "exposed_rmsnorm_latency_us": 0.0,
+      "hidden_fraction": 1.0,
+      "latency_increase_pct": 0.0,
+      "raw_rmsnorm_latency_us": 1210.95,
+      "rmsnorm_candidate_id": "macro_banked_three_credit",
+      "rmsnorm_service_cycles_per_token": 67275
+    }
+  ],
+  "version": 2
+}

@@ -47,7 +47,7 @@
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_exact_router_postroute_activity_power__l2_decoder_attention_score32_noc_exact_router_postroute_activity_power_llama7b_v2.json",
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_noc_exact_router_postroute_activity_power__l2_decoder_attention_score32_noc_exact_router_postroute_activity_power_llama7b_v2.md"
       ],
-      "status": "pending_after_bare_router_ppa",
+      "status": "blocked_on_bare_router_ppa",
       "comparison_role": "exact_segmented_xy_router_bare_workload_energy",
       "paired_baseline_item_id": "l1_segmented_xy_router_node5_bare_ppa_v1",
       "depends_on_item_ids": [

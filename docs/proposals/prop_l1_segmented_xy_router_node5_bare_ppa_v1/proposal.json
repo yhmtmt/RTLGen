@@ -56,12 +56,12 @@
         "runs/designs/npu_blocks/noc_segmented_mesh_router_node5_bare/metrics.csv",
         "runs/designs/npu_blocks/noc_segmented_mesh_router_node5_bare/timing_debug_report.md"
       ],
-      "status": "pending_after_router_r7",
+      "status": "ready_to_queue",
       "expected_result": {
         "direction": "measure_intrinsic_router_and_enable_postroute_activity",
         "reason": "The r7 router-plus-harness result cannot accept the bare-router replay VCD as exact workload power evidence."
       },
-      "acceptance_notes": "Require canonical replay-source identity, a logic-free node-5 specialization, complete PPA, timing feasibility, retained routed artifacts, and explicit path identity. Do not claim aggregate mesh or endpoint/SRAM energy."
+      "acceptance_notes": "Router r7 is promoted and the current-master source/guard/activity plumbing passes locally. Require canonical replay-source identity, a logic-free node-5 specialization, complete PPA, timing feasibility, retained routed artifacts, and explicit path identity. Do not claim aggregate mesh or endpoint/SRAM energy. Dispatch still requires the human Evaluation Gate."
     }
   ]
 }

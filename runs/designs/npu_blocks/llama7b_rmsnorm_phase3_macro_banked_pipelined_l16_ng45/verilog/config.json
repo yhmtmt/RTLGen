@@ -1,0 +1,11 @@
+{
+  "llama7b_rmsnorm": {
+    "lanes": 16,
+    "storage_backend": "fakeram45_64x32_banked_pipelined"
+  },
+  "report_links": {
+    "proposal_id": "prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1/proposal.json"
+  },
+  "top_name": "llama7b_rmsnorm_phase3_macro_banked_pipelined_l16_ng45"
+}

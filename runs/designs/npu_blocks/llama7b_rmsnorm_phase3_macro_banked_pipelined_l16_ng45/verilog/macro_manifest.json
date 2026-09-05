@@ -1,0 +1,27 @@
+{
+  "additional_gds": [],
+  "additional_lefs": [
+    "/orfs/flow/platforms/nangate45/lef/fakeram45_64x32.lef"
+  ],
+  "additional_libs": [
+    "/orfs/flow/platforms/nangate45/lib/fakeram45_64x32.lib"
+  ],
+  "blackbox_verilog": [
+    "npu/rtl/fakeram45_64x32_blackbox.v"
+  ],
+  "blackboxes": [
+    "fakeram45_64x32"
+  ],
+  "design_id": "llama7b_rmsnorm_phase3_macro_banked_pipelined_l16_ng45",
+  "flow_variant": "llama7b_rmsnorm_phase3_macro_banked_v1",
+  "manifest_params": {
+    "depth_shards_per_lane": 4,
+    "lane_banks": 16,
+    "logical_elements": 4096,
+    "macro_count": 64,
+    "physical_word_bits": 32
+  },
+  "module": "llama7b_rmsnorm_phase3_macro_banked_pipelined_l16_ng45",
+  "platform": "nangate45",
+  "version": "0.1"
+}

@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1",
-  "decision": "pending",
+  "decision": "iterate",
   "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "merge_commit": "b64f283cf857c3a5e6c5e3dbc8cc082d4c538f2e",
+  "merged_utc": "2026-08-12T12:57:51Z"
 }

@@ -16,7 +16,8 @@ if str(REPO_ROOT) not in sys.path:
 
 from npu.rtlgen.gen_llama7b_rmsnorm import generate
 
-_PROPOSAL_ID = "prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1"
+_REGISTER_PROPOSAL_ID = "prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1"
+_MACRO_PROPOSAL_ID = "prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1"
 
 
 def _json(path: Path) -> dict[str, object]:
@@ -56,16 +57,37 @@ def main(argv: list[str] | None = None) -> int:
     if not isinstance(body, dict):
         raise SystemExit("config must contain llama7b_rmsnorm object")
     _require(int(body.get("lanes", 0)), 16, "lane count")
+    storage_backend = str(body.get("storage_backend", "register_arrays"))
+    macro_backed = storage_backend.startswith("fakeram45_64x32_banked")
+    if storage_backend not in {
+        "register_arrays",
+        "fakeram45_64x32_banked",
+        "fakeram45_64x32_banked_pipelined",
+    }:
+        raise SystemExit(f"unsupported storage backend: {storage_backend}")
 
     links = config.get("report_links")
     if not isinstance(links, dict):
         raise SystemExit("config requires report_links")
-    _require(links.get("proposal_id"), _PROPOSAL_ID, "config proposal linkage")
+    _require(
+        links.get("proposal_id"),
+        _MACRO_PROPOSAL_ID if macro_backed else _REGISTER_PROPOSAL_ID,
+        "config proposal linkage",
+    )
 
     with tempfile.TemporaryDirectory(prefix="llama7b-rmsnorm-phase3-guard-") as name:
         regenerated = Path(name)
         generate(config, regenerated)
-        for filename in ("top.v", "config.json"):
+        generated_files = ["top.v", "config.json"]
+        if macro_backed:
+            generated_files.extend(
+                [
+                    "llama7b_rmsnorm_banked_row_gamma_store.v",
+                    "fakeram45_64x32_blackbox.v",
+                    "macro_manifest.json",
+                ]
+            )
+        for filename in generated_files:
             if (regenerated / filename).read_text(encoding="utf-8") != (
                 rtl_dir / filename
             ).read_text(encoding="utf-8"):
@@ -82,24 +104,55 @@ def main(argv: list[str] | None = None) -> int:
         "output wire                         out_protocol_error",
         "output reg  [31:0]                  accepted_row_count",
         "output reg  [31:0]                  completed_row_count",
-        "reg [15:0] row_mem [0:HIDDEN_SIZE-1];",
-        "reg [15:0] gamma_mem [0:HIDDEN_SIZE-1];",
         "localparam integer LANES = 16;",
         "localparam integer HIDDEN_SIZE = 4096;",
         "localparam integer BEATS = 256;",
         "seed_rom = 21'h",
     ]
+    if macro_backed:
+        required_tokens.append("llama7b_rmsnorm_banked_row_gamma_store u_row_gamma_store")
+        if storage_backend == "fakeram45_64x32_banked_pipelined":
+            required_tokens.extend(
+                [
+                    "reg [BEAT_W:0] store_issue_count",
+                    "reg [2:0] store_reads_inflight",
+                    "wire [2:0] arithmetic_occupancy",
+                    "{2'b0, s0_valid} + {2'b0, s1_valid} + {2'b0, s2_valid}",
+                    "arithmetic_occupancy + store_reads_inflight < 3",
+                ]
+            )
+        else:
+            required_tokens.append("reg store_read_pending")
+        forbidden_tokens = [
+            "reg [15:0] row_mem [0:HIDDEN_SIZE-1];",
+            "reg [15:0] gamma_mem [0:HIDDEN_SIZE-1];",
+        ]
+        manifest = _json(rtl_dir / "llama7b_rmsnorm_manifest.json")
+        _require(manifest.get("macro_inventory"), {"fakeram45_64x32": 64}, "macro inventory")
+        _require(manifest.get("storage_read_latency_cycles"), 2, "storage read latency")
+        macro_manifest = _json(rtl_dir / "macro_manifest.json")
+        _require(macro_manifest.get("blackboxes"), ["fakeram45_64x32"], "macro blackboxes")
+        params = macro_manifest.get("manifest_params")
+        if not isinstance(params, dict):
+            raise SystemExit("macro manifest_params must be an object")
+        _require(params.get("macro_count"), 64, "macro count")
+    else:
+        required_tokens.extend(
+            [
+                "reg [15:0] row_mem [0:HIDDEN_SIZE-1];",
+                "reg [15:0] gamma_mem [0:HIDDEN_SIZE-1];",
+            ]
+        )
+        forbidden_tokens = [
+            "fakeram45_",
+            "sky130_sram_",
+            "sram ",
+            "macro_manifest",
+            "blackbox",
+        ]
     for token in required_tokens:
         if token not in rtl:
             raise SystemExit(f"generated RTL missing expected token: {token}")
-
-    forbidden_tokens = [
-        "fakeram45_",
-        "sky130_sram_",
-        "sram ",
-        "macro_manifest",
-        "blackbox",
-    ]
     for token in forbidden_tokens:
         if token in rtl:
             raise SystemExit(f"generated RTL must not imply SRAM-backed measurement evidence: {token}")

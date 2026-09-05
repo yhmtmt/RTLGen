@@ -52,6 +52,24 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
         self.assertIn("evidence path does not exist", joined)
         self.assertIn("does_not_exist.md", joined)
 
+    def test_norm_records_exact_rtl_and_register_storage_boundary(self) -> None:
+        norm = next(item for item in self.matrix["components"] if item["id"] == "norm")
+        self.assertEqual(norm["status"], "open")
+        self.assertEqual(norm["dimensions"]["rtl"]["status"], "closed")
+        self.assertEqual(norm["dimensions"]["equivalence"]["status"], "measured_component")
+        self.assertEqual(norm["dimensions"]["routed_ppa"]["status"], "open")
+        self.assertIn("failed synthesis", norm["dimensions"]["routed_ppa"]["summary"])
+        self.assertIn("10/14/18 ns routed sweep", norm["next_gate"])
+        evidence_paths = {entry["path"] for entry in norm["evidence"]}
+        self.assertIn("npu/docs/llama7b_rmsnorm_banked_storage_contract.md", evidence_paths)
+        self.assertIn("npu/eval/probe_llama7b_rmsnorm_phase3_equivalence.py", evidence_paths)
+        self.assertIn(
+            "npu/docs/generated/llama7b_rmsnorm_macro_banked_latency_composition.json",
+            evidence_paths,
+        )
+        self.assertIn("65-row/token", norm["dimensions"]["composition"]["summary"])
+        self.assertIn("excludes transformer RMSNorm", norm["dimensions"]["composition"]["summary"])
+
     def test_multivalue_service_activity_is_measured_but_not_signoff(self) -> None:
         component = next(item for item in self.matrix["components"] if item["id"] == "multivalue_service")
         self.assertEqual(component["status"], "routed_with_caveat")
@@ -92,6 +110,57 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
             "analysis_report.md",
             evidence_paths,
         )
+
+    def test_pending_schedule_wrapper_activity_is_not_claimed_as_promoted(self) -> None:
+        for component_id in ("precision", "score_softmax", "scheduler_cdc", "full_llama7b_recost"):
+            component = next(item for item in self.matrix["components"] if item["id"] == component_id)
+            self.assertEqual(component["dimensions"]["activity"]["status"], "open")
+            activity_summary = component["dimensions"]["activity"]["summary"].lower()
+            self.assertIn("pending", activity_summary)
+            self.assertNotIn("already", activity_summary)
+            self.assertNotIn("promoted", activity_summary)
+
+        full = next(item for item in self.matrix["components"] if item["id"] == "full_llama7b_recost")
+        self.assertIn("RMSNorm", full["summary"])
+        self.assertIn("not yet a full-model", full["summary"])
+        self.assertIn("two non-dominated", full["summary"])
+        evidence_paths = {entry["path"] for entry in full["evidence"]}
+        self.assertIn("npu/docs/generated/llama7b_physically_credible_pareto.json", evidence_paths)
+
+    def test_noc_and_sram_reflect_promoted_post_august_physical_anchors(self) -> None:
+        noc = next(item for item in self.matrix["components"] if item["id"] == "noc")
+        self.assertEqual(noc["status"], "open")
+        self.assertEqual(noc["confidence"], "medium")
+        self.assertEqual(noc["dimensions"]["routed_ppa"]["status"], "measured_component")
+        self.assertEqual(noc["dimensions"]["equivalence"]["status"], "open")
+        self.assertEqual(noc["dimensions"]["activity"]["status"], "open")
+        self.assertIn("not activity-backed energy", noc["dimensions"]["activity"]["summary"])
+        noc_evidence = {entry["path"] for entry in noc["evidence"]}
+        self.assertIn(
+            "docs/proposals/prop_l1_segmented_xy_mesh_noc_phase1_v1/analysis_report.md",
+            noc_evidence,
+        )
+
+        sram = next(item for item in self.matrix["components"] if item["id"] == "sram")
+        self.assertEqual(sram["dimensions"]["routed_ppa"]["status"], "measured_component")
+        self.assertEqual(sram["dimensions"]["activity"]["status"], "open")
+        self.assertIn("macro/proxy pins", sram["dimensions"]["activity"]["summary"])
+        self.assertIn("different hierarchy", sram["dimensions"]["activity"]["summary"])
+        sram_evidence = {entry["path"] for entry in sram["evidence"]}
+        self.assertIn(
+            "docs/proposals/prop_l1_attention_shared_sram_read_group_adapter_ppa_v1/analysis_report.md",
+            sram_evidence,
+        )
+        self.assertIn(
+            "docs/proposals/prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1/analysis_report.md",
+            sram_evidence,
+        )
+        self.assertIn(
+            "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1/"
+            "evaluation_requests.json",
+            sram_evidence,
+        )
+        self.assertIn("same routed netlist", sram["next_gate"])
 
 
 if __name__ == "__main__":
