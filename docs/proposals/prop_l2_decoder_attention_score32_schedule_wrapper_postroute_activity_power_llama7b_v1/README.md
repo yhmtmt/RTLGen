@@ -4,4 +4,5 @@ This proposal adds a strict direct activity-power path for the score32 dual-stre
 
 - portable outputs: JSON and Markdown only
 - local-only artifacts: VCD, ODB, SPEF
-- dispatch mode: manual follow-up; keep `evaluation_requests.json` pending
+- dispatch mode: source/prerequisites ready; manual follow-up remains behind
+  `evaluation_gate.md` human approval

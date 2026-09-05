@@ -51,7 +51,7 @@
         "direction": "record_schedule_wrapper_postroute_activity_power",
         "reason": "The result should produce direct routed wrapper dynamic/leakage energy for the exact 986-cycle score32 service window without collapsing it to cluster_service_cycles=4."
       },
-      "status": "pending"
+      "status": "ready_to_queue"
     }
   ],
   "baseline_refs": [
