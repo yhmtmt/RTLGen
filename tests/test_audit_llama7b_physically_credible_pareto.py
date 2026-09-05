@@ -54,6 +54,7 @@ def test_pareto_audit_excludes_noncredible_dominators(tmp_path: Path) -> None:
     norm_path = tmp_path / "norm.json"
     norm = {
         "model": "llama7b_rmsnorm_macro_banked_latency_composition_v2",
+        "baseline": {"candidate_id": "fast_quality_safe", "latency_us": 10},
         "attention_scope_proof": {
             "status": "verified_attention_only_excludes_transformer_rmsnorm",
             "excluded_terms": ["pre_attention_rmsnorm", "pre_mlp_rmsnorm", "final_rmsnorm"],
@@ -61,6 +62,16 @@ def test_pareto_audit_excludes_noncredible_dominators(tmp_path: Path) -> None:
         "rmsnorm_scope": {"rows_per_token": 65},
         "rmsnorm_candidates": [
             {"candidate_id": "macro_banked_three_credit", "row_cycles": 1035}
+        ],
+        "rows": [
+            {
+                "rmsnorm_candidate_id": "macro_banked_three_credit",
+                "clock_period_ns": clock,
+                "hidden_fraction": 0.0,
+                "composed_latency_us": latency,
+                "composed_token_throughput_per_s": 1.0e6 / latency,
+            }
+            for clock, latency in ((10.0, 11.0), (14.0, 12.0), (18.0, 13.0))
         ],
         "promotion_gate_pass": False,
     }
@@ -80,6 +91,8 @@ def test_pareto_audit_excludes_noncredible_dominators(tmp_path: Path) -> None:
     assert report["scope_guard"]["rmsnorm_rows_per_token"] == 65
     assert report["promotion_gate_pass"] is False
     assert "not activity-backed" in report["objective_evidence"]["energy"]
+    assert report["rmsnorm_serialized_latency_robustness"]["latency_anchor_robust_across_envelope"] is True
+    assert report["rmsnorm_serialized_latency_robustness"]["worst_case"]["composed_latency_us"] == 13.0
     markdown = render_markdown(report)
     assert "fast_quality_safe" in markdown
     assert "abstract_dominator" in markdown

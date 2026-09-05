@@ -124,6 +124,8 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
         self.assertIn("RMSNorm", full["summary"])
         self.assertIn("not yet a full-model", full["summary"])
         self.assertIn("two non-dominated", full["summary"])
+        self.assertIn("13.487--14.920 ms", full["summary"])
+        self.assertIn("72.544 ms", full["summary"])
         evidence_paths = {entry["path"] for entry in full["evidence"]}
         self.assertIn("npu/docs/generated/llama7b_physically_credible_pareto.json", evidence_paths)
 

@@ -101,6 +101,43 @@ def build_report(
     norm_candidates = norm.get("rmsnorm_candidates")
     if not isinstance(norm_candidates, list) or not norm_candidates:
         raise ValueError("RMSNorm composition has no candidates")
+    norm_baseline = norm.get("baseline")
+    if not isinstance(norm_baseline, dict):
+        raise ValueError("RMSNorm composition has no baseline")
+    norm_baseline_id = str(norm_baseline.get("candidate_id") or "")
+    score32_point = next((row for row in pareto if row["candidate_id"] == norm_baseline_id), None)
+    if score32_point is None:
+        raise ValueError("RMSNorm baseline is not a credible Pareto point")
+    if float(norm_baseline.get("latency_us") or 0.0) != score32_point["latency_us"]:
+        raise ValueError("RMSNorm and Pareto baseline latencies differ")
+    norm_rows = norm.get("rows")
+    if not isinstance(norm_rows, list):
+        raise ValueError("RMSNorm composition rows are missing")
+    serialized_rows = [row for row in norm_rows if float(row.get("hidden_fraction", -1.0)) == 0.0]
+    expected_serialized_rows = len(norm_candidates) * 3
+    if len(serialized_rows) != expected_serialized_rows:
+        raise ValueError(
+            f"expected {expected_serialized_rows} serialized RMSNorm sensitivity rows, "
+            f"got {len(serialized_rows)}"
+        )
+    serialized_envelope = sorted(
+        (
+            {
+                "rmsnorm_candidate_id": str(row["rmsnorm_candidate_id"]),
+                "clock_period_ns": float(row["clock_period_ns"]),
+                "composed_latency_us": float(row["composed_latency_us"]),
+                "composed_token_throughput_per_s": float(row["composed_token_throughput_per_s"]),
+            }
+            for row in serialized_rows
+        ),
+        key=lambda row: row["composed_latency_us"],
+    )
+    competing_latencies = [
+        row["latency_us"] for row in pareto if row["candidate_id"] != score32_point["candidate_id"]
+    ]
+    latency_anchor_robust = bool(competing_latencies) and serialized_envelope[-1][
+        "composed_latency_us"
+    ] < min(competing_latencies)
 
     score32_activity_input = (frontier.get("inputs") or {}).get("score32_activity_power_json")
     activity_backed = bool(score32_activity_input)
@@ -140,6 +177,18 @@ def build_report(
             },
             "norm_promotion_gate_pass": bool(norm.get("promotion_gate_pass")),
         },
+        "rmsnorm_serialized_latency_robustness": {
+            "candidate_id": score32_point["candidate_id"],
+            "baseline_excludes_rmsnorm": True,
+            "sensitivity_rows": serialized_envelope,
+            "best_case": serialized_envelope[0],
+            "worst_case": serialized_envelope[-1],
+            "nearest_other_pareto_latency_us": min(competing_latencies)
+            if competing_latencies
+            else None,
+            "latency_anchor_robust_across_envelope": latency_anchor_robust,
+            "claim_scope": "serialized latency only; no norm area or energy promotion",
+        },
         "promotion_gate_pass": False,
         "blockers": [
             "the frontier energy objective does not consume schedule-wrapper post-route activity power",
@@ -172,6 +221,20 @@ def render_markdown(report: JsonDict) -> str:
             "| `{candidate_id}` | `{family}` | {latency_us:.3f} | {token_throughput_per_s:.3f} | "
             "{energy_mj_per_token:.3f} | {die_area_mm2:.3f} |".format(**row)
         )
+    robustness = report["rmsnorm_serialized_latency_robustness"]
+    lines.extend(
+        [
+            "",
+            "## RMSNorm Serialized-Latency Robustness",
+            "",
+            f"- score32 remains latency anchor across envelope: "
+            f"`{robustness['latency_anchor_robust_across_envelope']}`",
+            f"- best adjusted latency: `{robustness['best_case']['composed_latency_us']:.3f} us`",
+            f"- worst adjusted latency: `{robustness['worst_case']['composed_latency_us']:.3f} us`",
+            f"- nearest other Pareto latency: `{robustness['nearest_other_pareto_latency_us']:.3f} us`",
+            f"- claim scope: {robustness['claim_scope']}",
+        ]
+    )
     lines.extend(["", "## Excluded Points", "", "| candidate | reasons |", "| --- | --- |"])
     for row in report["excluded_points"]:
         lines.append(f"| `{row['candidate_id']}` | {', '.join(row['exclusion_reasons'])} |")
