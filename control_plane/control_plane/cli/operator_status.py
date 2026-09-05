@@ -51,6 +51,23 @@ def _render_table(payload: dict[str, object]) -> str:
 
 def _render_section(payload: dict[str, object], only: str) -> list[str]:
     sections = []
+    if only in ("all", "evaluator-machines"):
+        sections.append(
+            _render_rows(
+                "Evaluator Machines",
+                list(payload["evaluator_machines"]),
+                [
+                    "machine_key",
+                    "hostname",
+                    "active",
+                    "active_slots",
+                    "slot_capacity",
+                    "assigned_ready",
+                    "heartbeat_age_seconds",
+                    "worker_attention",
+                ],
+            )
+        )
     if only in ("all", "active-runs"):
         sections.append(
             _render_rows(
@@ -101,7 +118,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--format", choices=["json", "table"], default="table")
     parser.add_argument(
         "--only",
-        choices=["all", "health", "state-counts", "active-runs", "stale-leases", "failures", "submissions", "resolver-cases"],
+        choices=[
+            "all",
+            "health",
+            "state-counts",
+            "evaluator-machines",
+            "active-runs",
+            "stale-leases",
+            "failures",
+            "submissions",
+            "resolver-cases",
+        ],
         default="all",
     )
     args = parser.parse_args(argv)
@@ -114,6 +141,7 @@ def main(argv: list[str] | None = None) -> int:
     payload = {
         "health_summary": status.health_summary,
         "state_counts": status.state_counts,
+        "evaluator_machines": status.evaluator_machines,
         "active_runs": status.active_runs,
         "stale_leases": status.stale_leases,
         "recent_failures": status.recent_failures,
@@ -127,6 +155,8 @@ def main(argv: list[str] | None = None) -> int:
             out = {"health_summary": payload["health_summary"]}
         elif args.only == "state-counts":
             out = {"state_counts": payload["state_counts"]}
+        elif args.only == "evaluator-machines":
+            out = {"evaluator_machines": payload["evaluator_machines"]}
         elif args.only == "active-runs":
             out = {"active_runs": payload["active_runs"]}
         elif args.only == "stale-leases":
