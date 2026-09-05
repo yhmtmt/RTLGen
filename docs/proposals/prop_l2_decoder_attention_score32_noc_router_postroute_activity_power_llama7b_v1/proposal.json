@@ -76,7 +76,7 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "status": "pending_after_bare_router_ppa"
+      "status": "blocked_on_bare_router_ppa"
     }
   ],
   "baseline_refs": [
