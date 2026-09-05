@@ -463,6 +463,21 @@ def main(argv: list[str] | None = None) -> int:
     operator_status_parser.add_argument("--database-url", required=True)
     operator_status_parser.add_argument("--recent-limit", type=int, default=10)
     operator_status_parser.add_argument("--format", choices=["json", "table"], default="table")
+    operator_status_parser.add_argument(
+        "--only",
+        choices=[
+            "all",
+            "health",
+            "state-counts",
+            "evaluator-machines",
+            "active-runs",
+            "stale-leases",
+            "failures",
+            "submissions",
+            "resolver-cases",
+        ],
+        default="all",
+    )
 
     cleanup_parser = subparsers.add_parser(
         "cleanup",
@@ -1056,6 +1071,8 @@ def main(argv: list[str] | None = None) -> int:
                 str(args.recent_limit),
                 "--format",
                 args.format,
+                "--only",
+                args.only,
             ]
         )
     if args.command == "cleanup":
