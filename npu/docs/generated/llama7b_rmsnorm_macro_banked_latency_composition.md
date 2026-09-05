@@ -6,6 +6,7 @@
 - RMSNorm rows/token: `65`
 - RMSNorm cycles/row: `1800`
 - RMSNorm service cycles/token: `117000`
+- baseline scope proof: `verified_attention_only_excludes_transformer_rmsnorm`
 
 | clock ns | hidden fraction | raw norm us | exposed norm us | composed us | token/s | increase |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -23,7 +24,6 @@
 
 - routed timing, area, and power for the macro-backed RMSNorm are pending
 - the amount of RMSNorm overlap with attention/MLP execution is not measured
-- the current attention frontier does not prove whether its latency already includes any normalization allowance
 - activity-backed RMSNorm energy is unavailable
 
-Use the zero-hidden row as a serialized upper-bound increment and the fully hidden row as the unchanged-baseline lower bound. Do not rerank PPA or claim full-model latency until routed clock, overlap, area, and activity evidence are available.
+The source equation proves the attention baseline excludes transformer RMSNorm, so the zero-hidden row is a non-double-counted serialized increment and the fully hidden row is the overlap lower bound. Do not rerank PPA or claim final full-model latency until routed clock, overlap, area, and activity evidence are available.

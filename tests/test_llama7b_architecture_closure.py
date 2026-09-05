@@ -68,6 +68,7 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
             evidence_paths,
         )
         self.assertIn("65-row/token", norm["dimensions"]["composition"]["summary"])
+        self.assertIn("attention-only", norm["dimensions"]["composition"]["summary"])
 
     def test_multivalue_service_activity_is_measured_but_not_signoff(self) -> None:
         component = next(item for item in self.matrix["components"] if item["id"] == "multivalue_service")

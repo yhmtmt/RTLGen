@@ -228,7 +228,7 @@
         },
         "composition": {
           "status": "open",
-          "summary": "A fail-closed 65-row/token latency sensitivity now bounds serialized and overlapped composition, but the current attention frontier does not prove whether any normalization allowance is already included and routed clock/PPA are still pending."
+          "summary": "A machine-checked provenance equation proves the current score32 baseline is attention-only and excludes transformer RMSNorm. The 65-row/token audit therefore provides non-double-counted serialized and overlap latency bounds, while routed clock/PPA and measured overlap remain pending."
         },
         "scale_validation": {
           "status": "open",
@@ -280,7 +280,7 @@
             "composition",
             "scale_validation"
           ],
-          "note": "Prices 65 exact RMSNorm rows per token against the current score32 latency anchor across 10/14/18 ns clocks and 0/50/100 percent hidden-service bounds without claiming PPA closure."
+          "note": "Reconstructs the attention-only source cycle equation, proves transformer RMSNorm is excluded, and prices 65 exact rows per token across 10/14/18 ns clocks and 0/50/100 percent hidden-service bounds without claiming PPA closure."
         },
         {
           "path": "docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/quality_gate.md",
@@ -320,7 +320,7 @@
         "The failed register-array implementation must not be generalized into evidence against an explicitly banked SRAM-backed RMSNorm design.",
         "BF16 and fixed-point norm options are both still unresolved."
       ],
-      "next_gate": "After merge and human approval, run the guarded 10/14/18 ns routed sweep for the exact 64-macro hierarchy; then measure overlap and matched activity power, resolve whether the attention baseline already includes normalization, and replace the sensitivity envelope with a non-double-counted Llama7B recost."
+      "next_gate": "After merge and human approval, run the guarded 10/14/18 ns routed sweep for the exact 64-macro hierarchy; then measure overlap and matched activity power and replace the verified non-double-counted sensitivity envelope with a measured Llama7B recost."
     },
     {
       "id": "score_softmax",

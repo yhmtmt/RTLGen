@@ -17,6 +17,12 @@ DEFAULT_BASELINE = REPO_ROOT / (
     "decoder_attention_score32_integrated_frontier_ranking__"
     "l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1.json"
 )
+DEFAULT_ATTENTION_SCOPE = REPO_ROOT / (
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+    "decoder_attention_composed_datapath_physical_feasibility__"
+    "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
+    "measured_command_control_llama7b_v1.json"
+)
 
 
 def _load(path: Path) -> JsonDict:
@@ -41,6 +47,8 @@ def build_report(
     baseline: JsonDict,
     *,
     baseline_path: Path,
+    attention_scope: JsonDict,
+    attention_scope_path: Path,
     row_cycles: int = 1800,
     rows_per_token: int = 65,
     clock_periods_ns: tuple[float, ...] = (10.0, 14.0, 18.0),
@@ -55,6 +63,32 @@ def build_report(
     latency_us = float(diagnosis.get("score32_latency_us") or 0.0)
     if not candidate_id or latency_us <= 0.0:
         raise ValueError("baseline lacks a positive score32 latency anchor")
+
+    scope_row = attention_scope.get("best_requested")
+    if not isinstance(scope_row, dict):
+        raise ValueError("attention scope artifact is missing best_requested")
+    terms = {
+        "qkv_cycles": int(scope_row["replica_recost_qkv_cycles"]),
+        "tile_waves": int(scope_row["tile_waves"]),
+        "tile_service_cycles": int(scope_row["replica_recost_tile_service_cycles"]),
+        "command_dispatch_cycles": int(scope_row["command_dispatch_cycles"]),
+        "cross_tile_reduction_cycles": int(scope_row["cross_tile_reduction_cycles"]),
+        "kv_write_cycles": int(scope_row["kv_write_cycles"]),
+    }
+    reconstructed_layer_cycles = (
+        terms["qkv_cycles"]
+        + terms["tile_waves"] * terms["tile_service_cycles"]
+        + terms["command_dispatch_cycles"]
+        + terms["cross_tile_reduction_cycles"]
+        + terms["kv_write_cycles"]
+    )
+    recorded_layer_cycles = int(scope_row["replica_recost_layer_cycles"])
+    recorded_total_cycles = int(scope_row["replica_recost_total_cycles"])
+    layers = int(scope_row["layers"])
+    if reconstructed_layer_cycles != recorded_layer_cycles:
+        raise ValueError("attention layer-cycle provenance equation does not reconstruct")
+    if recorded_layer_cycles * layers != recorded_total_cycles:
+        raise ValueError("attention total-cycle provenance equation does not reconstruct")
 
     service_cycles = row_cycles * rows_per_token
     rows: list[JsonDict] = []
@@ -101,17 +135,28 @@ def build_report(
             "storage_backend": "fakeram45_64x32_banked",
             "macro_count": 64,
         },
+        "attention_scope_proof": {
+            "status": "verified_attention_only_excludes_transformer_rmsnorm",
+            "source_path": _portable_path(attention_scope_path),
+            "source_sha256": _sha256(attention_scope_path),
+            "layer_cycle_terms": terms,
+            "reconstructed_layer_cycles": reconstructed_layer_cycles,
+            "recorded_layer_cycles": recorded_layer_cycles,
+            "layers": layers,
+            "recorded_total_cycles": recorded_total_cycles,
+            "excluded_terms": ["pre_attention_rmsnorm", "pre_mlp_rmsnorm", "final_rmsnorm"],
+        },
         "rows": rows,
         "promotion_gate_pass": False,
         "blockers": [
             "routed timing, area, and power for the macro-backed RMSNorm are pending",
             "the amount of RMSNorm overlap with attention/MLP execution is not measured",
-            "the current attention frontier does not prove whether its latency already includes any normalization allowance",
             "activity-backed RMSNorm energy is unavailable",
         ],
         "interpretation": (
-            "Use the zero-hidden row as a serialized upper-bound increment and the fully hidden row as the "
-            "unchanged-baseline lower bound. Do not rerank PPA or claim full-model latency until routed clock, "
+            "The source equation proves the attention baseline excludes transformer RMSNorm, so the zero-hidden "
+            "row is a non-double-counted serialized increment and the fully hidden row is the overlap lower bound. "
+            "Do not rerank PPA or claim final full-model latency until routed clock, "
             "overlap, area, and activity evidence are available."
         ),
     }
@@ -120,6 +165,7 @@ def build_report(
 def render_markdown(report: JsonDict) -> str:
     base = report["baseline"]
     contract = report["rmsnorm_contract"]
+    scope = report["attention_scope_proof"]
     lines = [
         "# Llama7B Macro-Backed RMSNorm Latency Composition",
         "",
@@ -129,6 +175,7 @@ def render_markdown(report: JsonDict) -> str:
         f"- RMSNorm rows/token: `{contract['rows_per_token']}`",
         f"- RMSNorm cycles/row: `{contract['row_cycles']}`",
         f"- RMSNorm service cycles/token: `{contract['service_cycles_per_token']}`",
+        f"- baseline scope proof: `{scope['status']}`",
         "",
         "| clock ns | hidden fraction | raw norm us | exposed norm us | composed us | token/s | increase |",
         "| ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
@@ -148,10 +195,16 @@ def render_markdown(report: JsonDict) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", type=Path, default=DEFAULT_BASELINE)
+    parser.add_argument("--attention-scope", type=Path, default=DEFAULT_ATTENTION_SCOPE)
     parser.add_argument("--out-json", type=Path)
     parser.add_argument("--out-md", type=Path)
     args = parser.parse_args()
-    report = build_report(_load(args.baseline), baseline_path=args.baseline)
+    report = build_report(
+        _load(args.baseline),
+        baseline_path=args.baseline,
+        attention_scope=_load(args.attention_scope),
+        attention_scope_path=args.attention_scope,
+    )
     if args.out_json:
         args.out_json.parent.mkdir(parents=True, exist_ok=True)
         args.out_json.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

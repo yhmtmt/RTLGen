@@ -1,4 +1,26 @@
 {
+  "attention_scope_proof": {
+    "excluded_terms": [
+      "pre_attention_rmsnorm",
+      "pre_mlp_rmsnorm",
+      "final_rmsnorm"
+    ],
+    "layer_cycle_terms": {
+      "command_dispatch_cycles": 0,
+      "cross_tile_reduction_cycles": 141,
+      "kv_write_cycles": 10,
+      "qkv_cycles": 202,
+      "tile_service_cycles": 994,
+      "tile_waves": 8
+    },
+    "layers": 32,
+    "reconstructed_layer_cycles": 8305,
+    "recorded_layer_cycles": 8305,
+    "recorded_total_cycles": 265760,
+    "source_path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_composed_datapath_physical_feasibility__l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_measured_command_control_llama7b_v1.json",
+    "source_sha256": "cc2577c40018a0a3e2d740826ce14e2ac35e70a9fbc0c40a1aed85948e188db9",
+    "status": "verified_attention_only_excludes_transformer_rmsnorm"
+  },
   "baseline": {
     "candidate_id": "score32_exp_lut_hbm_dram_service_closure_best",
     "latency_us": 12532.357427,
@@ -9,11 +31,10 @@
   "blockers": [
     "routed timing, area, and power for the macro-backed RMSNorm are pending",
     "the amount of RMSNorm overlap with attention/MLP execution is not measured",
-    "the current attention frontier does not prove whether its latency already includes any normalization allowance",
     "activity-backed RMSNorm energy is unavailable"
   ],
   "decision": "latency_sensitivity_only_pending_routed_ppa",
-  "interpretation": "Use the zero-hidden row as a serialized upper-bound increment and the fully hidden row as the unchanged-baseline lower bound. Do not rerank PPA or claim full-model latency until routed clock, overlap, area, and activity evidence are available.",
+  "interpretation": "The source equation proves the attention baseline excludes transformer RMSNorm, so the zero-hidden row is a non-double-counted serialized increment and the fully hidden row is the overlap lower bound. Do not rerank PPA or claim final full-model latency until routed clock, overlap, area, and activity evidence are available.",
   "model": "llama7b_rmsnorm_macro_banked_latency_composition_v1",
   "promotion_gate_pass": false,
   "rmsnorm_contract": {
