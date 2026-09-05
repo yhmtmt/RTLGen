@@ -87,7 +87,7 @@ Evidence:
 - status: `open`
 - confidence: `low`
 - summary: Normalization remains the weakest physically measured datapath block, but its implementation ambiguity is substantially reduced: exact Phase-3 BF16 RMSNorm RTL now integrates a concrete 64-macro row/gamma store with conservative and three-credit controllers. Both pass seven bounded arithmetic, protocol, schedule, and backpressure equivalence rows; the three-credit schedule reduces exact service from 1800 to 1035 cycles per row, while matched routed PPA remains open.
-- next gate: After merge and human approval, run matched guarded 10/14/18 ns routed sweeps for both exact 64-macro controllers; use routed PPA to decide whether the 42.5 percent cycle reduction is Pareto-beneficial, then measure overlap and matched workload activity power before replacing the sensitivity envelope with a measured Llama7B recost.
+- next gate: After human approval, run matched guarded 10/14/18 ns routed sweeps for both exact 64-macro controllers from pinned merge commit 09a9854c; use routed PPA to decide whether the 42.5 percent cycle reduction is Pareto-beneficial, then measure overlap and matched workload activity power before replacing the sensitivity envelope with a measured Llama7B recost.
 
 | Dimension | Status | Summary |
 | --- | --- | --- |

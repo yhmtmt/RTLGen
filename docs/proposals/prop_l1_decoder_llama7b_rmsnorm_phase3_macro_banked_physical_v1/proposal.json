@@ -46,7 +46,7 @@
       "task_type": "l1_sweep",
       "evaluation_mode": "physical_calibration",
       "objective": "Compare the conservative and three-credit exact 64-macro LANES=16 Phase-3 RMSNorm controllers on Nangate45.",
-      "status": "pending_implementation_merge",
+      "status": "ready_to_queue",
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "configs": [
