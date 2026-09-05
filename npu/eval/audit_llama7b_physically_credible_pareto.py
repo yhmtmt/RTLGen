@@ -157,6 +157,19 @@ def build_report(
     ]
     score32_multiplier_to_tie = 1.0 / recorded_energy_ratio
 
+    area_reference = min(
+        (row for row in pareto if row["candidate_id"] != score32_point["candidate_id"]),
+        key=lambda row: row["component_area_mm2"],
+        default=None,
+    )
+    if area_reference is None:
+        raise ValueError("credible Pareto set has no area-reference competitor")
+    score32_missing_area_budget_to_tie_mm2 = (
+        area_reference["component_area_mm2"] - score32_point["component_area_mm2"]
+    )
+    if score32_missing_area_budget_to_tie_mm2 <= 0.0:
+        raise ValueError("score32 point is not the current component-area anchor")
+
     score32_activity_input = (frontier.get("inputs") or {}).get("score32_activity_power_json")
     activity_backed = bool(score32_activity_input)
     return {
@@ -209,6 +222,31 @@ def build_report(
             else None,
             "latency_anchor_robust_across_envelope": latency_anchor_robust,
             "claim_scope": "serialized latency only; no norm area or energy promotion",
+        },
+        "area_axis_uncertainty": {
+            "status": "rmsnorm_area_unmeasured_break_even_only",
+            "score32_candidate_id": score32_point["candidate_id"],
+            "area_reference_candidate_id": area_reference["candidate_id"],
+            "score32_recorded_component_area_mm2": score32_point["component_area_mm2"],
+            "area_reference_recorded_component_area_mm2": area_reference["component_area_mm2"],
+            "score32_aggregate_missing_area_budget_to_tie_mm2": round(
+                score32_missing_area_budget_to_tie_mm2, 9
+            ),
+            "score32_aggregate_missing_area_budget_to_tie_pct_of_recorded_area": round(
+                100.0
+                * score32_missing_area_budget_to_tie_mm2
+                / score32_point["component_area_mm2"],
+                9,
+            ),
+            "strict_area_lead_condition": (
+                "aggregate score32-only area absent from the current objective is less than the tie budget, "
+                "with the reference area unchanged"
+            ),
+            "rmsnorm_area_closed": False,
+            "reason": (
+                "The routed RMSNorm area and its architecture-level replication are not measured. The budget is "
+                "an aggregate break-even sensitivity, not an estimated RMSNorm area or a physical closure claim."
+            ),
         },
         "energy_axis_uncertainty": {
             "status": "recorded_energy_tradeoff_not_activity_closed",
@@ -274,6 +312,21 @@ def render_markdown(report: JsonDict) -> str:
             f"- worst adjusted latency: `{robustness['worst_case']['composed_latency_us']:.3f} us`",
             f"- nearest other Pareto latency: `{robustness['nearest_other_pareto_latency_us']:.3f} us`",
             f"- claim scope: {robustness['claim_scope']}",
+        ]
+    )
+    area = report["area_axis_uncertainty"]
+    lines.extend(
+        [
+            "",
+            "## Area-Axis Uncertainty",
+            "",
+            f"- status: `{area['status']}`",
+            f"- score32 aggregate missing-area budget to tie reference: "
+            f"`{area['score32_aggregate_missing_area_budget_to_tie_mm2']:.3f} mm2`",
+            f"- budget relative to recorded score32 component area: "
+            f"`{area['score32_aggregate_missing_area_budget_to_tie_pct_of_recorded_area']:.3f}%`",
+            f"- strict area-lead condition: {area['strict_area_lead_condition']}",
+            f"- reason: {area['reason']}",
         ]
     )
     energy = report["energy_axis_uncertainty"]
