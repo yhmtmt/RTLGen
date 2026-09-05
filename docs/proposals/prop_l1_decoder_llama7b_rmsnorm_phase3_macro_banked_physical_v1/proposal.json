@@ -1,0 +1,65 @@
+{
+  "proposal_id": "prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1",
+  "created_utc": "2026-09-05T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Macro-banked Llama7B RMSNorm Phase-3 physical anchor",
+  "abstraction_layer": "llama7b_rmsnorm_phase3_macro_banked",
+  "hypothesis": "Replacing the failed full-row/full-gamma register arrays with exactly 64 characterized 64x32 proxy macros preserves exact Phase-3 behavior and yields a routable LANES=16 RMSNorm baseline whose latency, macro area, controller area, and power can be recosted honestly.",
+  "direct_comparison": {
+    "primary_question": "Does the exact macro-banked Phase-3 RMSNorm become a physically feasible architecture point, and what PPA cost accompanies its measured 1800-cycle conservative row service?",
+    "baselines": [
+      "the merged two-row synthesis boundary from prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1",
+      "the 776-cycle but physically non-credible inferred-register Phase-3 schedule"
+    ],
+    "candidate": ["llama7b_rmsnorm_phase3_macro_banked_l16_ng45"],
+    "include": [
+      "exactly 64 fakeram45_64x32 macros organized as 16 lane banks by four depth shards",
+      "two-cycle registered macro reads with one outstanding request",
+      "full Phase-3 arithmetic, framing, exponent-255, row accounting, and backpressure equivalence",
+      "separate macro and standard-cell area plus routed timing and vectorless power"
+    ],
+    "exclude": [
+      "foundry SRAM signoff",
+      "activity-backed power until a matched routed VCD follow-on",
+      "multiple-outstanding read optimization",
+      "external DRAM controller or PHY"
+    ],
+    "metrics": [
+      "critical_path_ns",
+      "instance_area_um2",
+      "stdcell_area_um2",
+      "total_power_mw",
+      "macro_count",
+      "no_stall_row_cycles",
+      "flow_status"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1_r1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "physical_calibration",
+      "objective": "Measure the exact 64-macro LANES=16 Phase-3 RMSNorm baseline on Nangate45.",
+      "status": "pending_implementation_merge",
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "configs": ["runs/designs/npu_blocks/llama7b_rmsnorm_phase3_macro_banked_l16_ng45/config.json"],
+      "sweep_path": "runs/campaigns/npu/llama7b_rmsnorm_phase3_macro_banked_physical_v1/sweeps/nangate45.json",
+      "out_root": "runs/designs/npu_blocks"
+    }
+  ],
+  "remaining_abstractions": [
+    "FakeRAM is a characterized physical proxy rather than foundry SRAM signoff.",
+    "The conservative one-outstanding controller measures 1800 no-stall cycles; buffered or pipelined macro access remains a later Pareto candidate.",
+    "Power is vectorless until workload activity is replayed on the matching routed hierarchy."
+  ],
+  "source_refs": [
+    "npu/rtlgen/gen_llama7b_rmsnorm.py",
+    "npu/sim/rtl/llama7b_rmsnorm_banked_row_gamma_store.sv",
+    "npu/eval/probe_llama7b_rmsnorm_phase3_equivalence.py",
+    "npu/eval/check_llama7b_rmsnorm_phase3_physical_guard.py",
+    "npu/docs/llama7b_rmsnorm_banked_storage_contract.md"
+  ]
+}

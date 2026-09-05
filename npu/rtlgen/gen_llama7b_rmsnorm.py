@@ -21,7 +21,7 @@ def _load(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _validate(config: dict[str, Any]) -> dict[str, int]:
+def _validate(config: dict[str, Any]) -> dict[str, Any]:
     if not str(config.get("top_name") or "").strip():
         raise SystemExit("config top_name must not be empty")
     body = config.get("llama7b_rmsnorm")
@@ -31,7 +31,15 @@ def _validate(config: dict[str, Any]) -> dict[str, int]:
     if lanes <= 0 or lanes > 64 or 4096 % lanes:
         raise SystemExit("llama7b_rmsnorm.lanes must be a positive divisor of 4096 not greater than 64")
     body["lanes"] = lanes
-    return {"lanes": lanes}
+    storage_backend = str(body.get("storage_backend", "register_arrays"))
+    if storage_backend not in {"register_arrays", "fakeram45_64x32_banked"}:
+        raise SystemExit(
+            "llama7b_rmsnorm.storage_backend must be register_arrays or fakeram45_64x32_banked"
+        )
+    if storage_backend == "fakeram45_64x32_banked" and lanes != 16:
+        raise SystemExit("fakeram45_64x32_banked currently requires exactly 16 lanes")
+    body["storage_backend"] = storage_backend
+    return {"lanes": lanes, "storage_backend": storage_backend}
 
 
 def _seed_cases() -> str:
@@ -627,13 +635,200 @@ endmodule
     return template
 
 
+def _replace_once(text: str, old: str, new: str) -> str:
+    if text.count(old) != 1:
+        raise RuntimeError(f"expected exactly one template fragment, found {text.count(old)}: {old[:80]!r}")
+    return text.replace(old, new, 1)
+
+
+def _macro_banked_top(*, top_name: str, lanes: int) -> str:
+    """Retarget Phase-3 replay storage to the exact 64-macro boundary."""
+    text = _top(top_name=top_name, lanes=lanes)
+    text = _replace_once(
+        text,
+        "  reg [15:0] row_mem [0:HIDDEN_SIZE-1];\n  reg [15:0] gamma_mem [0:HIDDEN_SIZE-1];",
+        """  reg store_read_pending;
+  wire store_write_en = state == ACCEPT_MAX && in_valid && in_ready;
+  wire store_read_en;
+  wire [BEAT_W-1:0] store_read_beat =
+      state == ACCUMULATE_REPLAY ? replay_beat : issue_beat;
+  wire store_read_valid;
+  wire [(LANES*16)-1:0] store_read_row;
+  wire [(LANES*16)-1:0] store_read_gamma;
+  wire store_request_collision;
+
+  llama7b_rmsnorm_banked_row_gamma_store u_row_gamma_store (
+      .clk(clk),
+      .rst_n(rst_n),
+      .write_en(store_write_en),
+      .write_beat(input_beat),
+      .write_row(in_row),
+      .write_gamma(in_gamma),
+      .read_en(store_read_en),
+      .read_beat(store_read_beat),
+      .read_valid(store_read_valid),
+      .read_row(store_read_row),
+      .read_gamma(store_read_gamma),
+      .request_collision(store_request_collision)
+  );""",
+    )
+    text = _replace_once(
+        text,
+        "  wire issue_valid = state == EMIT;",
+        """  wire issue_valid = 1'b0;
+  assign store_read_en =
+      ((state == ACCUMULATE_REPLAY) || (state == EMIT && s0_ready)) &&
+      !store_read_pending;""",
+    )
+    text = _replace_once(
+        text,
+        "      issue_beat <= 0;\n      row_has_nonzero <= 1'b0;",
+        "      issue_beat <= 0;\n      store_read_pending <= 1'b0;\n      row_has_nonzero <= 1'b0;",
+    )
+    old_s0 = """      if (s0_ready) begin
+        s0_valid <= issue_valid;
+        if (issue_valid) begin
+          s0_last <= issue_beat == BEATS-1;
+          s0_error <= row_protocol_error;
+          for (lane = 0; lane < LANES; lane = lane + 1) begin
+            memory_index = issue_beat * LANES + lane;
+            word_value = row_mem[memory_index];
+            s0_product[(lane*28) +: 28] <=
+                bf16_significand(word_value) * rsqrt_mantissa_q20;
+            s0_exponent[(lane*10) +: 10] <=
+                bf16_exponent(word_value) + rsqrt_exponent - 11'sd20;
+            s0_gamma[(lane*16) +: 16] <= gamma_mem[memory_index];
+            s0_sign[lane] <= word_value[15];
+          end
+          if (issue_beat == BEATS-1) begin
+            issue_beat <= 0;
+            state <= DRAIN;
+          end else begin
+            issue_beat <= issue_beat + 1'b1;
+          end
+        end
+      end"""
+    new_s0 = """      if (s0_ready) begin
+        s0_valid <= store_read_valid && store_read_pending && state == EMIT;
+        if (store_read_valid && store_read_pending && state == EMIT) begin
+          s0_last <= issue_beat == BEATS-1;
+          s0_error <= row_protocol_error;
+          for (lane = 0; lane < LANES; lane = lane + 1) begin
+            word_value = store_read_row[(lane*16) +: 16];
+            s0_product[(lane*28) +: 28] <=
+                bf16_significand(word_value) * rsqrt_mantissa_q20;
+            s0_exponent[(lane*10) +: 10] <=
+                bf16_exponent(word_value) + rsqrt_exponent - 11'sd20;
+            s0_gamma[(lane*16) +: 16] <= store_read_gamma[(lane*16) +: 16];
+            s0_sign[lane] <= word_value[15];
+          end
+          store_read_pending <= 1'b0;
+          if (issue_beat == BEATS-1) begin
+            issue_beat <= 0;
+            state <= DRAIN;
+          end else begin
+            issue_beat <= issue_beat + 1'b1;
+          end
+        end
+      end"""
+    text = _replace_once(text, old_s0, new_s0)
+    text = _replace_once(
+        text,
+        "          row_mem[memory_index] <= word_value;\n          gamma_mem[memory_index] <= in_gamma[(lane*16) +: 16];\n",
+        "",
+    )
+    old_replay = """      if (state == ACCUMULATE_REPLAY) begin
+        beat_sum = 40'd0;
+        for (lane = 0; lane < LANES; lane = lane + 1) begin
+          memory_index = replay_beat * LANES + lane;
+          word_value = row_mem[memory_index];
+          if (word_value[14:7] != 8'hff) begin
+            coefficient_value = square_coefficient(word_value);
+            term_exponent_value = square_term_exponent(word_value);
+            aligned_term = align_square_rne(
+                coefficient_value, term_exponent_value, accumulator_lsb_exponent);
+            beat_sum = beat_sum + aligned_term;
+          end
+        end
+        accumulator_next = {1'b0, accumulator_mantissa} + beat_sum;
+        accumulator_mantissa <= accumulator_next[47:0];
+        if (replay_beat == BEATS-1) begin
+          replay_beat <= 0;
+          state <= F0_NORMALIZE;
+        end else begin
+          replay_beat <= replay_beat + 1'b1;
+        end
+`ifndef SYNTHESIS
+        if (accumulator_next[48]) $fatal(1, "RMSNorm 48-bit accumulator overflow");
+`endif
+      end"""
+    new_replay = """      if (state == ACCUMULATE_REPLAY && store_read_valid && store_read_pending) begin
+        beat_sum = 40'd0;
+        for (lane = 0; lane < LANES; lane = lane + 1) begin
+          word_value = store_read_row[(lane*16) +: 16];
+          if (word_value[14:7] != 8'hff) begin
+            coefficient_value = square_coefficient(word_value);
+            term_exponent_value = square_term_exponent(word_value);
+            aligned_term = align_square_rne(
+                coefficient_value, term_exponent_value, accumulator_lsb_exponent);
+            beat_sum = beat_sum + aligned_term;
+          end
+        end
+        accumulator_next = {1'b0, accumulator_mantissa} + beat_sum;
+        accumulator_mantissa <= accumulator_next[47:0];
+        store_read_pending <= 1'b0;
+        if (replay_beat == BEATS-1) begin
+          replay_beat <= 0;
+          state <= F0_NORMALIZE;
+        end else begin
+          replay_beat <= replay_beat + 1'b1;
+        end
+`ifndef SYNTHESIS
+        if (accumulator_next[48]) $fatal(1, "RMSNorm 48-bit accumulator overflow");
+`endif
+      end"""
+    text = _replace_once(text, old_replay, new_replay)
+    text = _replace_once(
+        text,
+        "    end else begin\n      if (s2_ready) begin",
+        """    end else begin
+      if (store_read_en)
+        store_read_pending <= 1'b1;
+`ifndef SYNTHESIS
+      if (store_request_collision) $fatal(1, "RMSNorm storage request collision");
+`endif
+      if (s2_ready) begin""",
+    )
+    text = _replace_once(
+        text,
+        "        accumulator_lsb_exponent <= 0;\n        state <= ACCEPT_MAX;",
+        "        accumulator_lsb_exponent <= 0;\n        store_read_pending <= 1'b0;\n        state <= ACCEPT_MAX;",
+    )
+    return text
+
+
 def generate(config: dict[str, Any], out_dir: Path) -> None:
     params = _validate(config)
     top_name = str(config["top_name"])
     lanes = params["lanes"]
+    storage_backend = str(params["storage_backend"])
     beats = 4096 // lanes
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "top.v").write_text(_top(top_name=top_name, lanes=lanes), encoding="utf-8")
+    top = (
+        _macro_banked_top(top_name=top_name, lanes=lanes)
+        if storage_backend == "fakeram45_64x32_banked"
+        else _top(top_name=top_name, lanes=lanes)
+    )
+    (out_dir / "top.v").write_text(top, encoding="utf-8")
+    if storage_backend == "fakeram45_64x32_banked":
+        store_rtl = REPO_ROOT / "npu/sim/rtl/llama7b_rmsnorm_banked_row_gamma_store.sv"
+        (out_dir / "llama7b_rmsnorm_banked_row_gamma_store.v").write_text(
+            store_rtl.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        blackbox = REPO_ROOT / "npu/rtl/fakeram45_64x32_blackbox.v"
+        (out_dir / "fakeram45_64x32_blackbox.v").write_text(
+            blackbox.read_text(encoding="utf-8"), encoding="utf-8"
+        )
     (out_dir / "config.json").write_text(json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     manifest = {
         "version": 1,
@@ -643,7 +838,7 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
         "hidden_size": 4096,
         "lanes": lanes,
         "beats_per_row": beats,
-        "no_stall_cycles": 3 * beats + 8,
+        "no_stall_cycles": 3 * beats + 8 if storage_backend == "register_arrays" else 7 * beats + 8,
         "semantic_profile": "llama7b_bf16_rmsnorm_phase3_bounded_ready_valid_v1",
         "accumulator": "unsigned_bfp48_rne",
         "variance": "q2.24_even_exponent_epsilon_1099512x2^-40",
@@ -651,17 +846,47 @@ def generate(config: dict[str, Any], out_dir: Path) -> None:
         "newton_iterations": 1,
         "newton_bias_q20": 4,
         "output": "full_precision_products_single_bf16_rne",
-        "storage": "internal_4096x16_row_and_gamma",
+        "storage": storage_backend,
         "protocol_error": "canonical_qnan_row_on_exponent255_or_framing_error",
         "remaining_abstractions": [
-            "storage_maps_to_register_arrays_rather_than_bound_memory_macros",
+            *(
+                ["storage_maps_to_register_arrays_rather_than_bound_memory_macros"]
+                if storage_backend == "register_arrays"
+                else ["single_outstanding_macro_reads_are_a_conservative_throughput_baseline"]
+            ),
             "phase_overlap_and_clock_gating_not_modeled",
         ],
     }
+    if storage_backend == "fakeram45_64x32_banked":
+        manifest["macro_inventory"] = {"fakeram45_64x32": 64}
+        manifest["storage_read_latency_cycles"] = 2
     (out_dir / "llama7b_rmsnorm_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+    if storage_backend == "fakeram45_64x32_banked":
+        macro_manifest = {
+            "version": "0.1",
+            "design_id": top_name,
+            "module": top_name,
+            "platform": "nangate45",
+            "flow_variant": "llama7b_rmsnorm_phase3_macro_banked_v1",
+            "blackboxes": ["fakeram45_64x32"],
+            "additional_lefs": ["/orfs/flow/platforms/nangate45/lef/fakeram45_64x32.lef"],
+            "additional_libs": ["/orfs/flow/platforms/nangate45/lib/fakeram45_64x32.lib"],
+            "additional_gds": [],
+            "blackbox_verilog": ["npu/rtl/fakeram45_64x32_blackbox.v"],
+            "manifest_params": {
+                "macro_count": 64,
+                "lane_banks": 16,
+                "depth_shards_per_lane": 4,
+                "logical_elements": 4096,
+                "physical_word_bits": 32,
+            },
+        }
+        (out_dir / "macro_manifest.json").write_text(
+            json.dumps(macro_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
 
 
 def main() -> int:

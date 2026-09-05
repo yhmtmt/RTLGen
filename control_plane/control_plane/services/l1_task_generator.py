@@ -956,7 +956,7 @@ def _read_config_target(
                     "run": _with_oss_cad_path(
                         (
                             "verilator --lint-only -Wall -Wno-fatal "
-                            f"{design_dir}/verilog/top.v"
+                            f"{design_dir}/verilog/*.v"
                         )
                     ),
                 },

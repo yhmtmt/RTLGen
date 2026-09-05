@@ -208,15 +208,15 @@
       "label": "Norm",
       "status": "open",
       "confidence": "low",
-      "summary": "Normalization remains the weakest physical datapath block, but it is no longer merely proposed: exact Phase-3 BF16 RMSNorm RTL passes bounded ready/valid equivalence. Its first LANES=16 physical attempt produced two synthesis failures near 12 GB peak memory because the complete row and gamma state were inferred as registers. A concrete 64-macro banked row/gamma store now fixes the replacement memory organization and latency, but it is not yet integrated into the Phase-3 controller.",
+      "summary": "Normalization remains the weakest physically measured datapath block, but its implementation ambiguity is substantially reduced: exact Phase-3 BF16 RMSNorm RTL now integrates a concrete 64-macro row/gamma store and passes seven bounded arithmetic, protocol, schedule, and backpressure equivalence rows. The prior register-storage attempt remains a two-row synthesis boundary; the macro-backed successor is implementation-complete but awaits routed PPA.",
       "dimensions": {
         "rtl": {
           "status": "closed",
-          "summary": "Exact Phase-3 Llama7B BF16 RMSNorm RTL and its generated ready/valid wrapper are implemented."
+          "summary": "Exact Phase-3 Llama7B BF16 RMSNorm RTL integrates the 64-macro row/gamma store, including fixed two-cycle reads and lossless single-outstanding replay control."
         },
         "equivalence": {
           "status": "measured_component",
-          "summary": "The deterministic Phase-3 probe passes five cases under always-ready and periodic-backpressure scenarios; this is bounded block equivalence, not full-model equivalence."
+          "summary": "The macro-backed deterministic probe passes seven rows spanning finite data, framing and exponent-255 errors, always-ready operation, and periodic output backpressure with exact data and cycle checks."
         },
         "routed_ppa": {
           "status": "open",
@@ -256,6 +256,24 @@
           "note": "Fixes the successor storage organization at 16 lane banks by four depth shards, exactly 64 available 64x32 proxy macros, with explicit two-cycle read latency and integration obligations."
         },
         {
+          "path": "npu/eval/probe_llama7b_rmsnorm_phase3_equivalence.py",
+          "kind": "equivalence_probe",
+          "dimensions": [
+            "rtl",
+            "equivalence"
+          ],
+          "note": "Checks the macro-backed implementation against the Phase-2 oracle and an independent 1800-cycle schedule model across seven functional/protocol/backpressure rows."
+        },
+        {
+          "path": "docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1/evaluation_requests.json",
+          "kind": "proposal_gate",
+          "dimensions": [
+            "routed_ppa",
+            "activity"
+          ],
+          "note": "Defines the guarded routed-PPA request for the exact 64-macro hierarchy; dispatch remains pending merge and human approval."
+        },
+        {
           "path": "docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/quality_gate.md",
           "kind": "proposal_gate",
           "dimensions": [
@@ -293,7 +311,7 @@
         "The failed register-array implementation must not be generalized into evidence against an explicitly banked SRAM-backed RMSNorm design.",
         "BF16 and fixed-point norm options are both still unresolved."
       ],
-      "next_gate": "Integrate the exact 64-macro banked row/gamma store into both Phase-3 replay paths while preserving arithmetic and ready/valid equivalence; then obtain routed PPA, matched activity power, and direct Llama7B recost integration."
+      "next_gate": "After merge and human approval, run the guarded 10/14/18 ns routed sweep for the exact 64-macro hierarchy; then capture matched activity power and integrate its measured 1800-cycle service into the Llama7B recost."
     },
     {
       "id": "score_softmax",

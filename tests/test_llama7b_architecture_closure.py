@@ -59,9 +59,10 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
         self.assertEqual(norm["dimensions"]["equivalence"]["status"], "measured_component")
         self.assertEqual(norm["dimensions"]["routed_ppa"]["status"], "open")
         self.assertIn("failed synthesis", norm["dimensions"]["routed_ppa"]["summary"])
-        self.assertIn("64-macro banked", norm["next_gate"])
+        self.assertIn("10/14/18 ns routed sweep", norm["next_gate"])
         evidence_paths = {entry["path"] for entry in norm["evidence"]}
         self.assertIn("npu/docs/llama7b_rmsnorm_banked_storage_contract.md", evidence_paths)
+        self.assertIn("npu/eval/probe_llama7b_rmsnorm_phase3_equivalence.py", evidence_paths)
 
     def test_multivalue_service_activity_is_measured_but_not_signoff(self) -> None:
         component = next(item for item in self.matrix["components"] if item["id"] == "multivalue_service")

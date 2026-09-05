@@ -37,6 +37,21 @@ def test_phase3_equivalence_probe_passes_representative_cases() -> None:
 
 
 @pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
+def test_macro_banked_phase3_equivalence_probe_passes() -> None:
+    report = build_report(
+        cases=["unity_identity", "framing_error", "row_exponent_255", "gamma_exponent_255"],
+        scenarios=["always_ready", "periodic_backpressure"],
+        storage_backend="fakeram45_64x32_banked",
+    )
+
+    assert report["decision"] == "llama7b_rmsnorm_phase3_equivalence_pass"
+    assert report["equivalence_pass"] is True
+    assert report["storage_backend"] == "fakeram45_64x32_banked"
+    assert report["semantic_profile"] == "llama7b_bf16_rmsnorm_phase3_macro_banked_ready_valid_v1"
+    assert all(row["equivalence_pass"] for row in report["rows"])
+
+
+@pytest.mark.skipif(not _rtl_tools_available(), reason="RTL tools unavailable")
 def test_phase3_equivalence_probe_cli_writes_json(tmp_path: Path) -> None:
     out_path = tmp_path / "phase3_equivalence.json"
     subprocess.run(

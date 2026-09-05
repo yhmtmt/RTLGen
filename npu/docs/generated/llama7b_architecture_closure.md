@@ -85,13 +85,13 @@ Evidence:
 
 - status: `open`
 - confidence: `low`
-- summary: Normalization remains the weakest physical datapath block, but it is no longer merely proposed: exact Phase-3 BF16 RMSNorm RTL passes bounded ready/valid equivalence. Its first LANES=16 physical attempt produced two synthesis failures near 12 GB peak memory because the complete row and gamma state were inferred as registers. A concrete 64-macro banked row/gamma store now fixes the replacement memory organization and latency, but it is not yet integrated into the Phase-3 controller.
-- next gate: Integrate the exact 64-macro banked row/gamma store into both Phase-3 replay paths while preserving arithmetic and ready/valid equivalence; then obtain routed PPA, matched activity power, and direct Llama7B recost integration.
+- summary: Normalization remains the weakest physically measured datapath block, but its implementation ambiguity is substantially reduced: exact Phase-3 BF16 RMSNorm RTL now integrates a concrete 64-macro row/gamma store and passes seven bounded arithmetic, protocol, schedule, and backpressure equivalence rows. The prior register-storage attempt remains a two-row synthesis boundary; the macro-backed successor is implementation-complete but awaits routed PPA.
+- next gate: After merge and human approval, run the guarded 10/14/18 ns routed sweep for the exact 64-macro hierarchy; then capture matched activity power and integrate its measured 1800-cycle service into the Llama7B recost.
 
 | Dimension | Status | Summary |
 | --- | --- | --- |
-| `rtl` | `closed` | Exact Phase-3 Llama7B BF16 RMSNorm RTL and its generated ready/valid wrapper are implemented. |
-| `equivalence` | `measured_component` | The deterministic Phase-3 probe passes five cases under always-ready and periodic-backpressure scenarios; this is bounded block equivalence, not full-model equivalence. |
+| `rtl` | `closed` | Exact Phase-3 Llama7B BF16 RMSNorm RTL integrates the 64-macro row/gamma store, including fixed two-cycle reads and lossless single-outstanding replay control. |
+| `equivalence` | `measured_component` | The macro-backed deterministic probe passes seven rows spanning finite data, framing and exponent-255 errors, always-ready operation, and periodic output backpressure with exact data and cycle checks. |
 | `routed_ppa` | `open` | The LANES=16 register-storage embodiment failed synthesis at both 16 ns and 20 ns after roughly 18--20 minutes and about 12 GB peak memory, so no routed norm PPA row exists. |
 | `activity` | `open` | No promoted activity-backed norm measurement is feeding the Llama7B recost. |
 | `composition` | `open` | The norm path is not yet composed into the selected architecture with the same strength as score, reducer, or service. |
@@ -105,6 +105,8 @@ Caveats:
 Evidence:
 - `docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1/analysis_report.md` (proposal_analysis; `rtl`, `equivalence`, `routed_ppa`): Records the exact Phase-3 implementation and the merged two-row synthesis-resource boundary for its inferred-register storage embodiment.
 - `npu/docs/llama7b_rmsnorm_banked_storage_contract.md` (rtl_contract; `rtl`, `composition`): Fixes the successor storage organization at 16 lane banks by four depth shards, exactly 64 available 64x32 proxy macros, with explicit two-cycle read latency and integration obligations.
+- `npu/eval/probe_llama7b_rmsnorm_phase3_equivalence.py` (equivalence_probe; `rtl`, `equivalence`): Checks the macro-backed implementation against the Phase-2 oracle and an independent 1800-cycle schedule model across seven functional/protocol/backpressure rows.
+- `docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1/evaluation_requests.json` (proposal_gate; `routed_ppa`, `activity`): Defines the guarded routed-PPA request for the exact 64-macro hierarchy; dispatch remains pending merge and human approval.
 - `docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/quality_gate.md` (proposal_gate; `rtl`): Shows that normalization calibration work exists, but is not yet promoted as a closed measured component.
 - `docs/proposals/prop_l1_decoder_bf16_recip_norm_datapath_v1/quality_gate.md` (proposal_gate; `rtl`): Tracks the BF16 reciprocal norm path that remains future work rather than a merged closure result.
 - `docs/proposals/prop_l1_decoder_q12_pwl_recip_norm_datapath_v1/quality_gate.md` (proposal_gate; `rtl`): Shows that a fixed-point reciprocal norm path was explored but not promoted into the final frontier.

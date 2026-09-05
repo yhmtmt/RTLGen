@@ -31,6 +31,7 @@ JsonDict = dict[str, Any]
 LANES = 16
 BEATS = HIDDEN_SIZE // LANES
 _SEMANTIC_PROFILE = "llama7b_bf16_rmsnorm_phase3_bounded_ready_valid_v1"
+_MACRO_SEMANTIC_PROFILE = "llama7b_bf16_rmsnorm_phase3_macro_banked_ready_valid_v1"
 
 
 def _tool(name: str) -> str:
@@ -43,11 +44,12 @@ def _tool(name: str) -> str:
     raise RuntimeError(f"required tool unavailable: {name}")
 
 
-def _config(*, top_name: str) -> JsonDict:
+def _config(*, top_name: str, storage_backend: str = "register_arrays") -> JsonDict:
     return {
         "top_name": top_name,
         "llama7b_rmsnorm": {
             "lanes": LANES,
+            "storage_backend": storage_backend,
         },
     }
 
@@ -335,12 +337,40 @@ def _simulate_output_cycles(
     return outputs
 
 
+def _simulate_macro_banked_output_cycles(
+    *, metadata: RMSNormPhase2Metadata, scenario: str
+) -> list[int]:
+    """Independent schedule for one-outstanding, two-cycle macro reads."""
+    first_raw_output = (
+        metadata.input_accept_cycles
+        + 3 * metadata.accumulation_replay_cycles
+        + metadata.finalize_cycles
+        + 6
+    )
+
+    def ready(cycle: int) -> bool:
+        if scenario == "always_ready":
+            return True
+        if scenario == "periodic_backpressure":
+            return (cycle % 4) != 2
+        raise ValueError(f"unknown scenario: {scenario}")
+
+    outputs: list[int] = []
+    for beat in range(metadata.beats_per_row):
+        cycle = first_raw_output + 3 * beat
+        while not ready(cycle):
+            cycle += 1
+        outputs.append(cycle)
+    return outputs
+
+
 def _run_rtl(
     *,
     work_dir: Path,
     top_name: str,
     case: JsonDict,
     scenario: str,
+    storage_backend: str = "register_arrays",
 ) -> JsonDict:
     row_path = work_dir / f"{case['case_id']}_{scenario}_row.mem"
     gamma_path = work_dir / f"{case['case_id']}_{scenario}_gamma.mem"
@@ -360,6 +390,13 @@ def _run_rtl(
         encoding="ascii",
     )
 
+    rtl_inputs = [str(work_dir / "rtl" / "top.v")]
+    if storage_backend == "fakeram45_64x32_banked":
+        rtl_inputs = [
+            str(_REPO_ROOT / "npu/sim/rtl/fakeram45_64x32_model.sv"),
+            str(work_dir / "rtl" / "llama7b_rmsnorm_banked_row_gamma_store.v"),
+            *rtl_inputs,
+        ]
     subprocess.run(
         [
             _tool("iverilog"),
@@ -368,7 +405,7 @@ def _run_rtl(
             "tb",
             "-o",
             str(sim_path),
-            str(work_dir / "rtl" / "top.v"),
+            *rtl_inputs,
             str(tb_path),
         ],
         capture_output=True,
@@ -415,7 +452,10 @@ def build_report(
     *,
     cases: list[str] | None = None,
     scenarios: list[str] | None = None,
+    storage_backend: str = "register_arrays",
 ) -> JsonDict:
+    if storage_backend not in {"register_arrays", "fakeram45_64x32_banked"}:
+        raise ValueError(f"unsupported storage backend: {storage_backend}")
     selected_cases = (
         ["unity_identity", "signed_pattern", "framing_error", "row_exponent_255", "gamma_exponent_255"]
         if cases is None
@@ -428,7 +468,7 @@ def build_report(
     top_name = "llama7b_rmsnorm_bf16_l16"
     with tempfile.TemporaryDirectory(prefix="llama7b-rmsnorm-phase3-equivalence-") as tmp_text:
         tmp = Path(tmp_text)
-        generate(_config(top_name=top_name), tmp / "rtl")
+        generate(_config(top_name=top_name, storage_backend=storage_backend), tmp / "rtl")
 
         for case_id in selected_cases:
             case = _expected_case(case_id)
@@ -439,8 +479,18 @@ def build_report(
                 else list(selected_scenarios)
             )
             for scenario in scenario_list:
-                rtl = _run_rtl(work_dir=tmp, top_name=top_name, case=case, scenario=scenario)
-                expected_cycles = _simulate_output_cycles(metadata=case["metadata"], scenario=scenario)
+                rtl = _run_rtl(
+                    work_dir=tmp,
+                    top_name=top_name,
+                    case=case,
+                    scenario=scenario,
+                    storage_backend=storage_backend,
+                )
+                expected_cycles = (
+                    _simulate_macro_banked_output_cycles(metadata=case["metadata"], scenario=scenario)
+                    if storage_backend == "fakeram45_64x32_banked"
+                    else _simulate_output_cycles(metadata=case["metadata"], scenario=scenario)
+                )
                 failures: list[str] = []
 
                 actual_outputs = rtl["outputs"]
@@ -507,7 +557,12 @@ def build_report(
         "model": "llama7b_rmsnorm_phase3_perf_rtl_equivalence_v1",
         "decision": "llama7b_rmsnorm_phase3_equivalence_pass" if passed else "llama7b_rmsnorm_phase3_equivalence_fail",
         "equivalence_pass": passed,
-        "semantic_profile": _SEMANTIC_PROFILE,
+        "semantic_profile": (
+            _MACRO_SEMANTIC_PROFILE
+            if storage_backend == "fakeram45_64x32_banked"
+            else _SEMANTIC_PROFILE
+        ),
+        "storage_backend": storage_backend,
         "lanes": LANES,
         "beats_per_row": BEATS,
         "cases": selected_cases,
@@ -526,7 +581,11 @@ def build_report(
             "exact_row_accounting": all(row["equivalence_pass"] for row in rows),
         },
         "remaining_abstractions": [
-            "row_mem and gamma_mem are internal register arrays, not SRAM-macro evidence",
+            *(
+                ["row_mem and gamma_mem are internal register arrays, not SRAM-macro evidence"]
+                if storage_backend == "register_arrays"
+                else ["FakeRAM is a characterized proxy macro, not foundry SRAM signoff"]
+            ),
             "no DRAM or external-memory controller behavior is claimed by this equivalence gate",
             "clock-gating and physical overlap policy remain outside this functional/workload proof",
         ],
@@ -542,11 +601,16 @@ def main() -> int:
         help="comma-separated scenario ids; empty uses always_ready and periodic_backpressure",
     )
     parser.add_argument("--out", type=Path, help="optional JSON report output path")
+    parser.add_argument(
+        "--storage-backend",
+        choices=("register_arrays", "fakeram45_64x32_banked"),
+        default="register_arrays",
+    )
     args = parser.parse_args()
 
     cases = [part.strip() for part in args.cases.split(",") if part.strip()] or None
     scenarios = [part.strip() for part in args.scenarios.split(",") if part.strip()] or None
-    report = build_report(cases=cases, scenarios=scenarios)
+    report = build_report(cases=cases, scenarios=scenarios, storage_backend=args.storage_backend)
     text = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if args.out is not None:
         args.out.write_text(text, encoding="utf-8")
