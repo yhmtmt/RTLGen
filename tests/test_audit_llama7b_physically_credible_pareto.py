@@ -25,6 +25,7 @@ def test_pareto_audit_excludes_noncredible_dominators(tmp_path: Path) -> None:
                 "quality_backed": True,
                 "latency_us": 10,
                 "energy_mj_per_token": 100,
+                "compute_area_mm2": 8,
                 "die_area_mm2": 8,
                 "token_throughput_per_s": 100000,
             },
@@ -35,6 +36,7 @@ def test_pareto_audit_excludes_noncredible_dominators(tmp_path: Path) -> None:
                 "quality_backed": True,
                 "latency_us": 50,
                 "energy_mj_per_token": 20,
+                "compute_area_mm2": 12,
                 "die_area_mm2": 12,
                 "token_throughput_per_s": 20000,
             },
@@ -45,6 +47,7 @@ def test_pareto_audit_excludes_noncredible_dominators(tmp_path: Path) -> None:
                 "quality_backed": False,
                 "latency_us": 1,
                 "energy_mj_per_token": 1,
+                "compute_area_mm2": 0,
                 "die_area_mm2": 1,
                 "token_throughput_per_s": 1000000,
             },
@@ -88,11 +91,20 @@ def test_pareto_audit_excludes_noncredible_dominators(tmp_path: Path) -> None:
         "efficient_quality_safe",
     ]
     assert report["excluded_points"][0]["candidate_id"] == "abstract_dominator"
+    assert report["objective_definition"]["minimize"] == [
+        "latency_us",
+        "energy_mj_per_token",
+        "component_area_mm2",
+    ]
+    assert report["pareto_points"][0]["die_area_envelope_mm2"] == 8.0
     assert report["scope_guard"]["rmsnorm_rows_per_token"] == 65
     assert report["promotion_gate_pass"] is False
     assert "not activity-backed" in report["objective_evidence"]["energy"]
     assert report["rmsnorm_serialized_latency_robustness"]["latency_anchor_robust_across_envelope"] is True
     assert report["rmsnorm_serialized_latency_robustness"]["worst_case"]["composed_latency_us"] == 13.0
+    assert report["energy_axis_uncertainty"]["score32_to_reference_recorded_ratio"] == 5.0
+    assert report["energy_axis_uncertainty"]["score32_energy_reduction_to_tie_pct_if_reference_unchanged"] == 80.0
+    assert report["energy_axis_uncertainty"]["activity_closed_pareto_status"] == "unproven"
     markdown = render_markdown(report)
     assert "fast_quality_safe" in markdown
     assert "abstract_dominator" in markdown
@@ -109,6 +121,7 @@ def test_pareto_audit_requires_proven_norm_scope(tmp_path: Path) -> None:
                 "quality_backed": True,
                 "latency_us": 1,
                 "energy_mj_per_token": 1,
+                "compute_area_mm2": 1,
                 "die_area_mm2": 1,
             }
         ],

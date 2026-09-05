@@ -18,7 +18,7 @@ DEFAULT_FRONTIER = REPO_ROOT / (
     "frontier_llama7b_v1.json"
 )
 DEFAULT_NORM = REPO_ROOT / "npu/docs/generated/llama7b_rmsnorm_macro_banked_latency_composition.json"
-OBJECTIVES = ("latency_us", "energy_mj_per_token", "die_area_mm2")
+OBJECTIVES = ("latency_us", "energy_mj_per_token", "component_area_mm2")
 
 
 def _load(path: Path) -> JsonDict:
@@ -66,12 +66,17 @@ def build_report(
         if not isinstance(raw, dict):
             raise ValueError("frontier row must be an object")
         candidate_id = str(raw.get("candidate_id") or "")
-        metrics = {key: float(raw.get(key) or 0.0) for key in OBJECTIVES}
-        if not candidate_id or any(value <= 0.0 for value in metrics.values()):
-            raise ValueError(f"candidate has missing/non-positive objective: {candidate_id}")
+        metrics = {
+            "latency_us": float(raw.get("latency_us") or 0.0),
+            "energy_mj_per_token": float(raw.get("energy_mj_per_token") or 0.0),
+            "component_area_mm2": float(raw.get("compute_area_mm2") or 0.0),
+        }
+        if not candidate_id or metrics["latency_us"] <= 0.0 or metrics["energy_mj_per_token"] <= 0.0:
+            raise ValueError(f"candidate has missing/non-positive latency or energy: {candidate_id}")
         record = {
             "candidate_id": candidate_id,
             **metrics,
+            "die_area_envelope_mm2": float(raw.get("die_area_mm2") or 0.0),
             "token_throughput_per_s": float(raw.get("token_throughput_per_s") or 0.0),
             "family": raw.get("family"),
             "precision_status": raw.get("precision_status"),
@@ -79,6 +84,8 @@ def build_report(
             "remaining_abstractions": list(raw.get("remaining_abstractions") or []),
         }
         if bool(raw.get("promotable")) and bool(raw.get("quality_backed")):
+            if metrics["component_area_mm2"] <= 0.0:
+                raise ValueError(f"eligible candidate has missing/non-positive component area: {candidate_id}")
             eligible.append(record)
         else:
             reasons = []
@@ -138,6 +145,17 @@ def build_report(
     latency_anchor_robust = bool(competing_latencies) and serialized_envelope[-1][
         "composed_latency_us"
     ] < min(competing_latencies)
+    energy_reference = min(
+        (row for row in pareto if row["candidate_id"] != score32_point["candidate_id"]),
+        key=lambda row: row["energy_mj_per_token"],
+        default=None,
+    )
+    if energy_reference is None:
+        raise ValueError("credible Pareto set has no energy-reference competitor")
+    recorded_energy_ratio = score32_point["energy_mj_per_token"] / energy_reference[
+        "energy_mj_per_token"
+    ]
+    score32_multiplier_to_tie = 1.0 / recorded_energy_ratio
 
     score32_activity_input = (frontier.get("inputs") or {}).get("score32_activity_power_json")
     activity_backed = bool(score32_activity_input)
@@ -161,7 +179,10 @@ def build_report(
         "excluded_points": excluded,
         "objective_evidence": {
             "latency": "component-composed attention-centered estimate",
-            "area": "component-composed measured/proxy area, not a full-chip routed total",
+            "area": (
+                "component-composed compute/controller area is the dominance objective; die area is retained only "
+                "as a capacity envelope, and RMSNorm area is not yet included"
+            ),
             "energy": (
                 "activity-backed score32 input"
                 if activity_backed
@@ -189,6 +210,25 @@ def build_report(
             "latency_anchor_robust_across_envelope": latency_anchor_robust,
             "claim_scope": "serialized latency only; no norm area or energy promotion",
         },
+        "energy_axis_uncertainty": {
+            "status": "recorded_energy_tradeoff_not_activity_closed",
+            "score32_candidate_id": score32_point["candidate_id"],
+            "energy_reference_candidate_id": energy_reference["candidate_id"],
+            "score32_recorded_energy_mj_per_token": score32_point["energy_mj_per_token"],
+            "energy_reference_recorded_mj_per_token": energy_reference["energy_mj_per_token"],
+            "score32_to_reference_recorded_ratio": round(recorded_energy_ratio, 9),
+            "score32_energy_multiplier_to_tie_if_reference_unchanged": round(
+                score32_multiplier_to_tie, 9
+            ),
+            "score32_energy_reduction_to_tie_pct_if_reference_unchanged": round(
+                100.0 * (1.0 - score32_multiplier_to_tie), 9
+            ),
+            "activity_closed_pareto_status": "unproven",
+            "reason": (
+                "The selected frontier has no score32_activity_power_json input. Its recorded energy ratio is a "
+                "break-even sensitivity, not an activity-backed dominance claim."
+            ),
+        },
         "promotion_gate_pass": False,
         "blockers": [
             "the frontier energy objective does not consume schedule-wrapper post-route activity power",
@@ -213,13 +253,14 @@ def render_markdown(report: JsonDict) -> str:
         f"- scope: `{report['scope_guard']['status']}`",
         f"- promotion gate: `{report['promotion_gate_pass']}`",
         "",
-        "| credible Pareto point | family | latency us | token/s | energy mJ/token | die area mm2 |",
-        "| --- | --- | ---: | ---: | ---: | ---: |",
+        "| credible Pareto point | family | latency us | token/s | energy mJ/token | component area mm2 | die envelope mm2 |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in report["pareto_points"]:
         lines.append(
             "| `{candidate_id}` | `{family}` | {latency_us:.3f} | {token_throughput_per_s:.3f} | "
-            "{energy_mj_per_token:.3f} | {die_area_mm2:.3f} |".format(**row)
+            "{energy_mj_per_token:.3f} | {component_area_mm2:.3f} | "
+            "{die_area_envelope_mm2:.3f} |".format(**row)
         )
     robustness = report["rmsnorm_serialized_latency_robustness"]
     lines.extend(
@@ -233,6 +274,20 @@ def render_markdown(report: JsonDict) -> str:
             f"- worst adjusted latency: `{robustness['worst_case']['composed_latency_us']:.3f} us`",
             f"- nearest other Pareto latency: `{robustness['nearest_other_pareto_latency_us']:.3f} us`",
             f"- claim scope: {robustness['claim_scope']}",
+        ]
+    )
+    energy = report["energy_axis_uncertainty"]
+    lines.extend(
+        [
+            "",
+            "## Energy-Axis Uncertainty",
+            "",
+            f"- status: `{energy['status']}`",
+            f"- recorded score32/reference ratio: `{energy['score32_to_reference_recorded_ratio']:.3f}x`",
+            f"- score32 reduction required to tie if reference is unchanged: "
+            f"`{energy['score32_energy_reduction_to_tie_pct_if_reference_unchanged']:.3f}%`",
+            f"- activity-closed Pareto status: `{energy['activity_closed_pareto_status']}`",
+            f"- reason: {energy['reason']}",
         ]
     )
     lines.extend(["", "## Excluded Points", "", "| candidate | reasons |", "| --- | --- |"])
