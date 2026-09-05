@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_attention_score32_exact_shared_root_transport_ppa_activity_v1",
-  "source_commit": "TBD",
-  "source_commit_note": "Queue only after merge from origin/master and pin source_requirement.required_sha to the merge commit containing the generator, guard, config, canary sweep, proposal linkage, and task-generator support.",
+  "source_commit": "36cc69c9aa182f898d4f45b0944db669c3ed88c7",
+  "source_commit_note": "Generate from the clean origin/master commit pinned here (or an exact clean descendant). It contains the r3 synth diagnostic merged in fc1852d1, including the generator, guard, config, diagnostic sweep, proposal linkage, and task-generator support.",
   "requested_items": [
     {
       "item_id": "l1_attention_score32_exact_shared_root_transport_ppa_activity_v1_r2",
@@ -54,14 +54,14 @@
       "expected_outputs": [
         "runs/designs/npu_blocks/attention_score32_exact_shared_root_transport_ppa_activity_l1/metrics.csv"
       ],
-      "status": "pending_source_merge",
+      "status": "ready_to_queue",
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "identify_flat_vs_hierarchical_synthesis_feasibility",
         "reason": "Choose a bounded physical-flow decomposition from measured synthesis success, elapsed time, failure signature, and resource behavior rather than repeating the 17 GiB r2 path."
       },
-      "acceptance_notes": "This is a synth-only legality/resource diagnostic, not PPA evidence. Preserve both successful and failed mode rows. Keep all 120 fakeram45_64x32 instances as blackboxes, pass ADDITIONAL_LIBS= during synthesis, and do not run hierarchy-area or timing postchecks. The v1 paramod-selection failure and r2 resource-boundary failure remain explicit history.",
+      "acceptance_notes": "This is a synth-only legality/resource diagnostic, not PPA evidence. Preserve both successful and failed mode rows. Keep all 120 fakeram45_64x32 instances as blackboxes, pass ADDITIONAL_LIBS= during synthesis, and do not run hierarchy-area or timing postchecks. The v1 paramod-selection failure and r2 resource-boundary failure remain explicit history. Source and plumbing are merged and locally verified; dispatch still requires the human Evaluation Gate.",
       "revision": {
         "reason": "r2 passed parameter elaboration but both physical points reached roughly 17 GiB RSS and flow_failed during hierarchy synthesis",
         "supersedes_item_ids": [

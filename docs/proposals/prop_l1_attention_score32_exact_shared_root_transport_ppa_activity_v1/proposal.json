@@ -76,7 +76,7 @@
       "item_id": "l1_attention_score32_exact_shared_root_transport_synth_mode_diag_v1_r3",
       "task_type": "l1_sweep",
       "objective": "Compare flat and hierarchy-preserving Yosys synthesis of the exact shared-root transport while retaining fakeram blackboxes and excluding macro Liberty from synthesis.",
-      "status": "pending_source_merge",
+      "status": "ready_to_queue",
       "evaluation_mode": "synth_prefilter",
       "make_target": "1_2_yosys",
       "abstraction_layer": "decoder_attention_exact_shared_root_transport",
