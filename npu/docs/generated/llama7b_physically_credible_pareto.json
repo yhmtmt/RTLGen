@@ -7,11 +7,24 @@
   ],
   "decision": "two_provisional_quality_backed_component_composed_pareto_points",
   "eligible_dominated": [],
+  "energy_axis_uncertainty": {
+    "activity_closed_pareto_status": "unproven",
+    "energy_reference_candidate_id": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512",
+    "energy_reference_recorded_mj_per_token": 81.66413005453946,
+    "reason": "The selected frontier has no score32_activity_power_json input. Its recorded energy ratio is a break-even sensitivity, not an activity-backed dominance claim.",
+    "score32_candidate_id": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+    "score32_energy_multiplier_to_tie_if_reference_unchanged": 0.174798052,
+    "score32_energy_reduction_to_tie_pct_if_reference_unchanged": 82.520194805,
+    "score32_recorded_energy_mj_per_token": 467.191305313106,
+    "score32_to_reference_recorded_ratio": 5.720887555,
+    "status": "recorded_energy_tradeoff_not_activity_closed"
+  },
   "excluded_points": [
     {
       "abstraction_status": "measured_int8_compute_quality_invalidated",
       "candidate_id": "die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024",
-      "die_area_mm2": 800.0,
+      "component_area_mm2": 179.09856,
+      "die_area_envelope_mm2": 800.0,
       "energy_mj_per_token": 135.75588466251537,
       "exclusion_reasons": [
         "not_promotable",
@@ -29,7 +42,8 @@
     {
       "abstraction_status": "abstract_compute_target_infeasible_after_measured_compute_closure",
       "candidate_id": "physical_hbm_gqa8_kv8_service_frontier",
-      "die_area_mm2": 100.0,
+      "component_area_mm2": 0.0,
+      "die_area_envelope_mm2": 100.0,
       "energy_mj_per_token": 8.14357724928343,
       "exclusion_reasons": [
         "not_promotable",
@@ -57,11 +71,11 @@
     "minimize": [
       "latency_us",
       "energy_mj_per_token",
-      "die_area_mm2"
+      "component_area_mm2"
     ]
   },
   "objective_evidence": {
-    "area": "component-composed measured/proxy area, not a full-chip routed total",
+    "area": "component-composed compute/controller area is the dominance objective; die area is retained only as a capacity envelope, and RMSNorm area is not yet included",
     "energy": "not activity-backed in this frontier; schedule-wrapper activity input is absent",
     "latency": "component-composed attention-centered estimate"
   },
@@ -69,7 +83,8 @@
     {
       "abstraction_status": "measured_schedule_wrapper_sram_envelope_hbm_controller_replay_ppa_recost",
       "candidate_id": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
-      "die_area_mm2": 800.0,
+      "component_area_mm2": 296.8263662009,
+      "die_area_envelope_mm2": 800.0,
       "energy_mj_per_token": 467.191305313106,
       "family": "score32_exp_lut_div",
       "latency_us": 12814.257853,
@@ -83,7 +98,8 @@
     {
       "abstraction_status": "measured_compute_with_source_backed_hbm_energy",
       "candidate_id": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512",
-      "die_area_mm2": 1200.0,
+      "component_area_mm2": 479.60213,
+      "die_area_envelope_mm2": 1200.0,
       "energy_mj_per_token": 81.66413005453946,
       "family": "measured_exact_fp16_gqa8_kv8",
       "latency_us": 72544.06213406654,

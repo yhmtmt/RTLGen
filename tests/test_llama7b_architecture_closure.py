@@ -126,6 +126,8 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
         self.assertIn("two non-dominated", full["summary"])
         self.assertIn("13.487--14.920 ms", full["summary"])
         self.assertIn("72.544 ms", full["summary"])
+        self.assertIn("82.520 percent", full["summary"])
+        self.assertIn("activity-closed energy ordering remains unproven", full["summary"])
         evidence_paths = {entry["path"] for entry in full["evidence"]}
         self.assertIn("npu/docs/generated/llama7b_physically_credible_pareto.json", evidence_paths)
 
