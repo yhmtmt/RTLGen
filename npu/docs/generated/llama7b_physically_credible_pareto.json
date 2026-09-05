@@ -96,6 +96,63 @@
     }
   ],
   "promotion_gate_pass": false,
+  "rmsnorm_serialized_latency_robustness": {
+    "baseline_excludes_rmsnorm": true,
+    "best_case": {
+      "clock_period_ns": 10.0,
+      "composed_latency_us": 13487.007853,
+      "composed_token_throughput_per_s": 74.145430247,
+      "rmsnorm_candidate_id": "macro_banked_three_credit"
+    },
+    "candidate_id": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+    "claim_scope": "serialized latency only; no norm area or energy promotion",
+    "latency_anchor_robust_across_envelope": true,
+    "nearest_other_pareto_latency_us": 72544.06213406654,
+    "sensitivity_rows": [
+      {
+        "clock_period_ns": 10.0,
+        "composed_latency_us": 13487.007853,
+        "composed_token_throughput_per_s": 74.145430247,
+        "rmsnorm_candidate_id": "macro_banked_three_credit"
+      },
+      {
+        "clock_period_ns": 14.0,
+        "composed_latency_us": 13756.107853,
+        "composed_token_throughput_per_s": 72.694981072,
+        "rmsnorm_candidate_id": "macro_banked_three_credit"
+      },
+      {
+        "clock_period_ns": 10.0,
+        "composed_latency_us": 13984.257853,
+        "composed_token_throughput_per_s": 71.508978918,
+        "rmsnorm_candidate_id": "macro_banked_conservative"
+      },
+      {
+        "clock_period_ns": 18.0,
+        "composed_latency_us": 14025.207853,
+        "composed_token_throughput_per_s": 71.30019109,
+        "rmsnorm_candidate_id": "macro_banked_three_credit"
+      },
+      {
+        "clock_period_ns": 14.0,
+        "composed_latency_us": 14452.257853,
+        "composed_token_throughput_per_s": 69.193340596,
+        "rmsnorm_candidate_id": "macro_banked_conservative"
+      },
+      {
+        "clock_period_ns": 18.0,
+        "composed_latency_us": 14920.257853,
+        "composed_token_throughput_per_s": 67.02297037,
+        "rmsnorm_candidate_id": "macro_banked_conservative"
+      }
+    ],
+    "worst_case": {
+      "clock_period_ns": 18.0,
+      "composed_latency_us": 14920.257853,
+      "composed_token_throughput_per_s": 67.02297037,
+      "rmsnorm_candidate_id": "macro_banked_conservative"
+    }
+  },
   "scope_guard": {
     "excluded_from_frontier_latency": [
       "pre_attention_rmsnorm",

@@ -991,7 +991,7 @@
       "label": "Integrated Llama7B Recost",
       "status": "measured_component",
       "confidence": "medium",
-      "summary": "The attention-centered Llama7B frontier is no longer heuristic-only. Among quality-backed promotable rows, it contains two non-dominated component-composed points: score32 is the latency/area anchor, while measured exact FP16 is the energy anchor. It is not yet a full-model or activity-backed frontier because transformer RMSNorm is excluded from the source latency equation, the schedule-wrapper activity rerank is pending, several subsystem closures remain partial, and external memory stays abstract.",
+      "summary": "The attention-centered Llama7B frontier is no longer heuristic-only. Among quality-backed promotable rows, it contains two non-dominated component-composed points: score32 is the latency/area anchor, while measured exact FP16 is the energy anchor. Adding all exact serialized RMSNorm sensitivities moves score32 from the incomplete 12.814 ms baseline to 13.487--14.920 ms and preserves its latency lead over the 72.544 ms FP16 point. It is not yet a full-model or activity-backed frontier because routed norm area/energy/overlap, the schedule-wrapper activity rerank, several subsystem closures, and external memory remain open.",
       "dimensions": {
         "rtl": {
           "status": "open",
@@ -1027,7 +1027,7 @@
             "composition",
             "scale_validation"
           ],
-          "note": "Computes three-objective dominance only among quality-backed promotable rows, identifies separate score32 latency/area and exact-FP16 energy anchors, excludes abstract/quality-invalid dominators, and fail-closes full-model and activity-backed promotion."
+          "note": "Computes three-objective dominance only among quality-backed promotable rows, identifies separate score32 latency/area and exact-FP16 energy anchors, excludes abstract/quality-invalid dominators, proves the score32 latency lead survives the full exact serialized RMSNorm sensitivity envelope, and fail-closes full-model and activity-backed promotion."
         },
         {
           "path": "docs/proposals/prop_l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1/analysis_report.md",
