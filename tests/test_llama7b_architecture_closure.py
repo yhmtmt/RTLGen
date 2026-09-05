@@ -52,6 +52,15 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
         self.assertIn("evidence path does not exist", joined)
         self.assertIn("does_not_exist.md", joined)
 
+    def test_norm_records_exact_rtl_and_register_storage_boundary(self) -> None:
+        norm = next(item for item in self.matrix["components"] if item["id"] == "norm")
+        self.assertEqual(norm["status"], "open")
+        self.assertEqual(norm["dimensions"]["rtl"]["status"], "closed")
+        self.assertEqual(norm["dimensions"]["equivalence"]["status"], "measured_component")
+        self.assertEqual(norm["dimensions"]["routed_ppa"]["status"], "open")
+        self.assertIn("failed synthesis", norm["dimensions"]["routed_ppa"]["summary"])
+        self.assertIn("explicitly banked SRAM", norm["next_gate"])
+
     def test_multivalue_service_activity_is_measured_but_not_signoff(self) -> None:
         component = next(item for item in self.matrix["components"] if item["id"] == "multivalue_service")
         self.assertEqual(component["status"], "routed_with_caveat")

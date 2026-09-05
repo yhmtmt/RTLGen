@@ -19,7 +19,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Precision | measured_component | medium | closed | measured_component | measured_component | measured_component | measured_component | measured_component |
 | Dense Compute | measured_component | medium | closed | closed | measured_component | open | measured_component | measured_component |
-| Norm | open | low | rtl_unmeasured | open | open | open | open | open |
+| Norm | open | low | closed | measured_component | open | open | open | open |
 | Score/Softmax | measured_component | medium | closed | measured_component | measured_component | measured_component | measured_component | measured_component |
 | Multivalue Service | routed_with_caveat | medium | closed | closed | routed_with_caveat | measured_component | measured_component | rtl_unmeasured |
 | Reducer | measured_component | medium | closed | closed | measured_component | open | measured_component | rtl_unmeasured |
@@ -85,23 +85,25 @@ Evidence:
 
 - status: `open`
 - confidence: `low`
-- summary: Normalization remains the weakest embodied datapath block. There are proposal tracks for arithmetic calibration and reciprocal datapaths, but the current Llama7B frontier still carries this area/energy contribution as an incompletely measured term.
-- next gate: Promote one norm datapath with RTL equivalence, routed PPA, and direct integration into the Llama7B recost.
+- summary: Normalization remains the weakest physical datapath block, but it is no longer merely proposed: exact Phase-3 BF16 RMSNorm RTL passes bounded ready/valid equivalence. Its first LANES=16 physical attempt produced two synthesis failures near 12 GB peak memory because the complete row and gamma state were inferred as registers, so the current embodiment is explicit boundary evidence rather than a Pareto candidate.
+- next gate: Replace full-row and gamma inferred registers with an explicitly banked SRAM interface while preserving the passing Phase-3 arithmetic and ready/valid contract; then obtain routed PPA, matched activity power, and direct Llama7B recost integration.
 
 | Dimension | Status | Summary |
 | --- | --- | --- |
-| `rtl` | `rtl_unmeasured` | Reciprocal and normalization datapath proposals exist, but they are not yet promoted as the measured norm block used by the frontier. |
-| `equivalence` | `open` | No full promoted norm equivalence record closes the behavior against the final frontier contract. |
-| `routed_ppa` | `open` | The frontier still lacks an accepted routed normalization primitive replacing the remaining cost heuristics. |
+| `rtl` | `closed` | Exact Phase-3 Llama7B BF16 RMSNorm RTL and its generated ready/valid wrapper are implemented. |
+| `equivalence` | `measured_component` | The deterministic Phase-3 probe passes five cases under always-ready and periodic-backpressure scenarios; this is bounded block equivalence, not full-model equivalence. |
+| `routed_ppa` | `open` | The LANES=16 register-storage embodiment failed synthesis at both 16 ns and 20 ns after roughly 18--20 minutes and about 12 GB peak memory, so no routed norm PPA row exists. |
 | `activity` | `open` | No promoted activity-backed norm measurement is feeding the Llama7B recost. |
 | `composition` | `open` | The norm path is not yet composed into the selected architecture with the same strength as score, reducer, or service. |
 | `scale_validation` | `open` | There is no scale sweep proving that the chosen normalization structure remains valid across the intended architecture range. |
 
 Caveats:
-- Current norm accounting is not yet on the same measurement footing as dense compute, service, or the selected score32 softmax branch.
+- Exact block behavior is bounded, but current norm accounting is not yet on the same physical-measurement footing as dense compute, service, or the selected score32 softmax branch.
+- The failed register-array implementation must not be generalized into evidence against an explicitly banked SRAM-backed RMSNorm design.
 - BF16 and fixed-point norm options are both still unresolved.
 
 Evidence:
+- `docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1/analysis_report.md` (proposal_analysis; `rtl`, `equivalence`, `routed_ppa`): Records the exact Phase-3 implementation and the merged two-row synthesis-resource boundary for its inferred-register storage embodiment.
 - `docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/quality_gate.md` (proposal_gate; `rtl`): Shows that normalization calibration work exists, but is not yet promoted as a closed measured component.
 - `docs/proposals/prop_l1_decoder_bf16_recip_norm_datapath_v1/quality_gate.md` (proposal_gate; `rtl`): Tracks the BF16 reciprocal norm path that remains future work rather than a merged closure result.
 - `docs/proposals/prop_l1_decoder_q12_pwl_recip_norm_datapath_v1/quality_gate.md` (proposal_gate; `rtl`): Shows that a fixed-point reciprocal norm path was explored but not promoted into the final frontier.
