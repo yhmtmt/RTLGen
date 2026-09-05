@@ -93,6 +93,30 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
             evidence_paths,
         )
 
+    def test_noc_and_sram_reflect_promoted_post_august_physical_anchors(self) -> None:
+        noc = next(item for item in self.matrix["components"] if item["id"] == "noc")
+        self.assertEqual(noc["status"], "open")
+        self.assertEqual(noc["confidence"], "medium")
+        self.assertEqual(noc["dimensions"]["routed_ppa"]["status"], "measured_component")
+        self.assertEqual(noc["dimensions"]["equivalence"]["status"], "open")
+        noc_evidence = {entry["path"] for entry in noc["evidence"]}
+        self.assertIn(
+            "docs/proposals/prop_l1_segmented_xy_mesh_noc_phase1_v1/analysis_report.md",
+            noc_evidence,
+        )
+
+        sram = next(item for item in self.matrix["components"] if item["id"] == "sram")
+        self.assertEqual(sram["dimensions"]["routed_ppa"]["status"], "measured_component")
+        sram_evidence = {entry["path"] for entry in sram["evidence"]}
+        self.assertIn(
+            "docs/proposals/prop_l1_attention_shared_sram_read_group_adapter_ppa_v1/analysis_report.md",
+            sram_evidence,
+        )
+        self.assertIn(
+            "docs/proposals/prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1/analysis_report.md",
+            sram_evidence,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,8 +3,8 @@
   "title": "Llama7B Architecture Closure Matrix",
   "model": "llama7b",
   "scope": "Decoder-attention architecture exploration with persistent closure tracking",
-  "as_of": "2026-08-06",
-  "source_commit_floor": "1e8cdd767e7767a9b07393ea9945eb7d5315b069",
+  "as_of": "2026-09-05",
+  "source_commit_floor": "36cc69c9aa182f898d4f45b0944db669c3ed88c7",
   "generated_markdown": "npu/docs/generated/llama7b_architecture_closure.md",
   "component_order": [
     "precision",
@@ -615,12 +615,12 @@
       "id": "noc",
       "label": "NoC",
       "status": "open",
-      "confidence": "low",
-      "summary": "The repo has moved beyond a free NoC: there are profile measurements, endpoint-router PPA anchors, and topology/scheduler studies. What is still missing is a stable, physically grounded topology/scheduler pair that the final Llama7B claim can rely on without qualification.",
+      "confidence": "medium",
+      "summary": "The repo has moved beyond a free NoC: the segmented 4x4 mesh now has promoted physical evidence, alongside endpoint-router anchors, traffic profiles, and exact shared-mesh arbitration/replay RTL. What is still missing is a promoted end-to-end equivalence gate and a frozen topology/scheduler pair for the final Llama7B claim.",
       "dimensions": {
         "rtl": {
           "status": "measured_component",
-          "summary": "Endpoint-router primitives and candidate NoC structures are represented in RTL-backed proposal work."
+          "summary": "Endpoint-router primitives, the segmented 4x4 mesh, and exact shared-mesh arbitration/replay are represented in RTL-backed work."
         },
         "equivalence": {
           "status": "open",
@@ -628,7 +628,7 @@
         },
         "routed_ppa": {
           "status": "measured_component",
-          "summary": "Endpoint router PPA anchors exist for the segmented and wide router families."
+          "summary": "Endpoint-router anchors and the promoted segmented 4x4 mesh r7 physical result provide measured NoC component PPA."
         },
         "activity": {
           "status": "measured_component",
@@ -652,6 +652,15 @@
             "routed_ppa"
           ],
           "note": "Provides a routed PPA anchor for one endpoint-router NoC primitive family."
+        },
+        {
+          "path": "docs/proposals/prop_l1_segmented_xy_mesh_noc_phase1_v1/analysis_report.md",
+          "kind": "proposal_analysis",
+          "dimensions": [
+            "rtl",
+            "routed_ppa"
+          ],
+          "note": "Provides the promoted r7 physical anchor for the complete segmented 4x4 mesh; it is component evidence, not final topology closure."
         },
         {
           "path": "docs/proposals/prop_l2_decoder_attention_noc_profile_v1/analysis_report.md",
@@ -680,7 +689,7 @@
         }
       ],
       "caveats": [
-        "NoC costs are no longer free, but the final architecture still depends on a partially analytic topology/scheduler choice.",
+        "NoC costs are no longer free and a complete segmented-mesh physical anchor exists, but the final architecture still depends on a partially analytic topology/scheduler choice.",
         "The current frontier can still move if the selected pair changes under stricter physical constraints."
       ],
       "next_gate": "Fix the final topology/scheduler pair under measured endpoint costs and then rerun the clustered frontier with that pair frozen."
@@ -701,8 +710,8 @@
           "summary": "Cluster-SRAM composition is bounded by the local16/global-tree GQA8 equivalence gate."
         },
         "routed_ppa": {
-          "status": "open",
-          "summary": "The SRAM contribution is still primarily consumed through measured profile/envelope data rather than a final routed memory hierarchy."
+          "status": "measured_component",
+          "summary": "Promoted shared-SRAM read-adapter and k-round-scheduler rows now provide routed component evidence, while the final composed memory hierarchy remains unmeasured."
         },
         "activity": {
           "status": "measured_component",
@@ -725,6 +734,24 @@
             "activity"
           ],
           "note": "Provides the promoted local SRAM profile evidence used by the attention model."
+        },
+        {
+          "path": "docs/proposals/prop_l1_attention_shared_sram_read_group_adapter_ppa_v1/analysis_report.md",
+          "kind": "proposal_analysis",
+          "dimensions": [
+            "rtl",
+            "routed_ppa"
+          ],
+          "note": "Provides promoted PPA measurements for the shared-SRAM read-group adapter frontier."
+        },
+        {
+          "path": "docs/proposals/prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1/analysis_report.md",
+          "kind": "proposal_analysis",
+          "dimensions": [
+            "rtl",
+            "routed_ppa"
+          ],
+          "note": "Provides promoted PPA measurements for the exact shared-SRAM K-round scheduler."
         },
         {
           "path": "docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1/analysis_report.md",
