@@ -110,6 +110,30 @@ def test_pareto_audit_excludes_noncredible_dominators(tmp_path: Path) -> None:
         == 50.0
     )
     assert report["area_axis_uncertainty"]["rmsnorm_area_closed"] is False
+    pairwise = report["pairwise_dominance_sensitivity"]
+    assert pairwise["score32_dominates_reference_if"]["energy_mj_per_token_at_most"] == 20.0
+    assert pairwise["score32_dominates_reference_if"]["aggregate_missing_area_mm2_at_most"] == 4.0
+    assert (
+        pairwise["reference_dominates_score32_recorded_axes_only_if"][
+            "latency_reduction_to_tie_recorded_score32_pct"
+        ]
+        == 80.0
+    )
+    assert (
+        pairwise["reference_dominates_score32_recorded_axes_only_if"][
+            "latency_reduction_to_tie_worst_serialized_norm_score32_pct"
+        ]
+        == 74.0
+    )
+    assert (
+        pairwise["reference_dominates_score32_recorded_axes_only_if"][
+            "component_area_reduction_to_tie_recorded_score32_pct"
+        ]
+        == pytest.approx(33.333333333)
+    )
+    assert pairwise["reference_dominates_score32_recorded_axes_only_if"][
+        "requirements_are_simultaneous"
+    ] is True
     assert report["energy_axis_uncertainty"]["score32_to_reference_recorded_ratio"] == 5.0
     assert report["energy_axis_uncertainty"]["score32_energy_reduction_to_tie_pct_if_reference_unchanged"] == 80.0
     assert report["energy_axis_uncertainty"]["activity_closed_pareto_status"] == "unproven"
@@ -117,6 +141,7 @@ def test_pareto_audit_excludes_noncredible_dominators(tmp_path: Path) -> None:
     assert "fast_quality_safe" in markdown
     assert "abstract_dominator" in markdown
     assert "aggregate missing-area budget to tie reference: `4.000 mm2`" in markdown
+    assert "reference latency and area requirements are simultaneous: `True`" in markdown
 
 
 def test_pareto_audit_requires_proven_norm_scope(tmp_path: Path) -> None:

@@ -169,6 +169,21 @@ def build_report(
     )
     if score32_missing_area_budget_to_tie_mm2 <= 0.0:
         raise ValueError("score32 point is not the current component-area anchor")
+    reference_latency_reduction_to_tie_recorded_pct = 100.0 * (
+        1.0 - score32_point["latency_us"] / area_reference["latency_us"]
+    )
+    reference_latency_reduction_to_tie_worst_serialized_norm_pct = 100.0 * (
+        1.0 - serialized_envelope[-1]["composed_latency_us"] / area_reference["latency_us"]
+    )
+    reference_area_reduction_to_tie_recorded_pct = 100.0 * (
+        1.0 - score32_point["component_area_mm2"] / area_reference["component_area_mm2"]
+    )
+    if min(
+        reference_latency_reduction_to_tie_recorded_pct,
+        reference_latency_reduction_to_tie_worst_serialized_norm_pct,
+        reference_area_reduction_to_tie_recorded_pct,
+    ) <= 0.0:
+        raise ValueError("reference does not trail score32 on the recorded latency/area axes")
 
     score32_activity_input = (frontier.get("inputs") or {}).get("score32_activity_power_json")
     activity_backed = bool(score32_activity_input)
@@ -246,6 +261,46 @@ def build_report(
             "reason": (
                 "The routed RMSNorm area and its architecture-level replication are not measured. The budget is "
                 "an aggregate break-even sensitivity, not an estimated RMSNorm area or a physical closure claim."
+            ),
+        },
+        "pairwise_dominance_sensitivity": {
+            "status": "conditional_break_even_not_physical_closure",
+            "score32_candidate_id": score32_point["candidate_id"],
+            "reference_candidate_id": area_reference["candidate_id"],
+            "score32_dominates_reference_if": {
+                "latency_condition": (
+                    "already strict across the complete exact serialized RMSNorm envelope"
+                ),
+                "energy_mj_per_token_at_most": energy_reference["energy_mj_per_token"],
+                "aggregate_missing_area_mm2_at_most": round(
+                    score32_missing_area_budget_to_tie_mm2, 9
+                ),
+                "assumptions": [
+                    "reference objectives remain unchanged",
+                    "score32 activity-backed energy includes the same system boundary as the reference",
+                    "all score32-only area absent from the current objective is counted in aggregate",
+                ],
+            },
+            "reference_dominates_score32_recorded_axes_only_if": {
+                "latency_reduction_to_tie_recorded_score32_pct": round(
+                    reference_latency_reduction_to_tie_recorded_pct, 9
+                ),
+                "latency_reduction_to_tie_worst_serialized_norm_score32_pct": round(
+                    reference_latency_reduction_to_tie_worst_serialized_norm_pct, 9
+                ),
+                "component_area_reduction_to_tie_recorded_score32_pct": round(
+                    reference_area_reduction_to_tie_recorded_pct, 9
+                ),
+                "requirements_are_simultaneous": True,
+                "energy_condition": "already strict on the recorded, non-activity-closed energy axis",
+                "assumptions": [
+                    "score32 recorded component area is used before adding unmeasured area",
+                    "each comparison holds the opposing candidate objective fixed",
+                ],
+            },
+            "reason": (
+                "These thresholds identify which missing measurements can change pairwise dominance. They do not "
+                "predict achievable improvements or replace matched physical and activity measurements."
             ),
         },
         "energy_axis_uncertainty": {
@@ -327,6 +382,30 @@ def render_markdown(report: JsonDict) -> str:
             f"`{area['score32_aggregate_missing_area_budget_to_tie_pct_of_recorded_area']:.3f}%`",
             f"- strict area-lead condition: {area['strict_area_lead_condition']}",
             f"- reason: {area['reason']}",
+        ]
+    )
+    pairwise = report["pairwise_dominance_sensitivity"]
+    score32_condition = pairwise["score32_dominates_reference_if"]
+    reference_condition = pairwise["reference_dominates_score32_recorded_axes_only_if"]
+    lines.extend(
+        [
+            "",
+            "## Pairwise Dominance Sensitivity",
+            "",
+            f"- status: `{pairwise['status']}`",
+            f"- score32 dominance boundary: energy at most "
+            f"`{score32_condition['energy_mj_per_token_at_most']:.3f} mJ/token` and aggregate "
+            f"missing area at most `{score32_condition['aggregate_missing_area_mm2_at_most']:.3f} mm2`; "
+            f"latency is {score32_condition['latency_condition']}",
+            f"- reference latency reduction to tie recorded score32: "
+            f"`{reference_condition['latency_reduction_to_tie_recorded_score32_pct']:.3f}%`",
+            f"- reference latency reduction to tie worst serialized-norm score32: "
+            f"`{reference_condition['latency_reduction_to_tie_worst_serialized_norm_score32_pct']:.3f}%`",
+            f"- reference component-area reduction to tie recorded score32: "
+            f"`{reference_condition['component_area_reduction_to_tie_recorded_score32_pct']:.3f}%`",
+            f"- reference latency and area requirements are simultaneous: "
+            f"`{reference_condition['requirements_are_simultaneous']}`",
+            f"- reason: {pairwise['reason']}",
         ]
     )
     energy = report["energy_axis_uncertainty"]
