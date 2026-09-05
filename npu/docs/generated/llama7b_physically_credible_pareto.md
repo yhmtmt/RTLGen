@@ -25,6 +25,16 @@
 - strict area-lead condition: aggregate score32-only area absent from the current objective is less than the tie budget, with the reference area unchanged
 - reason: The routed RMSNorm area and its architecture-level replication are not measured. The budget is an aggregate break-even sensitivity, not an estimated RMSNorm area or a physical closure claim.
 
+## Pairwise Dominance Sensitivity
+
+- status: `conditional_break_even_not_physical_closure`
+- score32 dominance boundary: energy at most `81.664 mJ/token` and aggregate missing area at most `182.776 mm2`; latency is already strict across the complete exact serialized RMSNorm envelope
+- reference latency reduction to tie recorded score32: `82.336%`
+- reference latency reduction to tie worst serialized-norm score32: `79.433%`
+- reference component-area reduction to tie recorded score32: `38.110%`
+- reference latency and area requirements are simultaneous: `True`
+- reason: These thresholds identify which missing measurements can change pairwise dominance. They do not predict achievable improvements or replace matched physical and activity measurements.
+
 ## Energy-Axis Uncertainty
 
 - status: `recorded_energy_tradeoff_not_activity_closed`
