@@ -68,7 +68,7 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
             evidence_paths,
         )
         self.assertIn("65-row/token", norm["dimensions"]["composition"]["summary"])
-        self.assertIn("attention-only", norm["dimensions"]["composition"]["summary"])
+        self.assertIn("excludes transformer RMSNorm", norm["dimensions"]["composition"]["summary"])
 
     def test_multivalue_service_activity_is_measured_but_not_signoff(self) -> None:
         component = next(item for item in self.matrix["components"] if item["id"] == "multivalue_service")
@@ -110,6 +110,22 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
             "analysis_report.md",
             evidence_paths,
         )
+
+    def test_pending_schedule_wrapper_activity_is_not_claimed_as_promoted(self) -> None:
+        for component_id in ("precision", "score_softmax", "scheduler_cdc", "full_llama7b_recost"):
+            component = next(item for item in self.matrix["components"] if item["id"] == component_id)
+            self.assertEqual(component["dimensions"]["activity"]["status"], "open")
+            activity_summary = component["dimensions"]["activity"]["summary"].lower()
+            self.assertIn("pending", activity_summary)
+            self.assertNotIn("already", activity_summary)
+            self.assertNotIn("promoted", activity_summary)
+
+        full = next(item for item in self.matrix["components"] if item["id"] == "full_llama7b_recost")
+        self.assertIn("RMSNorm", full["summary"])
+        self.assertIn("not yet a full-model", full["summary"])
+        self.assertIn("two non-dominated", full["summary"])
+        evidence_paths = {entry["path"] for entry in full["evidence"]}
+        self.assertIn("npu/docs/generated/llama7b_physically_credible_pareto.json", evidence_paths)
 
     def test_noc_and_sram_reflect_promoted_post_august_physical_anchors(self) -> None:
         noc = next(item for item in self.matrix["components"] if item["id"] == "noc")

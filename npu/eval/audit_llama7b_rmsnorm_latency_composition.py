@@ -20,13 +20,14 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BASELINE = REPO_ROOT / (
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
     "decoder_attention_score32_integrated_frontier_ranking__"
-    "l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1.json"
+    "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_"
+    "frontier_llama7b_v1.json"
 )
 DEFAULT_ATTENTION_SCOPE = REPO_ROOT / (
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
     "decoder_attention_composed_datapath_physical_feasibility__"
-    "l2_decoder_attention_composed_datapath_score32_exp_lut_div_reduced_replica_"
-    "measured_command_control_llama7b_v1.json"
+    "l2_decoder_attention_composed_datapath_score32_exp_lut_div_schedule_wrapper_"
+    "recost_llama7b_v1.json"
 )
 
 

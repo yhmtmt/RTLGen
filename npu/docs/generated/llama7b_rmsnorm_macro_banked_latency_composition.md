@@ -1,8 +1,8 @@
 # Llama7B Macro-Backed RMSNorm Latency Composition
 
 - decision: `latency_sensitivity_only_pending_routed_ppa`
-- baseline candidate: `score32_exp_lut_hbm_dram_service_closure_best`
-- baseline latency: `12532.357427 us`
+- baseline candidate: `score32_exp_lut_schedule_wrapper_hbm_controller_replay_best`
+- baseline latency: `12814.257853 us`
 - RMSNorm rows/token: `65`
 - baseline scope proof: `verified_attention_only_excludes_transformer_rmsnorm`
 
@@ -13,24 +13,24 @@
 
 | RMSNorm candidate | clock ns | hidden fraction | raw norm us | exposed norm us | composed us | token/s | increase |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `macro_banked_conservative` | 10 | 0.0 | 1170.000 | 1170.000 | 13702.357 | 72.980 | 9.336% |
-| `macro_banked_conservative` | 10 | 0.5 | 1170.000 | 585.000 | 13117.357 | 76.235 | 4.668% |
-| `macro_banked_conservative` | 10 | 1.0 | 1170.000 | 0.000 | 12532.357 | 79.793 | 0.000% |
-| `macro_banked_conservative` | 14 | 0.0 | 1638.000 | 1638.000 | 14170.357 | 70.570 | 13.070% |
-| `macro_banked_conservative` | 14 | 0.5 | 1638.000 | 819.000 | 13351.357 | 74.899 | 6.535% |
-| `macro_banked_conservative` | 14 | 1.0 | 1638.000 | 0.000 | 12532.357 | 79.793 | 0.000% |
-| `macro_banked_conservative` | 18 | 0.0 | 2106.000 | 2106.000 | 14638.357 | 68.314 | 16.804% |
-| `macro_banked_conservative` | 18 | 0.5 | 2106.000 | 1053.000 | 13585.357 | 73.609 | 8.402% |
-| `macro_banked_conservative` | 18 | 1.0 | 2106.000 | 0.000 | 12532.357 | 79.793 | 0.000% |
-| `macro_banked_three_credit` | 10 | 0.0 | 672.750 | 672.750 | 13205.107 | 75.728 | 5.368% |
-| `macro_banked_three_credit` | 10 | 0.5 | 672.750 | 336.375 | 12868.732 | 77.708 | 2.684% |
-| `macro_banked_three_credit` | 10 | 1.0 | 672.750 | 0.000 | 12532.357 | 79.793 | 0.000% |
-| `macro_banked_three_credit` | 14 | 0.0 | 941.850 | 941.850 | 13474.207 | 74.216 | 7.515% |
-| `macro_banked_three_credit` | 14 | 0.5 | 941.850 | 470.925 | 13003.282 | 76.904 | 3.758% |
-| `macro_banked_three_credit` | 14 | 1.0 | 941.850 | 0.000 | 12532.357 | 79.793 | 0.000% |
-| `macro_banked_three_credit` | 18 | 0.0 | 1210.950 | 1210.950 | 13743.307 | 72.763 | 9.663% |
-| `macro_banked_three_credit` | 18 | 0.5 | 1210.950 | 605.475 | 13137.832 | 76.116 | 4.831% |
-| `macro_banked_three_credit` | 18 | 1.0 | 1210.950 | 0.000 | 12532.357 | 79.793 | 0.000% |
+| `macro_banked_conservative` | 10 | 0.0 | 1170.000 | 1170.000 | 13984.258 | 71.509 | 9.130% |
+| `macro_banked_conservative` | 10 | 0.5 | 1170.000 | 585.000 | 13399.258 | 74.631 | 4.565% |
+| `macro_banked_conservative` | 10 | 1.0 | 1170.000 | 0.000 | 12814.258 | 78.038 | 0.000% |
+| `macro_banked_conservative` | 14 | 0.0 | 1638.000 | 1638.000 | 14452.258 | 69.193 | 12.783% |
+| `macro_banked_conservative` | 14 | 0.5 | 1638.000 | 819.000 | 13633.258 | 73.350 | 6.391% |
+| `macro_banked_conservative` | 14 | 1.0 | 1638.000 | 0.000 | 12814.258 | 78.038 | 0.000% |
+| `macro_banked_conservative` | 18 | 0.0 | 2106.000 | 2106.000 | 14920.258 | 67.023 | 16.435% |
+| `macro_banked_conservative` | 18 | 0.5 | 2106.000 | 1053.000 | 13867.258 | 72.112 | 8.217% |
+| `macro_banked_conservative` | 18 | 1.0 | 2106.000 | 0.000 | 12814.258 | 78.038 | 0.000% |
+| `macro_banked_three_credit` | 10 | 0.0 | 672.750 | 672.750 | 13487.008 | 74.145 | 5.250% |
+| `macro_banked_three_credit` | 10 | 0.5 | 672.750 | 336.375 | 13150.633 | 76.042 | 2.625% |
+| `macro_banked_three_credit` | 10 | 1.0 | 672.750 | 0.000 | 12814.258 | 78.038 | 0.000% |
+| `macro_banked_three_credit` | 14 | 0.0 | 941.850 | 941.850 | 13756.108 | 72.695 | 7.350% |
+| `macro_banked_three_credit` | 14 | 0.5 | 941.850 | 470.925 | 13285.183 | 75.272 | 3.675% |
+| `macro_banked_three_credit` | 14 | 1.0 | 941.850 | 0.000 | 12814.258 | 78.038 | 0.000% |
+| `macro_banked_three_credit` | 18 | 0.0 | 1210.950 | 1210.950 | 14025.208 | 71.300 | 9.450% |
+| `macro_banked_three_credit` | 18 | 0.5 | 1210.950 | 605.475 | 13419.733 | 74.517 | 4.725% |
+| `macro_banked_three_credit` | 18 | 1.0 | 1210.950 | 0.000 | 12814.258 | 78.038 | 0.000% |
 
 ## Blockers
 

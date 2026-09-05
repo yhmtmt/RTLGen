@@ -1,0 +1,211 @@
+#!/usr/bin/env python3
+"""Extract the physically credible Pareto set without promoting incomplete energy evidence."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+from typing import Any
+
+JsonDict = dict[str, Any]
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_FRONTIER = REPO_ROOT / (
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+    "decoder_attention_score32_integrated_frontier_ranking__"
+    "l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_"
+    "frontier_llama7b_v1.json"
+)
+DEFAULT_NORM = REPO_ROOT / "npu/docs/generated/llama7b_rmsnorm_macro_banked_latency_composition.json"
+OBJECTIVES = ("latency_us", "energy_mj_per_token", "die_area_mm2")
+
+
+def _load(path: Path) -> JsonDict:
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError(f"expected JSON object: {path}")
+    return value
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _portable(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT.resolve()))
+    except ValueError:
+        return str(path)
+
+
+def _dominates(left: JsonDict, right: JsonDict) -> bool:
+    left_values = tuple(float(left[key]) for key in OBJECTIVES)
+    right_values = tuple(float(right[key]) for key in OBJECTIVES)
+    return all(a <= b for a, b in zip(left_values, right_values)) and any(
+        a < b for a, b in zip(left_values, right_values)
+    )
+
+
+def build_report(
+    frontier: JsonDict,
+    *,
+    frontier_path: Path,
+    norm: JsonDict,
+    norm_path: Path,
+) -> JsonDict:
+    if frontier.get("model") != "llm_decoder_attention_score32_integrated_frontier_ranking_v1":
+        raise ValueError("unexpected integrated-frontier model")
+    rows = frontier.get("rows")
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("integrated frontier has no rows")
+
+    eligible: list[JsonDict] = []
+    excluded: list[JsonDict] = []
+    for raw in rows:
+        if not isinstance(raw, dict):
+            raise ValueError("frontier row must be an object")
+        candidate_id = str(raw.get("candidate_id") or "")
+        metrics = {key: float(raw.get(key) or 0.0) for key in OBJECTIVES}
+        if not candidate_id or any(value <= 0.0 for value in metrics.values()):
+            raise ValueError(f"candidate has missing/non-positive objective: {candidate_id}")
+        record = {
+            "candidate_id": candidate_id,
+            **metrics,
+            "token_throughput_per_s": float(raw.get("token_throughput_per_s") or 0.0),
+            "family": raw.get("family"),
+            "precision_status": raw.get("precision_status"),
+            "abstraction_status": raw.get("abstraction_status"),
+            "remaining_abstractions": list(raw.get("remaining_abstractions") or []),
+        }
+        if bool(raw.get("promotable")) and bool(raw.get("quality_backed")):
+            eligible.append(record)
+        else:
+            reasons = []
+            if not bool(raw.get("promotable")):
+                reasons.append("not_promotable")
+            if not bool(raw.get("quality_backed")):
+                reasons.append("not_quality_backed")
+            excluded.append({**record, "exclusion_reasons": reasons})
+
+    if not eligible:
+        raise ValueError("no quality-backed promotable candidates")
+    pareto = [row for row in eligible if not any(_dominates(other, row) for other in eligible if other is not row)]
+    dominated = [row for row in eligible if row not in pareto]
+
+    if norm.get("model") != "llama7b_rmsnorm_macro_banked_latency_composition_v2":
+        raise ValueError("unexpected RMSNorm composition model")
+    scope = norm.get("attention_scope_proof")
+    if not isinstance(scope, dict) or scope.get("status") != "verified_attention_only_excludes_transformer_rmsnorm":
+        raise ValueError("RMSNorm scope exclusion is not proven")
+    norm_candidates = norm.get("rmsnorm_candidates")
+    if not isinstance(norm_candidates, list) or not norm_candidates:
+        raise ValueError("RMSNorm composition has no candidates")
+
+    score32_activity_input = (frontier.get("inputs") or {}).get("score32_activity_power_json")
+    activity_backed = bool(score32_activity_input)
+    return {
+        "version": 1,
+        "model": "llama7b_physically_credible_pareto_audit_v1",
+        "decision": "two_provisional_quality_backed_component_composed_pareto_points",
+        "source": {
+            "frontier_path": _portable(frontier_path),
+            "frontier_sha256": _sha256(frontier_path),
+            "norm_path": _portable(norm_path),
+            "norm_sha256": _sha256(norm_path),
+        },
+        "objective_definition": {
+            "minimize": list(OBJECTIVES),
+            "eligibility": ["promotable", "quality_backed", "all objectives finite and positive"],
+            "dominance_pool": "eligible candidates only",
+        },
+        "pareto_points": pareto,
+        "eligible_dominated": dominated,
+        "excluded_points": excluded,
+        "objective_evidence": {
+            "latency": "component-composed attention-centered estimate",
+            "area": "component-composed measured/proxy area, not a full-chip routed total",
+            "energy": (
+                "activity-backed score32 input"
+                if activity_backed
+                else "not activity-backed in this frontier; schedule-wrapper activity input is absent"
+            ),
+        },
+        "scope_guard": {
+            "status": "attention_centered_not_full_model",
+            "excluded_from_frontier_latency": list(scope["excluded_terms"]),
+            "rmsnorm_rows_per_token": int(norm["rmsnorm_scope"]["rows_per_token"]),
+            "rmsnorm_candidate_cycles": {
+                str(row["candidate_id"]): int(row["row_cycles"]) for row in norm_candidates
+            },
+            "norm_promotion_gate_pass": bool(norm.get("promotion_gate_pass")),
+        },
+        "promotion_gate_pass": False,
+        "blockers": [
+            "the frontier energy objective does not consume schedule-wrapper post-route activity power",
+            "transformer RMSNorm latency is excluded and its routed area/activity/overlap are open",
+            "NoC and selected SRAM hierarchy lack matched workload-backed routed activity power",
+            "the architecture is component-composed rather than a full-chip routed implementation",
+        ],
+        "interpretation": (
+            "Among quality-backed promotable rows, score32 is the latency/area point and measured exact FP16 is "
+            "the energy point; neither dominates the other. These are provisional component-composed Pareto "
+            "anchors, not final full-model PPA points. Non-promotable abstract or quality-invalid rows are never "
+            "allowed to dominate the credible set."
+        ),
+    }
+
+
+def render_markdown(report: JsonDict) -> str:
+    lines = [
+        "# Llama7B Physically Credible Pareto Audit",
+        "",
+        f"- decision: `{report['decision']}`",
+        f"- scope: `{report['scope_guard']['status']}`",
+        f"- promotion gate: `{report['promotion_gate_pass']}`",
+        "",
+        "| credible Pareto point | family | latency us | token/s | energy mJ/token | die area mm2 |",
+        "| --- | --- | ---: | ---: | ---: | ---: |",
+    ]
+    for row in report["pareto_points"]:
+        lines.append(
+            "| `{candidate_id}` | `{family}` | {latency_us:.3f} | {token_throughput_per_s:.3f} | "
+            "{energy_mj_per_token:.3f} | {die_area_mm2:.3f} |".format(**row)
+        )
+    lines.extend(["", "## Excluded Points", "", "| candidate | reasons |", "| --- | --- |"])
+    for row in report["excluded_points"]:
+        lines.append(f"| `{row['candidate_id']}` | {', '.join(row['exclusion_reasons'])} |")
+    lines.extend(["", "## Evidence Limits", ""])
+    lines.extend(f"- {key}: {value}" for key, value in report["objective_evidence"].items())
+    lines.extend(["", "## Promotion Blockers", ""])
+    lines.extend(f"- {item}" for item in report["blockers"])
+    lines.extend(["", report["interpretation"], ""])
+    return "\n".join(lines)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--frontier", type=Path, default=DEFAULT_FRONTIER)
+    parser.add_argument("--norm", type=Path, default=DEFAULT_NORM)
+    parser.add_argument("--out-json", type=Path)
+    parser.add_argument("--out-md", type=Path)
+    args = parser.parse_args()
+    report = build_report(
+        _load(args.frontier),
+        frontier_path=args.frontier,
+        norm=_load(args.norm),
+        norm_path=args.norm,
+    )
+    if args.out_json:
+        args.out_json.parent.mkdir(parents=True, exist_ok=True)
+        args.out_json.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if args.out_md:
+        args.out_md.parent.mkdir(parents=True, exist_ok=True)
+        args.out_md.write_text(render_markdown(report), encoding="utf-8")
+    if not args.out_json and not args.out_md:
+        print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

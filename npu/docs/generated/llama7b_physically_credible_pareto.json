@@ -1,0 +1,120 @@
+{
+  "blockers": [
+    "the frontier energy objective does not consume schedule-wrapper post-route activity power",
+    "transformer RMSNorm latency is excluded and its routed area/activity/overlap are open",
+    "NoC and selected SRAM hierarchy lack matched workload-backed routed activity power",
+    "the architecture is component-composed rather than a full-chip routed implementation"
+  ],
+  "decision": "two_provisional_quality_backed_component_composed_pareto_points",
+  "eligible_dominated": [],
+  "excluded_points": [
+    {
+      "abstraction_status": "measured_int8_compute_quality_invalidated",
+      "candidate_id": "die800_dense_gemm_int8_16x8_k1_p1_rep855_lat1575.37_hbm0.983398_tt1024",
+      "die_area_mm2": 800.0,
+      "energy_mj_per_token": 135.75588466251537,
+      "exclusion_reasons": [
+        "not_promotable",
+        "not_quality_backed"
+      ],
+      "family": "mixed_int8_compute",
+      "latency_us": 1575.373891,
+      "precision_status": "quality_invalidated_low_precision_score_softmax",
+      "remaining_abstractions": [
+        "quality_invalidated_by_broad_native_attention_shadow",
+        "energy row uses score/softmax quantization or reciprocal-LUT softmax evidence, while broad native quality only passed qkv8_float_exact"
+      ],
+      "token_throughput_per_s": 634.7699461778119
+    },
+    {
+      "abstraction_status": "abstract_compute_target_infeasible_after_measured_compute_closure",
+      "candidate_id": "physical_hbm_gqa8_kv8_service_frontier",
+      "die_area_mm2": 100.0,
+      "energy_mj_per_token": 8.14357724928343,
+      "exclusion_reasons": [
+        "not_promotable",
+        "not_quality_backed"
+      ],
+      "family": "abstract_integrated_gqa8_kv8",
+      "latency_us": 30.944,
+      "precision_status": "planning_only_native_gqa8_kv8",
+      "remaining_abstractions": [
+        "abstract_compute_capacity",
+        "parameterized_energy"
+      ],
+      "token_throughput_per_s": 32316.442605997934
+    }
+  ],
+  "interpretation": "Among quality-backed promotable rows, score32 is the latency/area point and measured exact FP16 is the energy point; neither dominates the other. These are provisional component-composed Pareto anchors, not final full-model PPA points. Non-promotable abstract or quality-invalid rows are never allowed to dominate the credible set.",
+  "model": "llama7b_physically_credible_pareto_audit_v1",
+  "objective_definition": {
+    "dominance_pool": "eligible candidates only",
+    "eligibility": [
+      "promotable",
+      "quality_backed",
+      "all objectives finite and positive"
+    ],
+    "minimize": [
+      "latency_us",
+      "energy_mj_per_token",
+      "die_area_mm2"
+    ]
+  },
+  "objective_evidence": {
+    "area": "component-composed measured/proxy area, not a full-chip routed total",
+    "energy": "not activity-backed in this frontier; schedule-wrapper activity input is absent",
+    "latency": "component-composed attention-centered estimate"
+  },
+  "pareto_points": [
+    {
+      "abstraction_status": "measured_schedule_wrapper_sram_envelope_hbm_controller_replay_ppa_recost",
+      "candidate_id": "score32_exp_lut_schedule_wrapper_hbm_controller_replay_best",
+      "die_area_mm2": 800.0,
+      "energy_mj_per_token": 467.191305313106,
+      "family": "score32_exp_lut_div",
+      "latency_us": 12814.257853,
+      "precision_status": "mixed_int8_generation_quality_pass",
+      "remaining_abstractions": [
+        "HBM replay controller area, active energy, and control timing are backed by measured Nangate45 RTL PPA.",
+        "does not include vendor HBM current signoff"
+      ],
+      "token_throughput_per_s": 78.038073798
+    },
+    {
+      "abstraction_status": "measured_compute_with_source_backed_hbm_energy",
+      "candidate_id": "die1200_dense_gemm_16x8_k1_p1_mac132736_lat1872.29_hbm0.465654_tt512",
+      "die_area_mm2": 1200.0,
+      "energy_mj_per_token": 81.66413005453946,
+      "family": "measured_exact_fp16_gqa8_kv8",
+      "latency_us": 72544.06213406654,
+      "precision_status": "conservative_native_gqa8_kv8",
+      "remaining_abstractions": [
+        "source_backed_aggregate_hbm_energy_not_vendor_current_signoff",
+        "profile_scaled_noc_sram_energy"
+      ],
+      "token_throughput_per_s": 13.784725731954872
+    }
+  ],
+  "promotion_gate_pass": false,
+  "scope_guard": {
+    "excluded_from_frontier_latency": [
+      "pre_attention_rmsnorm",
+      "pre_mlp_rmsnorm",
+      "final_rmsnorm"
+    ],
+    "norm_promotion_gate_pass": false,
+    "rmsnorm_candidate_cycles": {
+      "macro_banked_conservative": 1800,
+      "macro_banked_three_credit": 1035
+    },
+    "rmsnorm_rows_per_token": 65,
+    "status": "attention_centered_not_full_model"
+  },
+  "source": {
+    "frontier_path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_quality_aware_hbm_controller_replay_rtl_ppa_recost_frontier_llama7b_v1.json",
+    "frontier_sha256": "dc0aba3112e2f13995ff4fa2707d12eb063d68be9f5010c9ce4d4a00fa020949",
+    "norm_path": "npu/docs/generated/llama7b_rmsnorm_macro_banked_latency_composition.json",
+    "norm_sha256": "31dc1bb3e5625c27806646381198fd59c28abdceb6c571e08cfbdc1150d5c405"
+  },
+  "version": 1
+}
