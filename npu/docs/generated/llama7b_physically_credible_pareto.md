@@ -17,6 +17,14 @@
 - nearest other Pareto latency: `72544.062 us`
 - claim scope: serialized latency only; no norm area or energy promotion
 
+## Area-Axis Uncertainty
+
+- status: `rmsnorm_area_unmeasured_break_even_only`
+- score32 aggregate missing-area budget to tie reference: `182.776 mm2`
+- budget relative to recorded score32 component area: `61.577%`
+- strict area-lead condition: aggregate score32-only area absent from the current objective is less than the tie budget, with the reference area unchanged
+- reason: The routed RMSNorm area and its architecture-level replication are not measured. The budget is an aggregate break-even sensitivity, not an estimated RMSNorm area or a physical closure claim.
+
 ## Energy-Axis Uncertainty
 
 - status: `recorded_energy_tradeoff_not_activity_closed`

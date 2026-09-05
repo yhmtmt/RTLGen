@@ -102,12 +102,21 @@ def test_pareto_audit_excludes_noncredible_dominators(tmp_path: Path) -> None:
     assert "not activity-backed" in report["objective_evidence"]["energy"]
     assert report["rmsnorm_serialized_latency_robustness"]["latency_anchor_robust_across_envelope"] is True
     assert report["rmsnorm_serialized_latency_robustness"]["worst_case"]["composed_latency_us"] == 13.0
+    assert report["area_axis_uncertainty"]["score32_aggregate_missing_area_budget_to_tie_mm2"] == 4.0
+    assert (
+        report["area_axis_uncertainty"][
+            "score32_aggregate_missing_area_budget_to_tie_pct_of_recorded_area"
+        ]
+        == 50.0
+    )
+    assert report["area_axis_uncertainty"]["rmsnorm_area_closed"] is False
     assert report["energy_axis_uncertainty"]["score32_to_reference_recorded_ratio"] == 5.0
     assert report["energy_axis_uncertainty"]["score32_energy_reduction_to_tie_pct_if_reference_unchanged"] == 80.0
     assert report["energy_axis_uncertainty"]["activity_closed_pareto_status"] == "unproven"
     markdown = render_markdown(report)
     assert "fast_quality_safe" in markdown
     assert "abstract_dominator" in markdown
+    assert "aggregate missing-area budget to tie reference: `4.000 mm2`" in markdown
 
 
 def test_pareto_audit_requires_proven_norm_scope(tmp_path: Path) -> None:
