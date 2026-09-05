@@ -43,7 +43,7 @@
 | `rtl` | `closed` | Score32 exp-LUT, exact-div, reciprocal-LUT, and replacement softmax paths all exist as RTL-backed candidate branches. |
 | `equivalence` | `measured_component` | Behavior is bounded by generation-quality and replacement checks against the software reference, but not by a single full-hierarchy hash-equivalence proof. |
 | `routed_ppa` | `measured_component` | Precision-sensitive wrapper cost is backed by measured composed-wrapper and schedule-wrapper rows rather than pure heuristics. |
-| `activity` | `open` | A score32 schedule-wrapper activity audit is specified, but its promotion record and analysis remain pending and its expected dataset is absent; no active-duty correction is folded into the current precision ranking. |
+| `activity` | `open` | A score32 schedule-wrapper activity audit is source-pinned and dry-run materialized, but human dispatch approval, its promotion record, and analysis remain pending and its expected dataset is absent; no active-duty correction is folded into the current precision ranking. |
 | `composition` | `measured_component` | The score32 exp-LUT service closure and integrated frontier ranking consume the measured wrapper path as the current precision-safe branch. |
 | `scale_validation` | `measured_component` | The Llama7B ranking has been recosted around the selected score32 branch, but future FP formats and recovery flows can still move the frontier. |
 
@@ -55,6 +55,7 @@ Evidence:
 - `docs/proposals/prop_l2_decoder_attention_mixed_int8_score32_exp_lut_div_generation_quality_llama7b_v1/analysis_report.md` (proposal_gate; `rtl`, `equivalence`, `composition`): Records the passing score32 exp-LUT generation-quality branch used as the current precision recommendation.
 - `docs/proposals/prop_l2_decoder_attention_mixed_int8_score32_w16_recip_lut_q16_generation_quality_llama7b_v1/analysis_report.md` (proposal_analysis; `equivalence`, `scale_validation`): Shows that the q16 reciprocal-LUT branch fails the Llama7B quality gate and cannot be promoted.
 - `docs/proposals/prop_l2_decoder_attention_mixed_int8_score32_w16_rtl_exact_generation_quality_llama7b_v1/analysis_report.md` (proposal_analysis; `equivalence`, `scale_validation`): Shows that exact-div shares the same quality failure mode as the reciprocal-LUT branch.
+- `docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1/evaluation_gate.md` (proposal_gate; `activity`, `routed_ppa`): Pins the executable two-command activity audit to merged source, requires the exact 986-cycle service window and routed-identity/hash/power gates, keeps raw physical artifacts evaluator-local, and retains mandatory human dispatch approval.
 - `docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1/analysis_report.md` (proposal_analysis; `activity`, `routed_ppa`, `composition`): Tracks the pending activity-aware rerank; its analysis report still says Pending initial evaluation and is not evidence of a promoted result.
 
 ## Dense Compute
@@ -298,7 +299,7 @@ Evidence:
 | `rtl` | `closed` | Schedule-wrapper and command-control RTL exist for the promoted score32 branch. |
 | `equivalence` | `open` | No promoted gate closes the final dual-clock scheduler and CDC behavior end to end. |
 | `routed_ppa` | `measured_component` | Measured schedule-wrapper rows exist for bounded c2/c4 wrappers. |
-| `activity` | `open` | The schedule-wrapper activity-power run and its integrated rerank are both pending, so the current score32 frontier is not activity-adjusted. |
+| `activity` | `open` | The schedule-wrapper activity-power run is source-pinned, dry-run materialized, and pending human dispatch approval; its dependency-blocked integrated rerank remains pending, so the current score32 frontier is not activity-adjusted. |
 | `composition` | `rtl_unmeasured` | The dual producer/reducer clock plan is architecturally selected, but the final CDC/buffer composition is not yet promoted as one measured implementation. |
 | `scale_validation` | `open` | The final scheduler remains sensitive to array hierarchy and memory service assumptions, so the larger-scale validity is still open. |
 

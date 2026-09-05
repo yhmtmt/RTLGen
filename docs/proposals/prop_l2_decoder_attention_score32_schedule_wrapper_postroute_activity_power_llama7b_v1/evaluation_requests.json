@@ -1,6 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1",
-  "source_commit_note": "Leave this request pending for manual dispatch only because raw VCD/ODB/SPEF remain evaluator-local.",
+  "source_commit": "acd2ad2afaa462f702dc8ead3db76639994d272b",
+  "source_commit_note": "Pinned to the clean merged origin/master commit whose isolated no-dispatch materialization produced the strict two-command activity audit. Source and prerequisite references are ready, but dispatch remains behind the human Evaluation Gate because raw VCD/ODB/SPEF remain evaluator-local.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1",
@@ -19,7 +20,8 @@
         "direction": "record_schedule_wrapper_postroute_activity_power",
         "reason": "The result should capture only repo-portable JSON/MD outputs while the raw VCD/ODB/SPEF stay local."
       },
-      "status": "pending"
+      "status": "ready_to_queue",
+      "acceptance_notes": "Require the authoritative density-0.4 routed row, exactly 986 activity cycles, matching RTL/count/timeline hashes, macro-less sequential-register coverage, finite positive post-route power, separate 10 ns annotation and 48.6509 ns promotion clocks, and repo-portable JSON/Markdown only. Preserve raw VCD/ODB/SPEF evaluator-local and do not claim energy for the residual 343 layer cycles or the full token. Dispatch still requires the human Evaluation Gate."
     }
   ]
 }

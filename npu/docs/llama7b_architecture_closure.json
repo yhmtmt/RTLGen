@@ -87,7 +87,7 @@
         },
         "activity": {
           "status": "open",
-          "summary": "A score32 schedule-wrapper activity audit is specified, but its promotion record and analysis remain pending and its expected dataset is absent; no active-duty correction is folded into the current precision ranking."
+          "summary": "A score32 schedule-wrapper activity audit is source-pinned and dry-run materialized, but human dispatch approval, its promotion record, and analysis remain pending and its expected dataset is absent; no active-duty correction is folded into the current precision ranking."
         },
         "composition": {
           "status": "measured_component",
@@ -126,6 +126,15 @@
             "scale_validation"
           ],
           "note": "Shows that exact-div shares the same quality failure mode as the reciprocal-LUT branch."
+        },
+        {
+          "path": "docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1/evaluation_gate.md",
+          "kind": "proposal_gate",
+          "dimensions": [
+            "activity",
+            "routed_ppa"
+          ],
+          "note": "Pins the executable two-command activity audit to merged source, requires the exact 986-cycle service window and routed-identity/hash/power gates, keeps raw physical artifacts evaluator-local, and retains mandatory human dispatch approval."
         },
         {
           "path": "docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1/analysis_report.md",
@@ -869,7 +878,7 @@
         },
         "activity": {
           "status": "open",
-          "summary": "The schedule-wrapper activity-power run and its integrated rerank are both pending, so the current score32 frontier is not activity-adjusted."
+          "summary": "The schedule-wrapper activity-power run is source-pinned, dry-run materialized, and pending human dispatch approval; its dependency-blocked integrated rerank remains pending, so the current score32 frontier is not activity-adjusted."
         },
         "composition": {
           "status": "rtl_unmeasured",

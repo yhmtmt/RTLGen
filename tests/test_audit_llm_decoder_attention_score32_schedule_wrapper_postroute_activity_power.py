@@ -265,3 +265,23 @@ def test_build_report_distinguishes_annotation_and_promotion_clocks(tmp_path: Pa
     assert energy["energy_j"]["dynamic"] == pytest.approx((0.2 + 0.3) * 986 * 10.0e-9)
     assert energy["energy_j"]["leakage"] == pytest.approx(0.1 * 986 * 48.6509e-9)
     assert payload["recost_contract"]["residual_layer_cycles"] == 343
+
+
+def test_activity_evaluation_request_is_ready_but_human_gated() -> None:
+    proposal_dir = REPO_ROOT / (
+        "docs/proposals/"
+        "prop_l2_decoder_attention_score32_schedule_wrapper_postroute_activity_power_llama7b_v1"
+    )
+    proposal = json.loads((proposal_dir / "proposal.json").read_text(encoding="utf-8"))
+    requests = json.loads(
+        (proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8")
+    )
+    gate = (proposal_dir / "evaluation_gate.md").read_text(encoding="utf-8")
+
+    assert proposal["required_evaluations"][0]["status"] == "ready_to_queue"
+    assert requests["source_commit"] == "acd2ad2afaa462f702dc8ead3db76639994d272b"
+    assert requests["requested_items"][0]["status"] == "ready_to_queue"
+    assert "pending human approval" in gate
+    assert "exactly 986" in gate
+    assert "VCD, ODB, and SPEF" in gate
+    assert "residual 343 cycles" in gate
