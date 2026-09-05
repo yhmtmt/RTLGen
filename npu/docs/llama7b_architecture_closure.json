@@ -700,7 +700,7 @@
       "label": "SRAM",
       "status": "measured_component",
       "confidence": "medium",
-      "summary": "SRAM is on firmer ground than NoC: there are profile measurements, hierarchy-envelope studies, and bounded cluster-SRAM equivalence work. It is still a measured component, not a final memory-macro signoff across the full architecture.",
+      "summary": "SRAM is on firmer ground than NoC: there are profile measurements, hierarchy-envelope studies, bounded cluster-SRAM equivalence work, and promoted routed logic for the read adapter and K-round scheduler. An older shared-score FakeRAM pin-activity flow exists, but its latest exact activity item is prerequisite-blocked and does not embody the selected read-adapter plus 17-bank scheduler hierarchy; it therefore cannot close current SRAM power.",
       "dimensions": {
         "rtl": {
           "status": "measured_component",
@@ -714,9 +714,9 @@
           "status": "measured_component",
           "summary": "Promoted shared-SRAM read-adapter and k-round-scheduler rows now provide routed component evidence, while the final composed memory hierarchy remains unmeasured."
         },
-        "activity": {
-          "status": "open",
-          "summary": "SRAM access and CACTI profile evidence feeds the model, but workload-annotated activity on routed SRAM macro/proxy pins is not yet measured."
+      "activity": {
+        "status": "open",
+        "summary": "SRAM access and CACTI profiles feed the model. The older shared-score FakeRAM flow demonstrates structural VCD pin extraction, but its latest exact item is blocked and targets a different hierarchy; no accepted workload replay currently annotates the selected read-adapter, 17-bank scheduler, and matched routed macro/proxy pins."
         },
         "composition": {
           "status": "measured_component",
@@ -755,6 +755,14 @@
           "note": "Provides promoted PPA measurements for the exact shared-SRAM K-round scheduler."
         },
         {
+          "path": "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1/evaluation_requests.json",
+          "kind": "proposal_gate",
+          "dimensions": [
+            "activity"
+          ],
+          "note": "Records the older FakeRAM macro-pin activity lineage and its prerequisite-blocked v16 gate. This proves reusable measurement machinery exists, but it is not evidence for the selected shared-SRAM hierarchy."
+        },
+        {
           "path": "docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1/analysis_report.md",
           "kind": "proposal_analysis",
           "dimensions": [
@@ -777,9 +785,10 @@
       "caveats": [
         "The SRAM model is materially better than a free-memory assumption, but it is still not a final top-level macro-floorplan closure.",
         "CACTI/access-profile energy must remain distinct from workload-annotated routed macro or proxy-pin activity power.",
+        "The shared-score multivalue-cluster FakeRAM activity lineage must not be relabeled as activity closure for the separately promoted shared-SRAM read adapter and K-round scheduler.",
         "The final clustered memory hierarchy can still change with the chosen NoC/scheduler pair."
       ],
-      "next_gate": "Measure workload-annotated SRAM macro/proxy activity, freeze SRAM with the final NoC/scheduler pair, and rerun the frontier under the chosen clustered hierarchy."
+      "next_gate": "Build a hierarchy-matched workload replay around the promoted 512-bit/two-slot read adapter and 17-bank K-round scheduler; bind VCD/SAIF to the same routed netlist, SDC, clock, ODB/SPEF, and macro/proxy instance identity; require finite post-route power plus explicit sequential and macro-pin coverage; then freeze it with the final NoC/scheduler pair and rerun the frontier."
     },
     {
       "id": "scheduler_cdc",

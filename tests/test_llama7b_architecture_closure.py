@@ -111,6 +111,7 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
         self.assertEqual(sram["dimensions"]["routed_ppa"]["status"], "measured_component")
         self.assertEqual(sram["dimensions"]["activity"]["status"], "open")
         self.assertIn("macro/proxy pins", sram["dimensions"]["activity"]["summary"])
+        self.assertIn("different hierarchy", sram["dimensions"]["activity"]["summary"])
         sram_evidence = {entry["path"] for entry in sram["evidence"]}
         self.assertIn(
             "docs/proposals/prop_l1_attention_shared_sram_read_group_adapter_ppa_v1/analysis_report.md",
@@ -120,6 +121,12 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
             "docs/proposals/prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1/analysis_report.md",
             sram_evidence,
         )
+        self.assertIn(
+            "docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1/"
+            "evaluation_requests.json",
+            sram_evidence,
+        )
+        self.assertIn("same routed netlist", sram["next_gate"])
 
 
 if __name__ == "__main__":

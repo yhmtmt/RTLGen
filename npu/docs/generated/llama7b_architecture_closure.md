@@ -253,27 +253,29 @@ Evidence:
 
 - status: `measured_component`
 - confidence: `medium`
-- summary: SRAM is on firmer ground than NoC: there are profile measurements, hierarchy-envelope studies, and bounded cluster-SRAM equivalence work. It is still a measured component, not a final memory-macro signoff across the full architecture.
-- next gate: Measure workload-annotated SRAM macro/proxy activity, freeze SRAM with the final NoC/scheduler pair, and rerun the frontier under the chosen clustered hierarchy.
+- summary: SRAM is on firmer ground than NoC: there are profile measurements, hierarchy-envelope studies, bounded cluster-SRAM equivalence work, and promoted routed logic for the read adapter and K-round scheduler. An older shared-score FakeRAM pin-activity flow exists, but its latest exact activity item is prerequisite-blocked and does not embody the selected read-adapter plus 17-bank scheduler hierarchy; it therefore cannot close current SRAM power.
+- next gate: Build a hierarchy-matched workload replay around the promoted 512-bit/two-slot read adapter and 17-bank K-round scheduler; bind VCD/SAIF to the same routed netlist, SDC, clock, ODB/SPEF, and macro/proxy instance identity; require finite post-route power plus explicit sequential and macro-pin coverage; then freeze it with the final NoC/scheduler pair and rerun the frontier.
 
 | Dimension | Status | Summary |
 | --- | --- | --- |
 | `rtl` | `measured_component` | Cluster-SRAM and local-SRAM structures are represented in the promoted attention hierarchy work. |
 | `equivalence` | `measured_component` | Cluster-SRAM composition is bounded by the local16/global-tree GQA8 equivalence gate. |
 | `routed_ppa` | `measured_component` | Promoted shared-SRAM read-adapter and k-round-scheduler rows now provide routed component evidence, while the final composed memory hierarchy remains unmeasured. |
-| `activity` | `open` | SRAM access and CACTI profile evidence feeds the model, but workload-annotated activity on routed SRAM macro/proxy pins is not yet measured. |
+| `activity` | `open` | SRAM access and CACTI profiles feed the model. The older shared-score FakeRAM flow demonstrates structural VCD pin extraction, but its latest exact item is blocked and targets a different hierarchy; no accepted workload replay currently annotates the selected read-adapter, 17-bank scheduler, and matched routed macro/proxy pins. |
 | `composition` | `measured_component` | The score32 SRAM hierarchy envelope and cluster-SRAM equivalence gates are already consumed by the selected frontier. |
 | `scale_validation` | `measured_component` | The SRAM hierarchy envelope indicates that conservative placement alone does not rerank the score32 frontier. |
 
 Caveats:
 - The SRAM model is materially better than a free-memory assumption, but it is still not a final top-level macro-floorplan closure.
 - CACTI/access-profile energy must remain distinct from workload-annotated routed macro or proxy-pin activity power.
+- The shared-score multivalue-cluster FakeRAM activity lineage must not be relabeled as activity closure for the separately promoted shared-SRAM read adapter and K-round scheduler.
 - The final clustered memory hierarchy can still change with the chosen NoC/scheduler pair.
 
 Evidence:
 - `docs/proposals/prop_l2_decoder_attention_sram_profile_v1/analysis_report.md` (proposal_analysis; `activity`): Provides the local SRAM access/profile evidence used by the attention model; it is not post-route activity-power evidence.
 - `docs/proposals/prop_l1_attention_shared_sram_read_group_adapter_ppa_v1/analysis_report.md` (proposal_analysis; `rtl`, `routed_ppa`): Provides promoted PPA measurements for the shared-SRAM read-group adapter frontier.
 - `docs/proposals/prop_l1_attention_shared_sram_k_round_scheduler_ppa_v1/analysis_report.md` (proposal_analysis; `rtl`, `routed_ppa`): Provides promoted PPA measurements for the exact shared-SRAM K-round scheduler.
+- `docs/proposals/prop_decoder_attention_decode_score_multivalue_cluster_activity_power_llama7b_v1/evaluation_requests.json` (proposal_gate; `activity`): Records the older FakeRAM macro-pin activity lineage and its prerequisite-blocked v16 gate. This proves reusable measurement machinery exists, but it is not evidence for the selected shared-SRAM hierarchy.
 - `docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1/analysis_report.md` (proposal_analysis; `rtl`, `equivalence`, `composition`): Anchors the bounded cluster-SRAM exact composition gate for the score32 hierarchy.
 - `docs/proposals/prop_l2_decoder_attention_score32_exp_lut_sram_hierarchy_envelope_llama7b_v1/analysis_report.md` (proposal_analysis; `composition`, `scale_validation`): Shows that the SRAM placement envelope does not materially rerank the selected score32 branch.
 
