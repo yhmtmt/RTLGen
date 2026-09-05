@@ -1,5 +1,5 @@
 {
-  "tag_prefix": "llama7b_rmsnorm_phase3_macro_banked_l16_ng45_v1",
+  "tag_prefix": "llama7b_rmsnorm_phase3_macro_banked_controller_pareto_ng45_v1",
   "flow_params": {
     "CLOCK_PERIOD": [10.0, 14.0, 18.0],
     "DIE_AREA": ["0 0 3200 3200"],

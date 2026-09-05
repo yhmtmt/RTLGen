@@ -40,23 +40,38 @@ def test_rmsnorm_latency_composition_is_fail_closed(tmp_path: Path) -> None:
         attention_scope_path=attention_scope_path,
     )
 
-    assert report["rmsnorm_contract"]["rows_per_token"] == 65
-    assert report["rmsnorm_contract"]["service_cycles_per_token"] == 117000
+    assert report["rmsnorm_scope"]["rows_per_token"] == 65
+    assert [(row["candidate_id"], row["service_cycles_per_token"]) for row in report["rmsnorm_candidates"]] == [
+        ("macro_banked_conservative", 117000),
+        ("macro_banked_three_credit", 67275),
+    ]
     assert report["promotion_gate_pass"] is False
     assert report["attention_scope_proof"]["status"] == "verified_attention_only_excludes_transformer_rmsnorm"
     assert report["attention_scope_proof"]["reconstructed_layer_cycles"] == 8305
     serialized_10ns = next(
-        row for row in report["rows"] if row["clock_period_ns"] == 10.0 and row["hidden_fraction"] == 0.0
+        row for row in report["rows"]
+        if row["rmsnorm_candidate_id"] == "macro_banked_conservative"
+        and row["clock_period_ns"] == 10.0 and row["hidden_fraction"] == 0.0
     )
     assert serialized_10ns["raw_rmsnorm_latency_us"] == 1170.0
     assert serialized_10ns["composed_latency_us"] == 11170.0
     fully_hidden = next(
-        row for row in report["rows"] if row["clock_period_ns"] == 18.0 and row["hidden_fraction"] == 1.0
+        row for row in report["rows"]
+        if row["rmsnorm_candidate_id"] == "macro_banked_three_credit"
+        and row["clock_period_ns"] == 18.0 and row["hidden_fraction"] == 1.0
     )
     assert fully_hidden["composed_latency_us"] == 10000.0
+    pipelined_10ns = next(
+        row for row in report["rows"]
+        if row["rmsnorm_candidate_id"] == "macro_banked_three_credit"
+        and row["clock_period_ns"] == 10.0 and row["hidden_fraction"] == 0.0
+    )
+    assert pipelined_10ns["raw_rmsnorm_latency_us"] == 672.75
+    assert pipelined_10ns["composed_latency_us"] == 10672.75
     markdown = render_markdown(report)
     assert "pending_routed_ppa" in markdown
     assert "117000" in markdown
+    assert "67275" in markdown
 
 
 def test_rmsnorm_composition_rejects_unreconstructed_attention_scope(tmp_path: Path) -> None:

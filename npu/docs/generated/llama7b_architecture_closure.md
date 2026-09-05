@@ -10,6 +10,7 @@
 - provisional recommendation: `INT8 dense compute` + `score32 + exp-LUT`, `hierarchical c1/c2 service islands`, `dual producer/reducer clocks`
 - provisional because: The accepted c1 multivalue-service route is exploratory only: it is timing-clean but still carries 142 max-cap violations with worst slack -17.81 fF.
 - provisional because: Producer-service-reducer composition is only bounded by partial equivalence and cadence audits, not by a full end-to-end measured composed implementation.
+- provisional because: Two exact 64-macro RMSNorm controllers now bound normalization latency at 1800 and 1035 cycles per row, but matched routed PPA and workload-backed activity are still absent.
 - provisional because: NoC, SRAM, and scheduler evidence are still mixed between measured primitives and analytic composition, so the final Llama7B recost is not yet a fully embodied chip closure.
 - provisional because: External DRAM controller and PHY remain an intentional abstract boundary, so full-system signoff is outside the current on-chip closure claim.
 
@@ -85,29 +86,29 @@ Evidence:
 
 - status: `open`
 - confidence: `low`
-- summary: Normalization remains the weakest physically measured datapath block, but its implementation ambiguity is substantially reduced: exact Phase-3 BF16 RMSNorm RTL now integrates a concrete 64-macro row/gamma store and passes seven bounded arithmetic, protocol, schedule, and backpressure equivalence rows. The prior register-storage attempt remains a two-row synthesis boundary; the macro-backed successor is implementation-complete but awaits routed PPA.
-- next gate: After merge and human approval, run the guarded 10/14/18 ns routed sweep for the exact 64-macro hierarchy; then measure overlap and matched activity power and replace the verified non-double-counted sensitivity envelope with a measured Llama7B recost.
+- summary: Normalization remains the weakest physically measured datapath block, but its implementation ambiguity is substantially reduced: exact Phase-3 BF16 RMSNorm RTL now integrates a concrete 64-macro row/gamma store with conservative and three-credit controllers. Both pass seven bounded arithmetic, protocol, schedule, and backpressure equivalence rows; the three-credit schedule reduces exact service from 1800 to 1035 cycles per row, while matched routed PPA remains open.
+- next gate: After merge and human approval, run matched guarded 10/14/18 ns routed sweeps for both exact 64-macro controllers; use routed PPA to decide whether the 42.5 percent cycle reduction is Pareto-beneficial, then measure overlap and matched workload activity power before replacing the sensitivity envelope with a measured Llama7B recost.
 
 | Dimension | Status | Summary |
 | --- | --- | --- |
-| `rtl` | `closed` | Exact Phase-3 Llama7B BF16 RMSNorm RTL integrates the 64-macro row/gamma store, including fixed two-cycle reads and lossless single-outstanding replay control. |
-| `equivalence` | `measured_component` | The macro-backed deterministic probe passes seven rows spanning finite data, framing and exponent-255 errors, always-ready operation, and periodic output backpressure with exact data and cycle checks. |
-| `routed_ppa` | `open` | The LANES=16 register-storage embodiment failed synthesis at both 16 ns and 20 ns after roughly 18--20 minutes and about 12 GB peak memory, so no routed norm PPA row exists. |
+| `rtl` | `closed` | Exact Phase-3 Llama7B BF16 RMSNorm RTL integrates the 64-macro row/gamma store with fixed two-cycle reads. It provides both lossless single-outstanding replay control and a three-response-credit controller bounded by the existing elastic arithmetic pipeline. |
+| `equivalence` | `measured_component` | Both macro-backed deterministic probes pass seven rows spanning finite data, framing and exponent-255 errors, always-ready operation, and periodic output backpressure with exact data and independent schedule checks: 1800 cycles for conservative control and 1035 for three-credit control. |
+| `routed_ppa` | `open` | The LANES=16 register-storage embodiment failed synthesis at both 16 ns and 20 ns after roughly 18--20 minutes and about 12 GB peak memory. The two 64-macro successors pass source/manifest physical guards, but neither has a routed norm PPA row yet. |
 | `activity` | `open` | No promoted activity-backed norm measurement is feeding the Llama7B recost. |
-| `composition` | `open` | A machine-checked provenance equation proves the current score32 baseline is attention-only and excludes transformer RMSNorm. The 65-row/token audit therefore provides non-double-counted serialized and overlap latency bounds, while routed clock/PPA and measured overlap remain pending. |
+| `composition` | `open` | A machine-checked provenance equation proves the current score32 baseline is attention-only and excludes transformer RMSNorm. The 65-row/token audit compares both exact controllers across serialized and overlap bounds; the 1035-cycle controller is performance-preferred at matched assumptions, but routed clock/PPA and measured overlap remain pending. |
 | `scale_validation` | `open` | There is no scale sweep proving that the chosen normalization structure remains valid across the intended architecture range. |
 
 Caveats:
-- Exact block behavior is bounded, but current norm accounting is not yet on the same physical-measurement footing as dense compute, service, or the selected score32 softmax branch.
+- Exact block behavior and two controller schedules are bounded, but current norm accounting is not yet on the same physical-measurement footing as dense compute, service, or the selected score32 softmax branch.
 - The failed register-array implementation must not be generalized into evidence against an explicitly banked SRAM-backed RMSNorm design.
 - BF16 and fixed-point norm options are both still unresolved.
 
 Evidence:
 - `docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_bounded_physical_v1/analysis_report.md` (proposal_analysis; `rtl`, `equivalence`, `routed_ppa`): Records the exact Phase-3 implementation and the merged two-row synthesis-resource boundary for its inferred-register storage embodiment.
-- `npu/docs/llama7b_rmsnorm_banked_storage_contract.md` (rtl_contract; `rtl`, `composition`): Fixes the successor storage organization at 16 lane banks by four depth shards, exactly 64 available 64x32 proxy macros, with explicit two-cycle read latency and integration obligations.
-- `npu/eval/probe_llama7b_rmsnorm_phase3_equivalence.py` (equivalence_probe; `rtl`, `equivalence`): Checks the macro-backed implementation against the Phase-2 oracle and an independent 1800-cycle schedule model across seven functional/protocol/backpressure rows.
-- `docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1/evaluation_requests.json` (proposal_gate; `routed_ppa`, `activity`): Defines the guarded routed-PPA request for the exact 64-macro hierarchy; dispatch remains pending merge and human approval.
-- `npu/docs/generated/llama7b_rmsnorm_macro_banked_latency_composition.json` (generated_audit; `composition`, `scale_validation`): Reconstructs the attention-only source cycle equation, proves transformer RMSNorm is excluded, and prices 65 exact rows per token across 10/14/18 ns clocks and 0/50/100 percent hidden-service bounds without claiming PPA closure.
+- `npu/docs/llama7b_rmsnorm_banked_storage_contract.md` (rtl_contract; `rtl`, `composition`): Fixes the successor storage organization at 16 lane banks by four depth shards, exactly 64 available 64x32 proxy macros, and defines both conservative and three-credit two-cycle-read policies.
+- `npu/eval/probe_llama7b_rmsnorm_phase3_equivalence.py` (equivalence_probe; `rtl`, `equivalence`): Checks both macro-backed controllers against the Phase-2 oracle and independent 1800- and 1035-cycle schedule models across seven functional/protocol/backpressure rows.
+- `docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1/evaluation_requests.json` (proposal_gate; `routed_ppa`, `activity`): Defines a matched guarded routed-PPA comparison of the conservative and three-credit exact 64-macro hierarchies; dispatch remains pending merge and human approval.
+- `npu/docs/generated/llama7b_rmsnorm_macro_banked_latency_composition.json` (generated_audit; `composition`, `scale_validation`): Reconstructs the attention-only source cycle equation, proves transformer RMSNorm is excluded, and compares 1800- and 1035-cycle controllers for 65 rows per token across 10/14/18 ns clocks and 0/50/100 percent hidden-service bounds without claiming PPA closure.
 - `docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/quality_gate.md` (proposal_gate; `rtl`): Shows that normalization calibration work exists, but is not yet promoted as a closed measured component.
 - `docs/proposals/prop_l1_decoder_bf16_recip_norm_datapath_v1/quality_gate.md` (proposal_gate; `rtl`): Tracks the BF16 reciprocal norm path that remains future work rather than a merged closure result.
 - `docs/proposals/prop_l1_decoder_q12_pwl_recip_norm_datapath_v1/quality_gate.md` (proposal_gate; `rtl`): Shows that a fixed-point reciprocal norm path was explored but not promoted into the final frontier.

@@ -11,6 +11,11 @@ from typing import Any
 
 JsonDict = dict[str, Any]
 
+DEFAULT_RMSNORM_CANDIDATES: tuple[tuple[str, str, int], ...] = (
+    ("macro_banked_conservative", "fakeram45_64x32_banked", 1800),
+    ("macro_banked_three_credit", "fakeram45_64x32_banked_pipelined", 1035),
+)
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BASELINE = REPO_ROOT / (
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
@@ -49,13 +54,19 @@ def build_report(
     baseline_path: Path,
     attention_scope: JsonDict,
     attention_scope_path: Path,
-    row_cycles: int = 1800,
+    candidates: tuple[tuple[str, str, int], ...] = DEFAULT_RMSNORM_CANDIDATES,
     rows_per_token: int = 65,
     clock_periods_ns: tuple[float, ...] = (10.0, 14.0, 18.0),
     hidden_fractions: tuple[float, ...] = (0.0, 0.5, 1.0),
 ) -> JsonDict:
-    if row_cycles <= 0 or rows_per_token <= 0:
-        raise ValueError("row_cycles and rows_per_token must be positive")
+    if not candidates or rows_per_token <= 0:
+        raise ValueError("candidates must be non-empty and rows_per_token must be positive")
+    candidate_ids = [candidate_id for candidate_id, _, _ in candidates]
+    if len(candidate_ids) != len(set(candidate_ids)):
+        raise ValueError("candidate ids must be unique")
+    for candidate_id, storage_backend, row_cycles in candidates:
+        if not candidate_id or not storage_backend or row_cycles <= 0:
+            raise ValueError("candidate id/backend must be non-empty and row cycles must be positive")
     diagnosis = baseline.get("diagnosis")
     if not isinstance(diagnosis, dict):
         raise ValueError("baseline is missing diagnosis")
@@ -90,33 +101,45 @@ def build_report(
     if recorded_layer_cycles * layers != recorded_total_cycles:
         raise ValueError("attention total-cycle provenance equation does not reconstruct")
 
-    service_cycles = row_cycles * rows_per_token
+    contracts: list[JsonDict] = []
     rows: list[JsonDict] = []
-    for period_ns in clock_periods_ns:
-        if period_ns <= 0.0:
-            raise ValueError("clock periods must be positive")
-        raw_norm_us = service_cycles * period_ns / 1000.0
-        for hidden in hidden_fractions:
-            if hidden < 0.0 or hidden > 1.0:
-                raise ValueError("hidden fractions must be in [0, 1]")
-            exposed_norm_us = raw_norm_us * (1.0 - hidden)
-            composed_latency_us = latency_us + exposed_norm_us
-            rows.append(
-                {
-                    "clock_period_ns": period_ns,
-                    "hidden_fraction": hidden,
-                    "rmsnorm_service_cycles_per_token": service_cycles,
-                    "raw_rmsnorm_latency_us": round(raw_norm_us, 9),
-                    "exposed_rmsnorm_latency_us": round(exposed_norm_us, 9),
-                    "composed_latency_us": round(composed_latency_us, 9),
-                    "composed_token_throughput_per_s": round(1.0e6 / composed_latency_us, 9),
-                    "latency_increase_pct": round(100.0 * exposed_norm_us / latency_us, 9),
-                }
-            )
+    for rmsnorm_candidate_id, storage_backend, row_cycles in candidates:
+        service_cycles = row_cycles * rows_per_token
+        contracts.append(
+            {
+                "candidate_id": rmsnorm_candidate_id,
+                "storage_backend": storage_backend,
+                "row_cycles": row_cycles,
+                "service_cycles_per_token": service_cycles,
+                "macro_count": 64,
+            }
+        )
+        for period_ns in clock_periods_ns:
+            if period_ns <= 0.0:
+                raise ValueError("clock periods must be positive")
+            raw_norm_us = service_cycles * period_ns / 1000.0
+            for hidden in hidden_fractions:
+                if hidden < 0.0 or hidden > 1.0:
+                    raise ValueError("hidden fractions must be in [0, 1]")
+                exposed_norm_us = raw_norm_us * (1.0 - hidden)
+                composed_latency_us = latency_us + exposed_norm_us
+                rows.append(
+                    {
+                        "rmsnorm_candidate_id": rmsnorm_candidate_id,
+                        "clock_period_ns": period_ns,
+                        "hidden_fraction": hidden,
+                        "rmsnorm_service_cycles_per_token": service_cycles,
+                        "raw_rmsnorm_latency_us": round(raw_norm_us, 9),
+                        "exposed_rmsnorm_latency_us": round(exposed_norm_us, 9),
+                        "composed_latency_us": round(composed_latency_us, 9),
+                        "composed_token_throughput_per_s": round(1.0e6 / composed_latency_us, 9),
+                        "latency_increase_pct": round(100.0 * exposed_norm_us / latency_us, 9),
+                    }
+                )
 
     return {
-        "version": 1,
-        "model": "llama7b_rmsnorm_macro_banked_latency_composition_v1",
+        "version": 2,
+        "model": "llama7b_rmsnorm_macro_banked_latency_composition_v2",
         "decision": "latency_sensitivity_only_pending_routed_ppa",
         "baseline": {
             "candidate_id": candidate_id,
@@ -125,16 +148,13 @@ def build_report(
             "source_path": _portable_path(baseline_path),
             "source_sha256": _sha256(baseline_path),
         },
-        "rmsnorm_contract": {
+        "rmsnorm_scope": {
             "transformer_layers": 32,
             "rows_per_layer": 2,
             "final_rows": 1,
             "rows_per_token": rows_per_token,
-            "row_cycles": row_cycles,
-            "service_cycles_per_token": service_cycles,
-            "storage_backend": "fakeram45_64x32_banked",
-            "macro_count": 64,
         },
+        "rmsnorm_candidates": contracts,
         "attention_scope_proof": {
             "status": "verified_attention_only_excludes_transformer_rmsnorm",
             "source_path": _portable_path(attention_scope_path),
@@ -156,7 +176,8 @@ def build_report(
         "interpretation": (
             "The source equation proves the attention baseline excludes transformer RMSNorm, so the zero-hidden "
             "row is a non-double-counted serialized increment and the fully hidden row is the overlap lower bound. "
-            "Do not rerank PPA or claim final full-model latency until routed clock, "
+            "The three-credit candidate is performance-preferred at every matched clock/overlap point, but this "
+            "does not establish PPA dominance. Do not rerank PPA or claim final full-model latency until routed clock, "
             "overlap, area, and activity evidence are available."
         ),
     }
@@ -164,7 +185,7 @@ def build_report(
 
 def render_markdown(report: JsonDict) -> str:
     base = report["baseline"]
-    contract = report["rmsnorm_contract"]
+    scope_contract = report["rmsnorm_scope"]
     scope = report["attention_scope_proof"]
     lines = [
         "# Llama7B Macro-Backed RMSNorm Latency Composition",
@@ -172,17 +193,27 @@ def render_markdown(report: JsonDict) -> str:
         f"- decision: `{report['decision']}`",
         f"- baseline candidate: `{base['candidate_id']}`",
         f"- baseline latency: `{base['latency_us']} us`",
-        f"- RMSNorm rows/token: `{contract['rows_per_token']}`",
-        f"- RMSNorm cycles/row: `{contract['row_cycles']}`",
-        f"- RMSNorm service cycles/token: `{contract['service_cycles_per_token']}`",
+        f"- RMSNorm rows/token: `{scope_contract['rows_per_token']}`",
         f"- baseline scope proof: `{scope['status']}`",
         "",
-        "| clock ns | hidden fraction | raw norm us | exposed norm us | composed us | token/s | increase |",
-        "| ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| RMSNorm candidate | cycles/row | cycles/token |",
+        "| --- | ---: | ---: |",
     ]
+    for candidate in report["rmsnorm_candidates"]:
+        lines.append(
+            f"| `{candidate['candidate_id']}` | {candidate['row_cycles']} | "
+            f"{candidate['service_cycles_per_token']} |"
+        )
+    lines.extend(
+        [
+            "",
+            "| RMSNorm candidate | clock ns | hidden fraction | raw norm us | exposed norm us | composed us | token/s | increase |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
     for row in report["rows"]:
         lines.append(
-            "| {clock_period_ns:g} | {hidden_fraction:.1f} | {raw_rmsnorm_latency_us:.3f} | "
+            "| `{rmsnorm_candidate_id}` | {clock_period_ns:g} | {hidden_fraction:.1f} | {raw_rmsnorm_latency_us:.3f} | "
             "{exposed_rmsnorm_latency_us:.3f} | {composed_latency_us:.3f} | "
             "{composed_token_throughput_per_s:.3f} | {latency_increase_pct:.3f}% |".format(**row)
         )

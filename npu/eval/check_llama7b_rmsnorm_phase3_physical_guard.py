@@ -58,8 +58,12 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("config must contain llama7b_rmsnorm object")
     _require(int(body.get("lanes", 0)), 16, "lane count")
     storage_backend = str(body.get("storage_backend", "register_arrays"))
-    macro_backed = storage_backend == "fakeram45_64x32_banked"
-    if storage_backend not in {"register_arrays", "fakeram45_64x32_banked"}:
+    macro_backed = storage_backend.startswith("fakeram45_64x32_banked")
+    if storage_backend not in {
+        "register_arrays",
+        "fakeram45_64x32_banked",
+        "fakeram45_64x32_banked_pipelined",
+    }:
         raise SystemExit(f"unsupported storage backend: {storage_backend}")
 
     links = config.get("report_links")
@@ -106,12 +110,19 @@ def main(argv: list[str] | None = None) -> int:
         "seed_rom = 21'h",
     ]
     if macro_backed:
-        required_tokens.extend(
-            [
-                "llama7b_rmsnorm_banked_row_gamma_store u_row_gamma_store",
-                "reg store_read_pending",
-            ]
-        )
+        required_tokens.append("llama7b_rmsnorm_banked_row_gamma_store u_row_gamma_store")
+        if storage_backend == "fakeram45_64x32_banked_pipelined":
+            required_tokens.extend(
+                [
+                    "reg [BEAT_W:0] store_issue_count",
+                    "reg [2:0] store_reads_inflight",
+                    "wire [2:0] arithmetic_occupancy",
+                    "{2'b0, s0_valid} + {2'b0, s1_valid} + {2'b0, s2_valid}",
+                    "arithmetic_occupancy + store_reads_inflight < 3",
+                ]
+            )
+        else:
+            required_tokens.append("reg store_read_pending")
         forbidden_tokens = [
             "reg [15:0] row_mem [0:HIDDEN_SIZE-1];",
             "reg [15:0] gamma_mem [0:HIDDEN_SIZE-1];",

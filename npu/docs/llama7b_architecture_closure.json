@@ -50,6 +50,7 @@
     "why_provisional": [
       "The accepted c1 multivalue-service route is exploratory only: it is timing-clean but still carries 142 max-cap violations with worst slack -17.81 fF.",
       "Producer-service-reducer composition is only bounded by partial equivalence and cadence audits, not by a full end-to-end measured composed implementation.",
+      "Two exact 64-macro RMSNorm controllers now bound normalization latency at 1800 and 1035 cycles per row, but matched routed PPA and workload-backed activity are still absent.",
       "NoC, SRAM, and scheduler evidence are still mixed between measured primitives and analytic composition, so the final Llama7B recost is not yet a fully embodied chip closure.",
       "External DRAM controller and PHY remain an intentional abstract boundary, so full-system signoff is outside the current on-chip closure claim."
     ]
@@ -208,19 +209,19 @@
       "label": "Norm",
       "status": "open",
       "confidence": "low",
-      "summary": "Normalization remains the weakest physically measured datapath block, but its implementation ambiguity is substantially reduced: exact Phase-3 BF16 RMSNorm RTL now integrates a concrete 64-macro row/gamma store and passes seven bounded arithmetic, protocol, schedule, and backpressure equivalence rows. The prior register-storage attempt remains a two-row synthesis boundary; the macro-backed successor is implementation-complete but awaits routed PPA.",
+      "summary": "Normalization remains the weakest physically measured datapath block, but its implementation ambiguity is substantially reduced: exact Phase-3 BF16 RMSNorm RTL now integrates a concrete 64-macro row/gamma store with conservative and three-credit controllers. Both pass seven bounded arithmetic, protocol, schedule, and backpressure equivalence rows; the three-credit schedule reduces exact service from 1800 to 1035 cycles per row, while matched routed PPA remains open.",
       "dimensions": {
         "rtl": {
           "status": "closed",
-          "summary": "Exact Phase-3 Llama7B BF16 RMSNorm RTL integrates the 64-macro row/gamma store, including fixed two-cycle reads and lossless single-outstanding replay control."
+          "summary": "Exact Phase-3 Llama7B BF16 RMSNorm RTL integrates the 64-macro row/gamma store with fixed two-cycle reads. It provides both lossless single-outstanding replay control and a three-response-credit controller bounded by the existing elastic arithmetic pipeline."
         },
         "equivalence": {
           "status": "measured_component",
-          "summary": "The macro-backed deterministic probe passes seven rows spanning finite data, framing and exponent-255 errors, always-ready operation, and periodic output backpressure with exact data and cycle checks."
+          "summary": "Both macro-backed deterministic probes pass seven rows spanning finite data, framing and exponent-255 errors, always-ready operation, and periodic output backpressure with exact data and independent schedule checks: 1800 cycles for conservative control and 1035 for three-credit control."
         },
         "routed_ppa": {
           "status": "open",
-          "summary": "The LANES=16 register-storage embodiment failed synthesis at both 16 ns and 20 ns after roughly 18--20 minutes and about 12 GB peak memory, so no routed norm PPA row exists."
+          "summary": "The LANES=16 register-storage embodiment failed synthesis at both 16 ns and 20 ns after roughly 18--20 minutes and about 12 GB peak memory. The two 64-macro successors pass source/manifest physical guards, but neither has a routed norm PPA row yet."
         },
         "activity": {
           "status": "open",
@@ -228,7 +229,7 @@
         },
         "composition": {
           "status": "open",
-          "summary": "A machine-checked provenance equation proves the current score32 baseline is attention-only and excludes transformer RMSNorm. The 65-row/token audit therefore provides non-double-counted serialized and overlap latency bounds, while routed clock/PPA and measured overlap remain pending."
+          "summary": "A machine-checked provenance equation proves the current score32 baseline is attention-only and excludes transformer RMSNorm. The 65-row/token audit compares both exact controllers across serialized and overlap bounds; the 1035-cycle controller is performance-preferred at matched assumptions, but routed clock/PPA and measured overlap remain pending."
         },
         "scale_validation": {
           "status": "open",
@@ -253,7 +254,7 @@
             "rtl",
             "composition"
           ],
-          "note": "Fixes the successor storage organization at 16 lane banks by four depth shards, exactly 64 available 64x32 proxy macros, with explicit two-cycle read latency and integration obligations."
+          "note": "Fixes the successor storage organization at 16 lane banks by four depth shards, exactly 64 available 64x32 proxy macros, and defines both conservative and three-credit two-cycle-read policies."
         },
         {
           "path": "npu/eval/probe_llama7b_rmsnorm_phase3_equivalence.py",
@@ -262,7 +263,7 @@
             "rtl",
             "equivalence"
           ],
-          "note": "Checks the macro-backed implementation against the Phase-2 oracle and an independent 1800-cycle schedule model across seven functional/protocol/backpressure rows."
+          "note": "Checks both macro-backed controllers against the Phase-2 oracle and independent 1800- and 1035-cycle schedule models across seven functional/protocol/backpressure rows."
         },
         {
           "path": "docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1/evaluation_requests.json",
@@ -271,7 +272,7 @@
             "routed_ppa",
             "activity"
           ],
-          "note": "Defines the guarded routed-PPA request for the exact 64-macro hierarchy; dispatch remains pending merge and human approval."
+          "note": "Defines a matched guarded routed-PPA comparison of the conservative and three-credit exact 64-macro hierarchies; dispatch remains pending merge and human approval."
         },
         {
           "path": "npu/docs/generated/llama7b_rmsnorm_macro_banked_latency_composition.json",
@@ -280,7 +281,7 @@
             "composition",
             "scale_validation"
           ],
-          "note": "Reconstructs the attention-only source cycle equation, proves transformer RMSNorm is excluded, and prices 65 exact rows per token across 10/14/18 ns clocks and 0/50/100 percent hidden-service bounds without claiming PPA closure."
+          "note": "Reconstructs the attention-only source cycle equation, proves transformer RMSNorm is excluded, and compares 1800- and 1035-cycle controllers for 65 rows per token across 10/14/18 ns clocks and 0/50/100 percent hidden-service bounds without claiming PPA closure."
         },
         {
           "path": "docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/quality_gate.md",
@@ -316,11 +317,11 @@
         }
       ],
       "caveats": [
-        "Exact block behavior is bounded, but current norm accounting is not yet on the same physical-measurement footing as dense compute, service, or the selected score32 softmax branch.",
+        "Exact block behavior and two controller schedules are bounded, but current norm accounting is not yet on the same physical-measurement footing as dense compute, service, or the selected score32 softmax branch.",
         "The failed register-array implementation must not be generalized into evidence against an explicitly banked SRAM-backed RMSNorm design.",
         "BF16 and fixed-point norm options are both still unresolved."
       ],
-      "next_gate": "After merge and human approval, run the guarded 10/14/18 ns routed sweep for the exact 64-macro hierarchy; then measure overlap and matched activity power and replace the verified non-double-counted sensitivity envelope with a measured Llama7B recost."
+      "next_gate": "After merge and human approval, run matched guarded 10/14/18 ns routed sweeps for both exact 64-macro controllers; use routed PPA to decide whether the 42.5 percent cycle reduction is Pareto-beneficial, then measure overlap and matched workload activity power before replacing the sensitivity envelope with a measured Llama7B recost."
     },
     {
       "id": "score_softmax",

@@ -32,6 +32,7 @@ LANES = 16
 BEATS = HIDDEN_SIZE // LANES
 _SEMANTIC_PROFILE = "llama7b_bf16_rmsnorm_phase3_bounded_ready_valid_v1"
 _MACRO_SEMANTIC_PROFILE = "llama7b_bf16_rmsnorm_phase3_macro_banked_ready_valid_v1"
+_PIPELINED_MACRO_SEMANTIC_PROFILE = "llama7b_bf16_rmsnorm_phase3_macro_banked_pipelined_ready_valid_v1"
 
 
 def _tool(name: str) -> str:
@@ -364,6 +365,30 @@ def _simulate_macro_banked_output_cycles(
     return outputs
 
 
+def _simulate_pipelined_macro_output_cycles(
+    *, metadata: RMSNormPhase2Metadata, scenario: str
+) -> list[int]:
+    """Independent closed form for the three-credit pipelined macro controller."""
+    first_output = (
+        metadata.input_accept_cycles
+        + metadata.accumulation_replay_cycles
+        + metadata.finalize_cycles
+        + 8
+    )
+    if scenario == "always_ready":
+        return [first_output + 6 * (beat // 3) + (beat % 3) for beat in range(metadata.beats_per_row)]
+    if scenario == "periodic_backpressure":
+        return [
+            (
+                first_output
+                if beat == 0
+                else (first_output + 2 if beat == 1 else (first_output + 3 if beat == 2 else first_output + 2 * beat))
+            )
+            for beat in range(metadata.beats_per_row)
+        ]
+    raise ValueError(f"unknown scenario: {scenario}")
+
+
 def _run_rtl(
     *,
     work_dir: Path,
@@ -391,7 +416,7 @@ def _run_rtl(
     )
 
     rtl_inputs = [str(work_dir / "rtl" / "top.v")]
-    if storage_backend == "fakeram45_64x32_banked":
+    if storage_backend.startswith("fakeram45_64x32_banked"):
         rtl_inputs = [
             str(_REPO_ROOT / "npu/sim/rtl/fakeram45_64x32_model.sv"),
             str(work_dir / "rtl" / "llama7b_rmsnorm_banked_row_gamma_store.v"),
@@ -454,7 +479,11 @@ def build_report(
     scenarios: list[str] | None = None,
     storage_backend: str = "register_arrays",
 ) -> JsonDict:
-    if storage_backend not in {"register_arrays", "fakeram45_64x32_banked"}:
+    if storage_backend not in {
+        "register_arrays",
+        "fakeram45_64x32_banked",
+        "fakeram45_64x32_banked_pipelined",
+    }:
         raise ValueError(f"unsupported storage backend: {storage_backend}")
     selected_cases = (
         ["unity_identity", "signed_pattern", "framing_error", "row_exponent_255", "gamma_exponent_255"]
@@ -486,11 +515,16 @@ def build_report(
                     scenario=scenario,
                     storage_backend=storage_backend,
                 )
-                expected_cycles = (
-                    _simulate_macro_banked_output_cycles(metadata=case["metadata"], scenario=scenario)
-                    if storage_backend == "fakeram45_64x32_banked"
-                    else _simulate_output_cycles(metadata=case["metadata"], scenario=scenario)
-                )
+                if storage_backend == "fakeram45_64x32_banked_pipelined":
+                    expected_cycles = _simulate_pipelined_macro_output_cycles(
+                        metadata=case["metadata"], scenario=scenario
+                    )
+                elif storage_backend == "fakeram45_64x32_banked":
+                    expected_cycles = _simulate_macro_banked_output_cycles(
+                        metadata=case["metadata"], scenario=scenario
+                    )
+                else:
+                    expected_cycles = _simulate_output_cycles(metadata=case["metadata"], scenario=scenario)
                 failures: list[str] = []
 
                 actual_outputs = rtl["outputs"]
@@ -558,9 +592,9 @@ def build_report(
         "decision": "llama7b_rmsnorm_phase3_equivalence_pass" if passed else "llama7b_rmsnorm_phase3_equivalence_fail",
         "equivalence_pass": passed,
         "semantic_profile": (
-            _MACRO_SEMANTIC_PROFILE
-            if storage_backend == "fakeram45_64x32_banked"
-            else _SEMANTIC_PROFILE
+            _PIPELINED_MACRO_SEMANTIC_PROFILE
+            if storage_backend == "fakeram45_64x32_banked_pipelined"
+            else (_MACRO_SEMANTIC_PROFILE if storage_backend == "fakeram45_64x32_banked" else _SEMANTIC_PROFILE)
         ),
         "storage_backend": storage_backend,
         "lanes": LANES,
@@ -603,7 +637,7 @@ def main() -> int:
     parser.add_argument("--out", type=Path, help="optional JSON report output path")
     parser.add_argument(
         "--storage-backend",
-        choices=("register_arrays", "fakeram45_64x32_banked"),
+        choices=("register_arrays", "fakeram45_64x32_banked", "fakeram45_64x32_banked_pipelined"),
         default="register_arrays",
     )
     args = parser.parse_args()

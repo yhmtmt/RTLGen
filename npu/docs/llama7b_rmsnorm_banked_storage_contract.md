@@ -30,6 +30,12 @@ The Phase-3 controller must account for the two-cycle read latency in both
 pipeline cannot absorb the corresponding response; returned data cannot be
 dropped or reordered. Input collection writes each accepted beat exactly once.
 
+Two controller policies are embodied. The conservative policy permits one
+outstanding read and measures 1800 no-stall cycles per row. The pipelined policy
+uses the three slots of the existing elastic arithmetic pipeline as explicit
+response credits; it never allows occupied slots plus in-flight reads to exceed
+three and measures 1035 cycles. Both policies retain the same 64 macros.
+
 Equivalence must retain the existing full-row BF16 result, framing-error replay,
 exponent-255 canonicalization, row counters, and output-backpressure checks. A
 new comparison must additionally cover all four shard boundaries (beats 63/64,
