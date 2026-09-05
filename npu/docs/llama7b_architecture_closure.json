@@ -228,7 +228,7 @@
         },
         "composition": {
           "status": "open",
-          "summary": "The norm path is not yet composed into the selected architecture with the same strength as score, reducer, or service."
+          "summary": "A fail-closed 65-row/token latency sensitivity now bounds serialized and overlapped composition, but the current attention frontier does not prove whether any normalization allowance is already included and routed clock/PPA are still pending."
         },
         "scale_validation": {
           "status": "open",
@@ -274,6 +274,15 @@
           "note": "Defines the guarded routed-PPA request for the exact 64-macro hierarchy; dispatch remains pending merge and human approval."
         },
         {
+          "path": "npu/docs/generated/llama7b_rmsnorm_macro_banked_latency_composition.json",
+          "kind": "generated_audit",
+          "dimensions": [
+            "composition",
+            "scale_validation"
+          ],
+          "note": "Prices 65 exact RMSNorm rows per token against the current score32 latency anchor across 10/14/18 ns clocks and 0/50/100 percent hidden-service bounds without claiming PPA closure."
+        },
+        {
           "path": "docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/quality_gate.md",
           "kind": "proposal_gate",
           "dimensions": [
@@ -311,7 +320,7 @@
         "The failed register-array implementation must not be generalized into evidence against an explicitly banked SRAM-backed RMSNorm design.",
         "BF16 and fixed-point norm options are both still unresolved."
       ],
-      "next_gate": "After merge and human approval, run the guarded 10/14/18 ns routed sweep for the exact 64-macro hierarchy; then capture matched activity power and integrate its measured 1800-cycle service into the Llama7B recost."
+      "next_gate": "After merge and human approval, run the guarded 10/14/18 ns routed sweep for the exact 64-macro hierarchy; then measure overlap and matched activity power, resolve whether the attention baseline already includes normalization, and replace the sensitivity envelope with a non-double-counted Llama7B recost."
     },
     {
       "id": "score_softmax",

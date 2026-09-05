@@ -63,6 +63,11 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
         evidence_paths = {entry["path"] for entry in norm["evidence"]}
         self.assertIn("npu/docs/llama7b_rmsnorm_banked_storage_contract.md", evidence_paths)
         self.assertIn("npu/eval/probe_llama7b_rmsnorm_phase3_equivalence.py", evidence_paths)
+        self.assertIn(
+            "npu/docs/generated/llama7b_rmsnorm_macro_banked_latency_composition.json",
+            evidence_paths,
+        )
+        self.assertIn("65-row/token", norm["dimensions"]["composition"]["summary"])
 
     def test_multivalue_service_activity_is_measured_but_not_signoff(self) -> None:
         component = next(item for item in self.matrix["components"] if item["id"] == "multivalue_service")

@@ -86,7 +86,7 @@ Evidence:
 - status: `open`
 - confidence: `low`
 - summary: Normalization remains the weakest physically measured datapath block, but its implementation ambiguity is substantially reduced: exact Phase-3 BF16 RMSNorm RTL now integrates a concrete 64-macro row/gamma store and passes seven bounded arithmetic, protocol, schedule, and backpressure equivalence rows. The prior register-storage attempt remains a two-row synthesis boundary; the macro-backed successor is implementation-complete but awaits routed PPA.
-- next gate: After merge and human approval, run the guarded 10/14/18 ns routed sweep for the exact 64-macro hierarchy; then capture matched activity power and integrate its measured 1800-cycle service into the Llama7B recost.
+- next gate: After merge and human approval, run the guarded 10/14/18 ns routed sweep for the exact 64-macro hierarchy; then measure overlap and matched activity power, resolve whether the attention baseline already includes normalization, and replace the sensitivity envelope with a non-double-counted Llama7B recost.
 
 | Dimension | Status | Summary |
 | --- | --- | --- |
@@ -94,7 +94,7 @@ Evidence:
 | `equivalence` | `measured_component` | The macro-backed deterministic probe passes seven rows spanning finite data, framing and exponent-255 errors, always-ready operation, and periodic output backpressure with exact data and cycle checks. |
 | `routed_ppa` | `open` | The LANES=16 register-storage embodiment failed synthesis at both 16 ns and 20 ns after roughly 18--20 minutes and about 12 GB peak memory, so no routed norm PPA row exists. |
 | `activity` | `open` | No promoted activity-backed norm measurement is feeding the Llama7B recost. |
-| `composition` | `open` | The norm path is not yet composed into the selected architecture with the same strength as score, reducer, or service. |
+| `composition` | `open` | A fail-closed 65-row/token latency sensitivity now bounds serialized and overlapped composition, but the current attention frontier does not prove whether any normalization allowance is already included and routed clock/PPA are still pending. |
 | `scale_validation` | `open` | There is no scale sweep proving that the chosen normalization structure remains valid across the intended architecture range. |
 
 Caveats:
@@ -107,6 +107,7 @@ Evidence:
 - `npu/docs/llama7b_rmsnorm_banked_storage_contract.md` (rtl_contract; `rtl`, `composition`): Fixes the successor storage organization at 16 lane banks by four depth shards, exactly 64 available 64x32 proxy macros, with explicit two-cycle read latency and integration obligations.
 - `npu/eval/probe_llama7b_rmsnorm_phase3_equivalence.py` (equivalence_probe; `rtl`, `equivalence`): Checks the macro-backed implementation against the Phase-2 oracle and an independent 1800-cycle schedule model across seven functional/protocol/backpressure rows.
 - `docs/proposals/prop_l1_decoder_llama7b_rmsnorm_phase3_macro_banked_physical_v1/evaluation_requests.json` (proposal_gate; `routed_ppa`, `activity`): Defines the guarded routed-PPA request for the exact 64-macro hierarchy; dispatch remains pending merge and human approval.
+- `npu/docs/generated/llama7b_rmsnorm_macro_banked_latency_composition.json` (generated_audit; `composition`, `scale_validation`): Prices 65 exact RMSNorm rows per token against the current score32 latency anchor across 10/14/18 ns clocks and 0/50/100 percent hidden-service bounds without claiming PPA closure.
 - `docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/quality_gate.md` (proposal_gate; `rtl`): Shows that normalization calibration work exists, but is not yet promoted as a closed measured component.
 - `docs/proposals/prop_l1_decoder_bf16_recip_norm_datapath_v1/quality_gate.md` (proposal_gate; `rtl`): Tracks the BF16 reciprocal norm path that remains future work rather than a merged closure result.
 - `docs/proposals/prop_l1_decoder_q12_pwl_recip_norm_datapath_v1/quality_gate.md` (proposal_gate; `rtl`): Shows that a fixed-point reciprocal norm path was explored but not promoted into the final frontier.

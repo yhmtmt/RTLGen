@@ -1,0 +1,122 @@
+{
+  "baseline": {
+    "candidate_id": "score32_exp_lut_hbm_dram_service_closure_best",
+    "latency_us": 12532.357427,
+    "source_path": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_score32_integrated_frontier_ranking__l2_decoder_attention_score32_integrated_frontier_ranking_llama7b_v1.json",
+    "source_sha256": "27393b03096156c1e45ce210db33be6b3e3362475a11859a190ff381ac68fb9b",
+    "token_throughput_per_s": 79.793447149
+  },
+  "blockers": [
+    "routed timing, area, and power for the macro-backed RMSNorm are pending",
+    "the amount of RMSNorm overlap with attention/MLP execution is not measured",
+    "the current attention frontier does not prove whether its latency already includes any normalization allowance",
+    "activity-backed RMSNorm energy is unavailable"
+  ],
+  "decision": "latency_sensitivity_only_pending_routed_ppa",
+  "interpretation": "Use the zero-hidden row as a serialized upper-bound increment and the fully hidden row as the unchanged-baseline lower bound. Do not rerank PPA or claim full-model latency until routed clock, overlap, area, and activity evidence are available.",
+  "model": "llama7b_rmsnorm_macro_banked_latency_composition_v1",
+  "promotion_gate_pass": false,
+  "rmsnorm_contract": {
+    "final_rows": 1,
+    "macro_count": 64,
+    "row_cycles": 1800,
+    "rows_per_layer": 2,
+    "rows_per_token": 65,
+    "service_cycles_per_token": 117000,
+    "storage_backend": "fakeram45_64x32_banked",
+    "transformer_layers": 32
+  },
+  "rows": [
+    {
+      "clock_period_ns": 10.0,
+      "composed_latency_us": 13702.357427,
+      "composed_token_throughput_per_s": 72.980142675,
+      "exposed_rmsnorm_latency_us": 1170.0,
+      "hidden_fraction": 0.0,
+      "latency_increase_pct": 9.335833316,
+      "raw_rmsnorm_latency_us": 1170.0,
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 10.0,
+      "composed_latency_us": 13117.357427,
+      "composed_token_throughput_per_s": 76.234867089,
+      "exposed_rmsnorm_latency_us": 585.0,
+      "hidden_fraction": 0.5,
+      "latency_increase_pct": 4.667916658,
+      "raw_rmsnorm_latency_us": 1170.0,
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 10.0,
+      "composed_latency_us": 12532.357427,
+      "composed_token_throughput_per_s": 79.793447149,
+      "exposed_rmsnorm_latency_us": 0.0,
+      "hidden_fraction": 1.0,
+      "latency_increase_pct": 0.0,
+      "raw_rmsnorm_latency_us": 1170.0,
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 14.0,
+      "composed_latency_us": 14170.357427,
+      "composed_token_throughput_per_s": 70.569850136,
+      "exposed_rmsnorm_latency_us": 1638.0,
+      "hidden_fraction": 0.0,
+      "latency_increase_pct": 13.070166643,
+      "raw_rmsnorm_latency_us": 1638.0,
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 14.0,
+      "composed_latency_us": 13351.357427,
+      "composed_token_throughput_per_s": 74.898751342,
+      "exposed_rmsnorm_latency_us": 819.0,
+      "hidden_fraction": 0.5,
+      "latency_increase_pct": 6.535083321,
+      "raw_rmsnorm_latency_us": 1638.0,
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 14.0,
+      "composed_latency_us": 12532.357427,
+      "composed_token_throughput_per_s": 79.793447149,
+      "exposed_rmsnorm_latency_us": 0.0,
+      "hidden_fraction": 1.0,
+      "latency_increase_pct": 0.0,
+      "raw_rmsnorm_latency_us": 1638.0,
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 18.0,
+      "composed_latency_us": 14638.357427,
+      "composed_token_throughput_per_s": 68.31367556,
+      "exposed_rmsnorm_latency_us": 2106.0,
+      "hidden_fraction": 0.0,
+      "latency_increase_pct": 16.80449997,
+      "raw_rmsnorm_latency_us": 2106.0,
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 18.0,
+      "composed_latency_us": 13585.357427,
+      "composed_token_throughput_per_s": 73.608663252,
+      "exposed_rmsnorm_latency_us": 1053.0,
+      "hidden_fraction": 0.5,
+      "latency_increase_pct": 8.402249985,
+      "raw_rmsnorm_latency_us": 2106.0,
+      "rmsnorm_service_cycles_per_token": 117000
+    },
+    {
+      "clock_period_ns": 18.0,
+      "composed_latency_us": 12532.357427,
+      "composed_token_throughput_per_s": 79.793447149,
+      "exposed_rmsnorm_latency_us": 0.0,
+      "hidden_fraction": 1.0,
+      "latency_increase_pct": 0.0,
+      "raw_rmsnorm_latency_us": 2106.0,
+      "rmsnorm_service_cycles_per_token": 117000
+    }
+  ],
+  "version": 1
+}
