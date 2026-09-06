@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1",
-  "source_commit": "1b639463ca3bfb4a811f4c857560d239bc4ca5d3",
-  "source_commit_note": "Pinned to the merge containing the strict design/verilog guard layout and complete behavioral SRAM bundle. Dispatch still requires explicit human approval.",
+  "source_commit": "90047370adde8e174c72de0764fccc496ae5534d",
+  "source_commit_note": "Pinned to the merge containing the strict guard layout, complete behavioral SRAM bundle, two-stage hierarchical Verilator build, and module-family aliasing. Dispatch still requires explicit human approval.",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1",
@@ -41,7 +41,7 @@
         "direction": "replace_inferred_vc1_release_with_exact_cluster_output_cycles",
         "reason": "The shared-mesh replay cannot support a throughput revision until both cluster structures provide exact full-128D group release timing."
       },
-      "acceptance_notes": "Require source commit 1b639463ca3bfb4a811f4c857560d239bc4ca5d3; direct p54 and p53 representative cluster wrappers; 32 wave commands each; four completed groups; 512 exact aggregate rows per cluster; structured row equality; zero errors; all 128 accepted output cycles plus finite first/last cycles for every group; both fakeram45_2048x39 and fakeram45_64x32 behavioral models; and source hashes. Require a demonstrated direct-hierarchy-capable simulator. Do not substitute 986, eager or bulk-ready timing, synthetic compositional cycle zero, fine-grained component replay, SRAM black boxes, or developer-PC tool failures as result evidence. Human dispatch approval is mandatory."
+      "acceptance_notes": "Require source commit 90047370adde8e174c72de0764fccc496ae5534d; direct p54 and p53 representative cluster wrappers; 32 wave commands each; four completed groups; 512 exact aggregate rows per cluster; structured row equality; zero errors; all 128 accepted output cycles plus finite first/last cycles for every group; both fakeram45_2048x39 and fakeram45_64x32 behavioral models; and source hashes. Require a demonstrated direct-hierarchy-capable simulator with enough memory for p54 child Verilation. Do not substitute 986, eager or bulk-ready timing, synthetic compositional cycle zero, fine-grained component replay, SRAM black boxes, or developer-PC tool failures as result evidence. Human dispatch approval is mandatory."
     }
   ]
 }

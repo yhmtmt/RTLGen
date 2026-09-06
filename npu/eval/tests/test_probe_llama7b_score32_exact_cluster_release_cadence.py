@@ -145,7 +145,7 @@ def test_cadence_request_is_source_pinned_and_human_gated() -> None:
     )
     request = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
     item = request["requested_items"][0]
-    assert request["source_commit"] == "1b639463ca3bfb4a811f4c857560d239bc4ca5d3"
+    assert request["source_commit"] == "90047370adde8e174c72de0764fccc496ae5534d"
     assert item["status"] == "ready_to_queue_pending_human_approval"
     assert item["run_physical"] is False
     assert "Human dispatch approval is mandatory" in item["acceptance_notes"]
