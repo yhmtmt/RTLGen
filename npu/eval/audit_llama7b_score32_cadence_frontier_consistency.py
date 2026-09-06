@@ -20,8 +20,8 @@ DEFAULT_FRONTIER = REPO_ROOT / (
 DEFAULT_NORM = REPO_ROOT / "npu/docs/generated/llama7b_rmsnorm_macro_banked_latency_composition.json"
 DEFAULT_CADENCE = REPO_ROOT / (
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
-    "decoder_attention_score32_folded_global_exact_reduction_recost__"
-    "l2_decoder_attention_score32_folded_global_exact_reduction_recost_llama7b_v2_r2.json"
+    "decoder_attention_score32_local_reducer_measured_recost__"
+    "l2_decoder_attention_score32_local_reducer_measured_recost_llama7b_v1_r1.json"
 )
 
 
@@ -56,38 +56,36 @@ def build_report(
         raise ValueError("unexpected integrated-frontier model")
     if norm.get("model") != "llama7b_rmsnorm_macro_banked_latency_composition_v2":
         raise ValueError("unexpected RMSNorm composition model")
-    if cadence.get("model") != "llm_decoder_attention_score32_folded_global_exact_reduction_recost_v2":
+    if cadence.get("model") != "llm_decoder_attention_score32_local_reducer_measured_recost_v1":
         raise ValueError("unexpected cadence recost model")
 
     baseline = norm.get("baseline")
     scope = norm.get("attention_scope_proof")
-    bounded = cadence.get("bounded_schedule_analysis")
-    cadence_evidence = cadence.get("cadence_evidence")
-    if not all(isinstance(value, dict) for value in (baseline, scope, bounded, cadence_evidence)):
+    schedule = cadence.get("schedule_recost")
+    summary = cadence.get("summary")
+    if not all(isinstance(value, dict) for value in (baseline, scope, schedule, summary)):
         raise ValueError("missing baseline, scope, or cadence evidence")
     if scope.get("status") != "verified_attention_only_excludes_transformer_rmsnorm":
         raise ValueError("RMSNorm attention scope is not verified")
-    if cadence_evidence.get("reference_986_cycles_sustained") is not False:
-        raise ValueError("cadence evidence does not explicitly retract 986 cycles")
+    source_contract = schedule.get("source_exact_reduction_contract")
+    if not isinstance(source_contract, dict):
+        raise ValueError("missing superseded source contract")
 
     terms = scope.get("layer_cycle_terms")
     if not isinstance(terms, dict):
         raise ValueError("missing layer cycle terms")
     old_tile_cycles = int(terms["tile_service_cycles"])
     tile_waves = int(terms["tile_waves"])
-    if old_tile_cycles != int(cadence["summary"]["old_arithmetic_reference_cycles"]):
+    if old_tile_cycles != int(source_contract["replica_recost_tile_service_cycles"]):
         raise ValueError("frontier and cadence reports do not share the superseded reference")
     old_attention_cycles = old_tile_cycles * tile_waves
-    replacement_attention_cycles = int(bounded["strict_serialized_bound_all_4_groups_cycles"])
     recorded_layer_cycles = int(scope["recorded_layer_cycles"])
-    corrected_layer_cycles = recorded_layer_cycles - old_attention_cycles + replacement_attention_cycles
     layers = int(scope["layers"])
     recorded_total_cycles = int(scope["recorded_total_cycles"])
     if recorded_total_cycles != recorded_layer_cycles * layers:
         raise ValueError("recorded cycle accounting is inconsistent")
     recorded_latency_us = float(baseline["latency_us"])
     clock_period_ns = recorded_latency_us * 1000.0 / recorded_total_cycles
-    corrected_latency_us = corrected_layer_cycles * layers * clock_period_ns / 1000.0
 
     rows = frontier.get("rows")
     if not isinstance(rows, list):
@@ -108,9 +106,19 @@ def build_report(
     ]
     if not serialized:
         raise ValueError("serialized RMSNorm envelope is missing")
-    correction_delta_us = corrected_latency_us - recorded_latency_us
-    corrected_norm_latencies = [float(row["composed_latency_us"]) + correction_delta_us for row in serialized]
+    norm_deltas_us = [float(row["composed_latency_us"]) - recorded_latency_us for row in serialized]
     competitor_latency_us = float(competitor["latency_us"])
+    single = schedule["single_clock_full_layer_bound"]
+    dual = schedule["dual_clock_component_rate_bound"]
+    single_low = float(single["conditional_overlap_latency_lower_bound_us"])
+    single_high = float(single["strict_no_overlap_latency_upper_bound_us"])
+    dual_low = float(dual["conditional_overlap_latency_lower_bound_us"])
+    dual_high = float(dual["strict_no_overlap_latency_upper_bound_us"])
+    ppa = cadence["routed_component_ppa"]
+    local_area_low = float(ppa["synthesis_area_lower_bound_scaled_16_clusters"]["total_hierarchy_area_mm2"])
+    local_area_high = float(ppa["macro_only_sum_scaled_16_clusters"]["die_area_mm2"])
+    score32_area = float(score32["compute_area_mm2"])
+    competitor_area = float(competitor["compute_area_mm2"])
 
     return {
         "version": 1,
@@ -129,19 +137,21 @@ def build_report(
             "recorded_latency_us": recorded_latency_us,
             "physically_credible_latency_anchor": False,
         },
-        "strict_serialized_sensitivity": {
-            "replacement_attention_cycles_per_layer": replacement_attention_cycles,
-            "corrected_layer_cycles": corrected_layer_cycles,
+        "measured_local_reducer_recost": {
             "clock_period_ns_reconstructed": clock_period_ns,
-            "latency_us_before_rmsnorm": corrected_latency_us,
-            "token_throughput_per_s_before_rmsnorm": 1.0e6 / corrected_latency_us,
-            "serialized_rmsnorm_latency_min_us": min(corrected_norm_latencies),
-            "serialized_rmsnorm_latency_max_us": max(corrected_norm_latencies),
+            "single_clock_latency_interval_us": [single_low, single_high],
+            "single_clock_serialized_rmsnorm_interval_us": [single_low + min(norm_deltas_us), single_high + max(norm_deltas_us)],
+            "single_clock_latency_lead_preserved": single_high < competitor_latency_us,
+            "dual_clock_latency_interval_us": [dual_low, dual_high],
+            "dual_clock_serialized_rmsnorm_interval_us": [dual_low + min(norm_deltas_us), dual_high + max(norm_deltas_us)],
+            "dual_clock_latency_lead_preserved_across_serialized_rmsnorm_envelope": dual_high + max(norm_deltas_us) < competitor_latency_us,
+            "dual_clock_requires_unmeasured_cdc_scheduler": bool(dual["cdc_handshake_required"]),
             "nearest_credible_competitor_id": str(competitor["candidate_id"]),
             "nearest_credible_competitor_latency_us": competitor_latency_us,
-            "latency_lead_preserved_before_rmsnorm": corrected_latency_us < competitor_latency_us,
-            "latency_lead_preserved_across_serialized_rmsnorm_envelope": max(corrected_norm_latencies) < competitor_latency_us,
-            "claim_scope": "conservative timing sensitivity only; energy and area are not recost",
+            "local_reducer_area_interval_mm2": [local_area_low, local_area_high],
+            "score32_component_plus_local_reducer_area_interval_mm2": [score32_area + local_area_low, score32_area + local_area_high],
+            "remaining_area_headroom_to_fp16_interval_mm2": [competitor_area - score32_area - local_area_high, competitor_area - score32_area - local_area_low],
+            "claim_scope": "measured reducer service and component-area bounds; no routed composed top, CDC closure, or activity-backed energy",
         },
         "pareto_status": {
             "recorded_two_point_set_physically_credible": False,
@@ -150,25 +160,27 @@ def build_report(
         },
         "blockers": [
             "the integrated frontier still consumes the superseded 986-cycle tile-service term",
-            "the local 53/54-way persistent reducer and safe group overlap scheduler remain unresolved",
-            "score32 energy has not been recomputed for the corrected service time or closed with activity",
+            "the routed 53/54-way composed top is absent despite functional reducer and routed submacro evidence",
+            "the latency-leading dual-clock interval requires unmeasured CDC and scheduler composition",
+            "score32 energy has not been recomputed for the measured reducer schedule or closed with activity",
         ],
     }
 
 
 def render_markdown(report: JsonDict) -> str:
     old = report["superseded_contract"]
-    new = report["strict_serialized_sensitivity"]
+    new = report["measured_local_reducer_recost"]
     lines = [
         "# Llama7B Score32 Cadence/Frontier Consistency Audit",
         "",
         f"- decision: `{report['decision']}`",
         f"- recorded two-point Pareto set physically credible: `{report['pareto_status']['recorded_two_point_set_physically_credible']}`",
         f"- superseded Score32 latency: `{old['recorded_latency_us']:.3f} us`",
-        f"- strict serialized sensitivity before RMSNorm: `{new['latency_us_before_rmsnorm']:.3f} us`",
-        f"- strict serialized sensitivity with RMSNorm: `{new['serialized_rmsnorm_latency_min_us']:.3f}--{new['serialized_rmsnorm_latency_max_us']:.3f} us`",
+        f"- single-clock interval before RMSNorm: `{new['single_clock_latency_interval_us'][0]:.3f}--{new['single_clock_latency_interval_us'][1]:.3f} us`",
+        f"- dual-clock interval before RMSNorm: `{new['dual_clock_latency_interval_us'][0]:.3f}--{new['dual_clock_latency_interval_us'][1]:.3f} us`",
+        f"- dual-clock interval with serialized RMSNorm: `{new['dual_clock_serialized_rmsnorm_interval_us'][0]:.3f}--{new['dual_clock_serialized_rmsnorm_interval_us'][1]:.3f} us`",
         f"- nearest measured reference latency: `{new['nearest_credible_competitor_latency_us']:.3f} us`",
-        f"- conservative latency lead preserved: `{new['latency_lead_preserved_across_serialized_rmsnorm_envelope']}`",
+        f"- dual-clock latency lead preserved: `{new['dual_clock_latency_lead_preserved_across_serialized_rmsnorm_envelope']}`",
         f"- claim scope: {new['claim_scope']}",
         "",
         "## Blockers",

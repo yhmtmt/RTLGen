@@ -55,7 +55,7 @@
       }
     ],
     "why_provisional": [
-      "The recorded 12.814 ms score32 point consumes a superseded 986-cycle tile-service assumption. A machine-checked strict serialized cadence sensitivity is 43.515 ms before RMSNorm and 44.188--45.621 ms with serialized RMSNorm, but energy and area have not been recost on that timing basis, so score32 Pareto membership is currently unproven.",
+      "The recorded 12.814 ms score32 point consumes a superseded 986-cycle tile-service assumption. With measured local-reducer service, single-clock bounds are 146.083--172.388 ms, while the proposed dual-clock bounds are 29.361--50.588 ms before RMSNorm and require unmeasured CDC/scheduler composition; energy is not activity-closed, so score32 Pareto membership is currently unproven.",
       "The accepted c1 multivalue-service route is exploratory only: it is timing-clean but still carries 142 max-cap violations with worst slack -17.81 fF.",
       "Producer-service-reducer composition is only bounded by partial equivalence and cadence audits, not by a full end-to-end measured composed implementation.",
       "Two exact 64-macro RMSNorm controllers now bound normalization latency at 1800 and 1035 cycles per row, but matched routed PPA and workload-backed activity are still absent.",
@@ -1079,7 +1079,7 @@
       "label": "Integrated Llama7B Recost",
       "status": "open",
       "confidence": "low",
-      "summary": "The previously reported two-point component-composed Pareto set is retracted as a physically credible set because its 12.814 ms score32 point consumes the superseded 986-cycle tile-service assumption. A machine-checked replacement of 8x986 cycles/layer by the accepted 27,608-cycle strict serialized four-group cadence bound yields 43.515 ms before RMSNorm and 44.188--45.621 ms across the serialized RMSNorm envelope, still below the 72.544 ms exact-FP16 reference. That result is a conservative latency sensitivity, not a new Pareto point: score32 energy and area have not been recost on the corrected schedule, and the local 53/54-way persistent reducer plus safe overlap scheduler remain unresolved. Exact FP16 is therefore retained as the current measured reference while score32 membership is unproven.",
+      "summary": "The previously reported two-point component-composed Pareto set is retracted as a physically credible set because its 12.814 ms score32 point consumes the superseded 986-cycle tile-service assumption. The latest accepted recost includes measured p53 eight-wave local-reducer service: its inherited single-clock interval is 146.083--172.388 ms and loses to the 72.544 ms exact-FP16 reference, while its proposed dual-clock interval is 29.361--50.588 ms before RMSNorm and 30.034--52.694 ms across the serialized RMSNorm envelope. The dual-clock latency lead is conditional on unmeasured CDC/scheduler composition. Routed local-reducer submacro evidence adds 52.754--92.347 mm2 across 16 clusters, leaving 90.429--130.022 mm2 of the old area headroom before other missing score32-only area, but energy remains unrecost and not activity-backed. Exact FP16 is therefore retained as the current measured reference while score32 membership is unproven.",
       "dimensions": {
         "rtl": {
           "status": "open",
@@ -1103,7 +1103,7 @@
         },
         "scale_validation": {
           "status": "open",
-          "summary": "A conservative Llama7B timing sensitivity exists, but no integrated energy/area rerank consumes the corrected 27,608-cycle four-group bound."
+          "summary": "Measured local-reducer service produces distinct single- and dual-clock Llama7B intervals, but no integrated activity-backed rerank consumes that evidence and the dual-clock result still lacks CDC/scheduler closure."
         }
       },
       "evidence": [
@@ -1114,7 +1114,7 @@
             "composition",
             "scale_validation"
           ],
-          "note": "Proves that the recorded score32 point consumes the superseded 986-cycle term, reconstructs the 43.515 ms strict serialized sensitivity and 44.188--45.621 ms serialized-RMSNorm envelope, and retracts score32 Pareto membership until cadence-integrated energy and area are recost."
+          "note": "Proves that the recorded score32 point consumes the superseded 986-cycle term; consumes the later measured local-reducer recost; distinguishes single-clock 146.083--172.388 ms from CDC-dependent dual-clock 29.361--50.588 ms; carries the serialized RMSNorm and local-reducer area intervals; and retracts score32 Pareto membership pending composition and activity closure."
         },
         {
           "path": "npu/docs/generated/llama7b_physically_credible_pareto.json",
@@ -1168,7 +1168,8 @@
       ],
       "caveats": [
         "Do not quote 12.814 ms or its 13.487--14.920 ms RMSNorm envelope as the current physically credible score32 latency; both inherit the superseded 986-cycle service term.",
-        "The 43.515 ms cadence correction is a strict serialized timing sensitivity only and must not be paired with the old score32 energy as if they were one evaluated design point.",
+        "The dual-clock latency interval must not be promoted until its CDC and safe-overlap scheduler are implemented and measured; the single-clock interval is slower than exact FP16.",
+        "Measured local-reducer area is a submacro replication/lower-bound interval, not routed composed-top area, and must not be paired with the old score32 energy as if they were one evaluated design point.",
         "This is an attention-centered architecture recost, not a complete Llama7B workload model or full-chip physical implementation.",
         "The current source latency excludes 65 transformer RMSNorm rows per token; exact latency sensitivity exists, but routed norm PPA, energy, and measured overlap are still open.",
         "The schedule-wrapper activity proposal and activity-aware rerank are pending, so current energy numbers are not the final activity-backed Pareto objective.",
