@@ -75,6 +75,69 @@ def _write_behavioral_memories(work_dir: Path) -> Path:
     return path
 
 
+def _verilator_two_stage_commands(
+    *,
+    rtl_dir: Path,
+    fakeram_path: Path,
+    tb_path: Path,
+    control_path: Path,
+    obj_dir: Path,
+) -> tuple[list[str], ...]:
+    """Avoid the broken ``--binary --hierarchical`` recursion in Verilator 5.039."""
+
+    verilator = probe._tool("verilator")
+    return (
+        [
+            verilator,
+            "--cc",
+            "--main",
+            "--timing",
+            "--hierarchical",
+            "--build-dep-bin",
+            verilator,
+            "-Wno-fatal",
+            "-j",
+            str(probe.VERILATOR_BUILD_JOBS),
+            "--Mdir",
+            str(obj_dir),
+            "--top-module",
+            "tb",
+            str(control_path),
+            str(rtl_dir / "top.v"),
+            str(fakeram_path),
+            str(tb_path),
+        ],
+        [
+            "make",
+            "-C",
+            str(obj_dir),
+            "-f",
+            "Vtb.mk",
+            "-j",
+            str(probe.VERILATOR_BUILD_JOBS),
+        ],
+        [
+            "g++",
+            "-o",
+            str(obj_dir / probe.VERILATOR_BINARY_NAME),
+            str(obj_dir / "libVtb.a"),
+            str(obj_dir / "libverilated.a"),
+            "-pthread",
+            "-latomic",
+        ],
+    )
+
+
+def _alias_module_family(text: str, *, prefix: str, alias: str) -> str:
+    """Shorten generated module names so Verilator does not mangle ``__`` in hier blocks."""
+
+    if not prefix or prefix not in text:
+        raise ValueError("module family prefix is absent from extracted RTL")
+    if not alias or "__" in alias:
+        raise ValueError("module family alias must be non-empty and contain no double underscore")
+    return text.replace(prefix, alias)
+
+
 def extract_cluster_cadence(
     stdout: str,
     *,
@@ -184,8 +247,13 @@ def measure(
             run_dir = build_dir / "run"
             source_dir.mkdir(parents=True)
             run_dir.mkdir()
+            compile_top = f"cadence_{kind}"
             (source_dir / "top.v").write_text(
-                extract_module_family(generated_rtl, prefix=modules[kind]),
+                _alias_module_family(
+                    extract_module_family(generated_rtl, prefix=modules[kind]),
+                    prefix=modules[kind],
+                    alias=compile_top,
+                ),
                 encoding="utf-8",
             )
             tb_path = build_dir / "tb.sv"
@@ -193,7 +261,7 @@ def measure(
             sim_path = build_dir / "simv"
             tb_path.write_text(
                 cluster_testbench(
-                    top_name=modules[kind],
+                    top_name=compile_top,
                     producers=producers,
                     logical_head_groups=logical_head_groups,
                     output_ready_pattern=(True,),
@@ -209,10 +277,10 @@ def measure(
                 control_path = build_dir / "cluster.vlt"
                 control_path.write_text(
                     "`verilator_config\n"
-                    f'hier_block -module "{modules[kind]}"\n',
+                    f'hier_block -module "{compile_top}"\n',
                     encoding="ascii",
                 )
-                command = probe._verilator_hierarchical_compile_command(
+                compile_commands = _verilator_two_stage_commands(
                     rtl_dir=source_dir,
                     fakeram_path=fakeram_path,
                     tb_path=tb_path,
@@ -224,27 +292,31 @@ def measure(
                     f"+CLUSTER={cluster}",
                 ]
             else:
-                command = probe._icarus_compile_command(
-                    rtl_dir=source_dir,
-                    fakeram_path=fakeram_path,
-                    tb_path=tb_path,
-                    sim_path=sim_path,
+                compile_commands = (
+                    probe._icarus_compile_command(
+                        rtl_dir=source_dir,
+                        fakeram_path=fakeram_path,
+                        tb_path=tb_path,
+                        sim_path=sim_path,
+                    ),
                 )
                 run_command = [probe._tool("vvp"), str(sim_path), f"+CLUSTER={cluster}"]
-            _result, failure = _run_process(
-                command,
-                cwd=build_dir,
-                timeout_sec=compile_timeout_sec,
-                phase=f"compile_{kind}",
-            )
-            phase_records.append(
-                {
-                    "phase": f"compile_{kind}",
-                    "returncode": failure["returncode"] if failure else 0,
-                }
-            )
-            if failure:
-                raise RuntimeError(_diagnostic(failure))
+            for compile_index, command in enumerate(compile_commands):
+                compile_phase = f"compile_{kind}_{compile_index}"
+                _result, failure = _run_process(
+                    command,
+                    cwd=build_dir,
+                    timeout_sec=compile_timeout_sec,
+                    phase=compile_phase,
+                )
+                phase_records.append(
+                    {
+                        "phase": compile_phase,
+                        "returncode": failure["returncode"] if failure else 0,
+                    }
+                )
+                if failure:
+                    raise RuntimeError(_diagnostic(failure))
             result, failure = _run_process(
                 run_command,
                 cwd=run_dir,
