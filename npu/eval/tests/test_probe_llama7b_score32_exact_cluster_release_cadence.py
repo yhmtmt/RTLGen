@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import pytest
+from pathlib import Path
 
 from npu.eval import probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 as probe
 from npu.eval.probe_llama7b_score32_exact_cluster_release_cadence import (
+    _prepare_guarded_rtl,
+    _write_behavioral_memories,
     extract_cluster_cadence,
     render_markdown,
 )
@@ -91,3 +94,41 @@ def test_extract_cluster_cadence_rejects_incomplete_group(
             _cluster_stdout(monkeypatch, omit_last=True),
             cluster=0,
         )
+
+
+def test_prepare_guarded_rtl_uses_guard_design_layout(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    calls = []
+
+    def fake_generate(config: dict, out_dir: Path) -> None:
+        calls.append(("generate", config, out_dir))
+        out_dir.mkdir(parents=True)
+        (out_dir / "config.json").write_text("{}", encoding="utf-8")
+
+    def fake_guard(argv: list[str]) -> int:
+        calls.append(("guard", argv))
+        assert argv == [
+            "--design-dir",
+            str(tmp_path),
+            "--config",
+            str(tmp_path / "verilog/config.json"),
+        ]
+        return 0
+
+    module = __import__(
+        "npu.eval.probe_llama7b_score32_exact_cluster_release_cadence",
+        fromlist=["generate"],
+    )
+    monkeypatch.setattr(module, "generate", fake_generate)
+    monkeypatch.setattr(module, "strict_guard_main", fake_guard)
+
+    assert _prepare_guarded_rtl({"top_name": "dut"}, tmp_path) == tmp_path / "verilog"
+    assert calls[0] == ("generate", {"top_name": "dut"}, tmp_path / "verilog")
+    assert calls[1][0] == "guard"
+
+
+def test_behavioral_memory_bundle_covers_cluster_macros(tmp_path: Path) -> None:
+    text = _write_behavioral_memories(tmp_path).read_text(encoding="utf-8")
+    assert text.count("module fakeram45_2048x39") == 1
+    assert text.count("module fakeram45_64x32") == 1

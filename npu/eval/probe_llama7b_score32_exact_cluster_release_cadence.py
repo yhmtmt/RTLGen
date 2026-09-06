@@ -50,6 +50,31 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _prepare_guarded_rtl(config: JsonDict, work_dir: Path) -> Path:
+    """Generate the hierarchy in the design layout required by the strict guard."""
+
+    rtl_dir = work_dir / "verilog"
+    generate(config, rtl_dir)
+    with contextlib.redirect_stdout(io.StringIO()):
+        strict_guard_main(
+            ["--design-dir", str(work_dir), "--config", str(rtl_dir / "config.json")]
+        )
+    return rtl_dir
+
+
+def _write_behavioral_memories(work_dir: Path) -> Path:
+    """Materialize every SRAM model referenced by a representative cluster."""
+
+    path = work_dir / "fakeram_behavioral_models.sv"
+    path.write_text(
+        probe.full_probe._FAKERAM_MODEL
+        + "\n"
+        + (REPO_ROOT / "npu/sim/rtl/fakeram45_64x32_model.sv").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    return path
+
+
 def extract_cluster_cadence(
     stdout: str,
     *,
@@ -141,16 +166,11 @@ def measure(
     logical_head_groups = 4
     top_name = str(config["top_name"])
     modules = probe._hierarchical_module_names(top_name)
-    fakeram_path = REPO_ROOT / "npu/sim/rtl/fakeram45_64x32_model.sv"
 
     with tempfile.TemporaryDirectory(prefix="score32_cluster_release_cadence_") as temp_name:
         work_dir = Path(temp_name)
-        rtl_dir = work_dir / "rtl"
-        generate(config, rtl_dir)
-        with contextlib.redirect_stdout(io.StringIO()):
-            strict_guard_main(
-                ["--design-dir", str(work_dir), "--config", str(rtl_dir / "config.json")]
-            )
+        rtl_dir = _prepare_guarded_rtl(config, work_dir)
+        fakeram_path = _write_behavioral_memories(work_dir)
 
         generated_rtl = (rtl_dir / "top.v").read_text(encoding="utf-8")
         reference = probe._reference(logical_head_groups=logical_head_groups)
