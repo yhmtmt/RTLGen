@@ -7606,11 +7606,24 @@ def test_generate_l2_campaign_task_adds_noc_exact_router_postroute_activity_powe
                 "partial_payload_bits_per_beat": 328,
                 "release_contract": "group_major_actual_valid_ready",
                 "phases": 5,
+                "shared_vc0_flits": 60928,
+                "reduction_vc1_groups": 4,
+                "reduction_vc1_flits_per_group": 2505,
+                "reduction_vc1_flits": 10020,
                 "total_flits": 70948,
             }
             assert decoder_inputs[
                 "attention_score32_noc_exact_router_postroute_activity_power_local_only_artifacts"
             ] == ["VCD", "ODB", "SPEF"]
+            assert work_item.acceptance_rules == [
+                "Replay one 60928-flit VC0 phase and four 2505-flit group-major VC1 phases for exactly 70948 total flits",
+                "Require all five cycle-level RTL/performance phases to match actual producer and SRAM valid-ready behavior",
+                "Preserve the 419-bit link, 328-bit payload, and group-major stats-once release contract",
+                "Annotate every uniquely preserved timing-feasible bare-router route directly from VCD with at least 95 percent sequential-register sidecar coverage, no macro activity, and finite positive routed power",
+                "Commit only the declared repo-portable JSON and Markdown outputs; keep VCD, ODB, and SPEF evaluator-local",
+                "Do not promote the result as simultaneous VC arbitration, aggregate mesh/link/clock-tree, endpoint/SRAM, or HBM/DRAM energy",
+                "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
+            ]
 
 
 def test_generate_l2_campaign_task_adds_schedule_wrapper_activity_integrated_frontier_ranking_input() -> None:
