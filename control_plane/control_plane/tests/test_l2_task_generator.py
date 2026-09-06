@@ -7515,6 +7515,15 @@ def test_generate_l2_campaign_task_adds_schedule_wrapper_postroute_activity_powe
                 "ODB",
                 "SPEF",
             ]
+            assert work_item.acceptance_rules == [
+                "Select exactly the authoritative density-0.4 routed wrapper row and preserve its route identity",
+                "Generate exactly 986 service-window activity cycles with matching RTL, count, and observable timeline hashes",
+                "Require the macro-less sequential-register activity gate and finite positive post-route power",
+                "Keep the 10 ns annotation clock distinct from the 48.6509 ns promotion clock",
+                "Commit only the declared repo-portable JSON and Markdown outputs; keep VCD, ODB, and SPEF evaluator-local",
+                "Do not attribute the residual 343 layer cycles or SRAM, HBM, full-token, or full-chip energy to this trace",
+                "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
+            ]
 
 
 def test_generate_l2_campaign_task_adds_noc_router_postroute_activity_power_input() -> None:
