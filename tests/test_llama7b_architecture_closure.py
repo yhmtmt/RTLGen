@@ -166,6 +166,23 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
         )
         self.assertIn("same routed netlist", sram["next_gate"])
 
+    def test_mapper_is_explicitly_open_for_selected_llama7b_hierarchy(self) -> None:
+        mapper = next(
+            item for item in self.matrix["components"] if item["id"] == "mapper_workload_lowering"
+        )
+        self.assertEqual(mapper["status"], "open")
+        self.assertEqual(mapper["confidence"], "low")
+        self.assertEqual(mapper["dimensions"]["equivalence"]["status"], "open")
+        self.assertEqual(mapper["dimensions"]["activity"]["status"], "open")
+        self.assertIn("not yet unified", mapper["dimensions"]["composition"]["summary"])
+        self.assertIn("canonical Llama7B score32 mapper IR", mapper["next_gate"])
+        evidence_paths = {entry["path"] for entry in mapper["evidence"]}
+        self.assertIn("npu/mapper/onnx_to_schedule.py", evidence_paths)
+        self.assertIn(
+            "docs/proposals/prop_l2_mapper_memory_aware_split_v1/analysis_report.md",
+            evidence_paths,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

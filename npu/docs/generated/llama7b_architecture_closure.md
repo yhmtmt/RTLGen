@@ -2,16 +2,17 @@
 
 - source JSON: `npu/docs/llama7b_architecture_closure.json`
 - generated Markdown: `npu/docs/generated/llama7b_architecture_closure.md`
-- as_of: `2026-09-05`
+- as_of: `2026-09-06`
 
 ## Headline
 
-- closure counts: `closed=0`, `routed_with_caveat=1`, `measured_component=6`, `rtl_unmeasured=1`, `abstract_external=1`, `open=3`
+- closure counts: `closed=0`, `routed_with_caveat=1`, `measured_component=6`, `rtl_unmeasured=1`, `abstract_external=1`, `open=4`
 - provisional recommendation: `INT8 dense compute` + `score32 + exp-LUT`, `hierarchical c1/c2 service islands`, `dual producer/reducer clocks`
 - provisional because: The accepted c1 multivalue-service route is exploratory only: it is timing-clean but still carries 142 max-cap violations with worst slack -17.81 fF.
 - provisional because: Producer-service-reducer composition is only bounded by partial equivalence and cadence audits, not by a full end-to-end measured composed implementation.
 - provisional because: Two exact 64-macro RMSNorm controllers now bound normalization latency at 1800 and 1035 cycles per row, but matched routed PPA and workload-backed activity are still absent.
 - provisional because: NoC, SRAM, and scheduler evidence are still mixed between measured primitives and analytic composition, so the final Llama7B recost is not yet a fully embodied chip closure.
+- provisional because: The selected Llama7B score32 hierarchy is not emitted by one canonical mapper-to-descriptor-to-RTL path; current attention schedules are composed from specialized analytic and RTL evidence.
 - provisional because: External DRAM controller and PHY remain an intentional abstract boundary, so full-system signoff is outside the current on-chip closure claim.
 
 ## Component Status
@@ -28,6 +29,7 @@
 | NoC | open | medium | measured_component | open | measured_component | open | open | open |
 | SRAM | measured_component | medium | measured_component | measured_component | measured_component | open | measured_component | measured_component |
 | Scheduler/CDC | open | low | closed | open | measured_component | open | rtl_unmeasured | open |
+| Mapper/Workload Lowering | open | low | rtl_unmeasured | open | open | open | open | open |
 | External Memory Boundary | abstract_external | high | abstract_external | abstract_external | abstract_external | abstract_external | abstract_external | abstract_external |
 | Integrated Llama7B Recost | measured_component | medium | open | open | measured_component | open | measured_component | measured_component |
 
@@ -312,6 +314,33 @@ Evidence:
 - `docs/proposals/prop_l2_decoder_attention_composed_datapath_score32_exp_lut_div_measured_command_control_llama7b_v1/analysis_report.md` (proposal_analysis; `routed_ppa`, `composition`): Documents the command-control recost consumed by the Llama7B score32 branch.
 - `docs/proposals/prop_l2_decoder_attention_score32_schedule_wrapper_activity_integrated_frontier_ranking_llama7b_v1/analysis_report.md` (proposal_analysis; `activity`, `scale_validation`): Tracks the pending schedule-wrapper activity rerank; it does not yet change the integrated frontier numbers.
 - `docs/proposals/prop_l2_decoder_attention_kv_onchip_service_schedule_llama7b_v1/analysis_report.md` (proposal_analysis; `composition`, `scale_validation`): Captures the still-open on-chip service scheduling problem at Llama7B scale.
+
+## Mapper/Workload Lowering
+
+- status: `open`
+- confidence: `low`
+- summary: The repository has an implemented descriptor mapper, capacity-aware buffer checks, MLP output-channel splitting, and a promoted narrow memory-aware softmax-tail policy. The selected Llama7B score32 attention hierarchy, however, is assembled by specialized performance/evidence scripts rather than emitted and replayed through one canonical mapper-to-descriptor-to-RTL flow, so mapper-induced scheduling and control overhead remain an explicit architecture ambiguity.
+- next gate: Define a canonical Llama7B score32 mapper IR covering producer, selected SRAM hierarchy, exact five-phase NoC transport, four-group reduction, RMSNorm placement, and CDC events; emit a deterministic descriptor stream, prove mapper/performance/RTL event and tensor equivalence, measure its control/buffering PPA and activity, and consume those results in the final Pareto recost.
+
+| Dimension | Status | Summary |
+| --- | --- | --- |
+| `rtl` | `rtl_unmeasured` | Generic mapper descriptors execute on the NPU shell, but no canonical descriptor stream embodies the selected score32 producer, SRAM service, exact four-group reduction, NoC transport, and RMSNorm sequence together. |
+| `equivalence` | `open` | There is no end-to-end proof that a mapper-emitted Llama7B attention descriptor stream matches the selected specialized performance model and composed RTL hierarchy. |
+| `routed_ppa` | `open` | Measured wrapper control exists elsewhere in the matrix, but mapper-selected buffering, synchronization, descriptor traffic, and final hierarchy overhead have not been routed as one representative implementation. |
+| `activity` | `open` | No workload trace from a canonical Llama7B mapper output drives activity power for the final composed hierarchy. |
+| `composition` | `open` | Memory, topology, and scheduler estimators constrain the architecture, but their selected policies are not yet unified into one legal mapper output consumed by the final recost. |
+| `scale_validation` | `open` | The promoted mapper optimization is narrow to an nm2 softmax-tail benchmark; Llama7B-scale attention mapping remains analytic and does not establish broad mapper optimality. |
+
+Caveats:
+- Do not interpret a legal analytic schedule row as proof that the mapper can emit, synchronize, and execute the selected hierarchy.
+- The narrow softmax-tail mapper win demonstrates that mapper policy can materially rerank hardware, which increases rather than removes the need for a Llama7B-specific mapper closure.
+- Mapper closure must preserve the already-promoted score32 quality and exact four-group reduction semantics rather than substituting an easier approximate schedule.
+
+Evidence:
+- `npu/mapper/onnx_to_schedule.py` (mapper_source; `rtl`, `composition`): Implements descriptor lowering, capacity checks, and bounded splitting, but does not emit the selected full score32 Llama7B hierarchy as one canonical schedule.
+- `docs/proposals/prop_l2_mapper_memory_aware_split_v1/analysis_report.md` (proposal_analysis; `equivalence`, `composition`, `scale_validation`): Promotes a bounded mapper policy on one nm2 softmax-tail benchmark while explicitly retaining broader mapper search as open.
+- `docs/proposals/prop_l2_decoder_attention_kv_hbm_closed_onchip_schedule_v1/analysis_report.md` (proposal_analysis; `composition`, `scale_validation`): Records a Llama7B on-chip schedule choice, but the proposal identifies it as an analytic service simulator with optimistic combinations still requiring RTL validation.
+- `docs/proposals/prop_l2_decoder_attention_kv_subtile_pipeline_schedule_v1/analysis_report.md` (proposal_analysis; `routed_ppa`, `activity`, `composition`, `scale_validation`): Shows that the selected 986-cycle attention schedule originated from an analytic dual-MAC/online-normalization point without RTL/PPA or numerical closure.
 
 ## External Memory Boundary
 
