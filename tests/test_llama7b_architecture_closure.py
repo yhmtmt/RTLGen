@@ -125,8 +125,9 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
         self.assertEqual(full["confidence"], "low")
         self.assertIn("RMSNorm", full["summary"])
         self.assertIn("retracted", full["summary"])
-        self.assertIn("43.515 ms", full["summary"])
-        self.assertIn("44.188--45.621 ms", full["summary"])
+        self.assertIn("146.083--172.388 ms", full["summary"])
+        self.assertIn("29.361--50.588 ms", full["summary"])
+        self.assertIn("30.034--52.694 ms", full["summary"])
         self.assertIn("72.544 ms", full["summary"])
         self.assertIn("score32 membership is unproven", full["summary"])
         evidence_paths = {entry["path"] for entry in full["evidence"]}
