@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 from pathlib import Path
+import json
 
 from npu.eval import probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 as probe
 from npu.eval.probe_llama7b_score32_exact_cluster_release_cadence import (
@@ -132,3 +133,20 @@ def test_behavioral_memory_bundle_covers_cluster_macros(tmp_path: Path) -> None:
     text = _write_behavioral_memories(tmp_path).read_text(encoding="utf-8")
     assert text.count("module fakeram45_2048x39") == 1
     assert text.count("module fakeram45_64x32") == 1
+
+
+def test_cadence_request_is_source_pinned_and_human_gated() -> None:
+    root = Path(__file__).resolve().parents[3]
+    proposal_dir = root / (
+        "docs/proposals/"
+        "prop_l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1"
+    )
+    request = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
+    item = request["requested_items"][0]
+    assert request["source_commit"] == "1b639463ca3bfb4a811f4c857560d239bc4ca5d3"
+    assert item["status"] == "ready_to_queue_pending_human_approval"
+    assert item["run_physical"] is False
+    assert "Human dispatch approval is mandatory" in item["acceptance_notes"]
+    gate = (proposal_dir / "evaluation_gate.md").read_text(encoding="utf-8")
+    assert "awaiting_human_approval" in gate
+    assert "48,384" in gate

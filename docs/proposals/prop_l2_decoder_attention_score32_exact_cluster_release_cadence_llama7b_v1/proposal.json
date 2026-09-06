@@ -64,7 +64,7 @@
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "run_physical": false,
-      "status": "draft_pending_source_merge_and_evaluator_recovery"
+      "status": "ready_to_queue_pending_human_approval"
     }
   ],
   "baseline_refs": [
