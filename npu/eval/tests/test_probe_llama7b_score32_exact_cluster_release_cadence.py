@@ -8,6 +8,8 @@ from npu.eval import probe_attention_score32_exact_local16_global_tree_cluster_s
 from npu.eval.probe_llama7b_score32_exact_cluster_release_cadence import (
     _prepare_guarded_rtl,
     _write_behavioral_memories,
+    _verilator_two_stage_commands,
+    _alias_module_family,
     extract_cluster_cadence,
     render_markdown,
 )
@@ -150,3 +152,40 @@ def test_cadence_request_is_source_pinned_and_human_gated() -> None:
     gate = (proposal_dir / "evaluation_gate.md").read_text(encoding="utf-8")
     assert "awaiting_human_approval" in gate
     assert "48,384" in gate
+
+
+def test_verilator_two_stage_flow_avoids_binary_hierarchy_bug(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    module = __import__(
+        "npu.eval.probe_llama7b_score32_exact_cluster_release_cadence",
+        fromlist=["probe"],
+    )
+    monkeypatch.setattr(module.probe, "_tool", lambda name: f"/tools/{name}")
+    commands = _verilator_two_stage_commands(
+        rtl_dir=tmp_path / "rtl",
+        fakeram_path=tmp_path / "memories.sv",
+        tb_path=tmp_path / "tb.sv",
+        control_path=tmp_path / "cluster.vlt",
+        obj_dir=tmp_path / "obj",
+    )
+    assert commands[0][:7] == [
+        "/tools/verilator",
+        "--cc",
+        "--main",
+        "--timing",
+        "--hierarchical",
+        "--build-dep-bin",
+        "/tools/verilator",
+    ]
+    assert "--binary" not in commands[0]
+    assert commands[1][:5] == ["make", "-C", str(tmp_path / "obj"), "-f", "Vtb.mk"]
+    assert commands[2][-2:] == ["-pthread", "-latomic"]
+
+
+def test_module_family_alias_removes_verilator_double_underscore_boundary() -> None:
+    source = "module long__cluster; long__cluster__child u(); endmodule\n"
+    aliased = _alias_module_family(source, prefix="long__cluster", alias="cadence_p54")
+    assert aliased == "module cadence_p54; cadence_p54__child u(); endmodule\n"
+    with pytest.raises(ValueError, match="contain no double underscore"):
+        _alias_module_family(source, prefix="long__cluster", alias="bad__alias")
