@@ -6,8 +6,9 @@
 
 ## Headline
 
-- closure counts: `closed=0`, `routed_with_caveat=1`, `measured_component=6`, `rtl_unmeasured=1`, `abstract_external=1`, `open=4`
+- closure counts: `closed=0`, `routed_with_caveat=1`, `measured_component=5`, `rtl_unmeasured=1`, `abstract_external=1`, `open=5`
 - provisional recommendation: `INT8 dense compute` + `score32 + exp-LUT`, `hierarchical c1/c2 service islands`, `dual producer/reducer clocks`
+- provisional because: The recorded 12.814 ms score32 point consumes a superseded 986-cycle tile-service assumption. A machine-checked strict serialized cadence sensitivity is 43.515 ms before RMSNorm and 44.188--45.621 ms with serialized RMSNorm, but energy and area have not been recost on that timing basis, so score32 Pareto membership is currently unproven.
 - provisional because: The accepted c1 multivalue-service route is exploratory only: it is timing-clean but still carries 142 max-cap violations with worst slack -17.81 fF.
 - provisional because: Producer-service-reducer composition is only bounded by partial equivalence and cadence audits, not by a full end-to-end measured composed implementation.
 - provisional because: Two exact 64-macro RMSNorm controllers now bound normalization latency at 1800 and 1035 cycles per row, but matched routed PPA and workload-backed activity are still absent.
@@ -31,7 +32,7 @@
 | Scheduler/CDC | open | low | closed | open | measured_component | open | rtl_unmeasured | open |
 | Mapper/Workload Lowering | open | low | rtl_unmeasured | open | open | open | open | open |
 | External Memory Boundary | abstract_external | high | abstract_external | abstract_external | abstract_external | abstract_external | abstract_external | abstract_external |
-| Integrated Llama7B Recost | measured_component | medium | open | open | measured_component | open | measured_component | measured_component |
+| Integrated Llama7B Recost | open | low | open | open | measured_component | open | open | open |
 
 ## Precision
 
@@ -368,10 +369,10 @@ Evidence:
 
 ## Integrated Llama7B Recost
 
-- status: `measured_component`
-- confidence: `medium`
-- summary: The attention-centered Llama7B frontier is no longer heuristic-only. Among quality-backed promotable rows, it contains two non-dominated component-composed points: score32 is the latency/component-area anchor, while measured exact FP16 is the recorded-energy anchor. Adding all exact serialized RMSNorm sensitivities moves score32 from the incomplete 12.814 ms baseline to 13.487--14.920 ms and preserves its latency lead over the 72.544 ms FP16 point. Score32 also has 182.776 mm2 of aggregate uncounted-area headroom before tying the FP16 component-area point, provided FP16 area is unchanged; this is a break-even sensitivity, not an RMSNorm area estimate. Recorded score32 energy is 5.721x FP16 and would need an 82.520 percent reduction to tie if the FP16 estimate stayed fixed. Conversely, FP16 would need simultaneous 82.336 percent latency and 38.110 percent component-area reductions to tie the current recorded score32 axes; even against worst serialized-norm score32 latency, the latency reduction is 79.433 percent. The activity-closed energy ordering remains unproven. It is not yet a full-model or activity-backed frontier because routed norm area/energy/overlap, the schedule-wrapper activity rerank, several subsystem closures, and external memory remain open.
-- next gate: After the remaining on-chip component gates close, rerun the integrated ranking one more time and freeze the provisional best architecture as the project conclusion.
+- status: `open`
+- confidence: `low`
+- summary: The previously reported two-point component-composed Pareto set is retracted as a physically credible set because its 12.814 ms score32 point consumes the superseded 986-cycle tile-service assumption. A machine-checked replacement of 8x986 cycles/layer by the accepted 27,608-cycle strict serialized four-group cadence bound yields 43.515 ms before RMSNorm and 44.188--45.621 ms across the serialized RMSNorm envelope, still below the 72.544 ms exact-FP16 reference. That result is a conservative latency sensitivity, not a new Pareto point: score32 energy and area have not been recost on the corrected schedule, and the local 53/54-way persistent reducer plus safe overlap scheduler remain unresolved. Exact FP16 is therefore retained as the current measured reference while score32 membership is unproven.
+- next gate: First recost score32 latency, energy, and area on one cadence-consistent local-reducer/scheduler contract; then rerun dominance with RMSNorm, NoC/SRAM activity, and mapper overhead before freezing any Pareto recommendation.
 
 | Dimension | Status | Summary |
 | --- | --- | --- |
@@ -379,16 +380,19 @@ Evidence:
 | `equivalence` | `open` | There is no whole-system tensor-hash equivalence proof for the full recosted architecture. |
 | `routed_ppa` | `measured_component` | The recost consumes multiple measured routed or wrapper-level PPA anchors instead of using a free abstract core. |
 | `activity` | `open` | The score32 schedule-wrapper post-route activity run and its downstream rerank are pending; current frontier energy must not be described as activity-backed. |
-| `composition` | `measured_component` | Integrated ranking combines measured compute, selected score32 service closure, SRAM envelope, and HBM service models. |
-| `scale_validation` | `measured_component` | The frontier has been reranked repeatedly under measured-component substitutions, but some key subsystem closures remain provisional. |
+| `composition` | `open` | The integrated ranking combines measured components, but its selected score32 row still consumes a cadence assumption explicitly superseded by later functional producer and folded-reduction evidence. |
+| `scale_validation` | `open` | A conservative Llama7B timing sensitivity exists, but no integrated energy/area rerank consumes the corrected 27,608-cycle four-group bound. |
 
 Caveats:
+- Do not quote 12.814 ms or its 13.487--14.920 ms RMSNorm envelope as the current physically credible score32 latency; both inherit the superseded 986-cycle service term.
+- The 43.515 ms cadence correction is a strict serialized timing sensitivity only and must not be paired with the old score32 energy as if they were one evaluated design point.
 - This is an attention-centered architecture recost, not a complete Llama7B workload model or full-chip physical implementation.
 - The current source latency excludes 65 transformer RMSNorm rows per token; exact latency sensitivity exists, but routed norm PPA, energy, and measured overlap are still open.
 - The schedule-wrapper activity proposal and activity-aware rerank are pending, so current energy numbers are not the final activity-backed Pareto objective.
 - The result remains provisional until producer-service-reducer composition, scheduler/CDC, and the c1 service electrical caveat are tightened further.
 
 Evidence:
+- `npu/docs/generated/llama7b_score32_cadence_frontier_consistency.json` (generated_audit; `composition`, `scale_validation`): Proves that the recorded score32 point consumes the superseded 986-cycle term, reconstructs the 43.515 ms strict serialized sensitivity and 44.188--45.621 ms serialized-RMSNorm envelope, and retracts score32 Pareto membership until cadence-integrated energy and area are recost.
 - `npu/docs/generated/llama7b_physically_credible_pareto.json` (generated_audit; `routed_ppa`, `composition`, `scale_validation`): Computes latency/energy/component-area dominance only among quality-backed promotable rows, retains die size as an envelope rather than mislabeling it as used area, identifies separate score32 latency/area and exact-FP16 recorded-energy anchors, excludes abstract/quality-invalid dominators, proves the score32 latency lead survives the full exact serialized RMSNorm sensitivity envelope, quantifies both directions of pairwise dominance including the 182.776 mm2 aggregate missing-area, 82.520 percent score32 energy, and simultaneous 82.336 percent FP16 latency plus 38.110 percent FP16 area break-even thresholds, and fail-closes physical/activity-backed promotion.
 - `docs/proposals/prop_l2_decoder_attention_kv_physical_hbm_quality_backed_7b_llama7b_v1/analysis_report.md` (proposal_gate; `composition`, `scale_validation`): Records the conservative quality-backed HBM service frontier used as one baseline for the Llama7B recost.
 - `docs/proposals/prop_l2_decoder_attention_measured_compute_energy_closure_llama7b_v1/analysis_report.md` (proposal_analysis; `routed_ppa`, `composition`, `scale_validation`): Replaces the abstract compute density with measured dense-tile data in the Llama7B architecture ranking.

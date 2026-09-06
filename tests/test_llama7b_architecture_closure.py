@@ -121,15 +121,20 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
             self.assertNotIn("promoted", activity_summary)
 
         full = next(item for item in self.matrix["components"] if item["id"] == "full_llama7b_recost")
+        self.assertEqual(full["status"], "open")
+        self.assertEqual(full["confidence"], "low")
         self.assertIn("RMSNorm", full["summary"])
-        self.assertIn("not yet a full-model", full["summary"])
-        self.assertIn("two non-dominated", full["summary"])
-        self.assertIn("13.487--14.920 ms", full["summary"])
+        self.assertIn("retracted", full["summary"])
+        self.assertIn("43.515 ms", full["summary"])
+        self.assertIn("44.188--45.621 ms", full["summary"])
         self.assertIn("72.544 ms", full["summary"])
-        self.assertIn("82.520 percent", full["summary"])
-        self.assertIn("activity-closed energy ordering remains unproven", full["summary"])
+        self.assertIn("score32 membership is unproven", full["summary"])
         evidence_paths = {entry["path"] for entry in full["evidence"]}
         self.assertIn("npu/docs/generated/llama7b_physically_credible_pareto.json", evidence_paths)
+        self.assertIn(
+            "npu/docs/generated/llama7b_score32_cadence_frontier_consistency.json",
+            evidence_paths,
+        )
 
     def test_noc_and_sram_reflect_promoted_post_august_physical_anchors(self) -> None:
         noc = next(item for item in self.matrix["components"] if item["id"] == "noc")
