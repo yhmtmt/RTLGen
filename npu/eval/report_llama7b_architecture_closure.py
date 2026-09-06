@@ -25,6 +25,7 @@ REQUIRED_COMPONENTS = [
     "noc",
     "sram",
     "scheduler_cdc",
+    "mapper_workload_lowering",
     "external_memory_boundary",
     "full_llama7b_recost",
 ]

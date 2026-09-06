@@ -3,7 +3,7 @@
   "title": "Llama7B Architecture Closure Matrix",
   "model": "llama7b",
   "scope": "Decoder-attention architecture exploration with persistent closure tracking",
-  "as_of": "2026-09-05",
+  "as_of": "2026-09-06",
   "source_commit_floor": "09a9854c357a419a70bc04417509b451de235c2a",
   "generated_markdown": "npu/docs/generated/llama7b_architecture_closure.md",
   "component_order": [
@@ -17,6 +17,7 @@
     "noc",
     "sram",
     "scheduler_cdc",
+    "mapper_workload_lowering",
     "external_memory_boundary",
     "full_llama7b_recost"
   ],
@@ -62,6 +63,7 @@
       "Producer-service-reducer composition is only bounded by partial equivalence and cadence audits, not by a full end-to-end measured composed implementation.",
       "Two exact 64-macro RMSNorm controllers now bound normalization latency at 1800 and 1035 cycles per row, but matched routed PPA and workload-backed activity are still absent.",
       "NoC, SRAM, and scheduler evidence are still mixed between measured primitives and analytic composition, so the final Llama7B recost is not yet a fully embodied chip closure.",
+      "The selected Llama7B score32 hierarchy is not emitted by one canonical mapper-to-descriptor-to-RTL path; current attention schedules are composed from specialized analytic and RTL evidence.",
       "External DRAM controller and PHY remain an intentional abstract boundary, so full-system signoff is outside the current on-chip closure claim."
     ]
   },
@@ -932,6 +934,86 @@
         "The scheduler result is still entangled with unresolved NoC and external-memory service assumptions."
       ],
       "next_gate": "Promote one representative dual-clock composed scheduler path with explicit CDC buffering and consume it in the Llama7B frontier."
+    },
+    {
+      "id": "mapper_workload_lowering",
+      "label": "Mapper/Workload Lowering",
+      "status": "open",
+      "confidence": "low",
+      "summary": "The repository has an implemented descriptor mapper, capacity-aware buffer checks, MLP output-channel splitting, and a promoted narrow memory-aware softmax-tail policy. The selected Llama7B score32 attention hierarchy, however, is assembled by specialized performance/evidence scripts rather than emitted and replayed through one canonical mapper-to-descriptor-to-RTL flow, so mapper-induced scheduling and control overhead remain an explicit architecture ambiguity.",
+      "dimensions": {
+        "rtl": {
+          "status": "rtl_unmeasured",
+          "summary": "Generic mapper descriptors execute on the NPU shell, but no canonical descriptor stream embodies the selected score32 producer, SRAM service, exact four-group reduction, NoC transport, and RMSNorm sequence together."
+        },
+        "equivalence": {
+          "status": "open",
+          "summary": "There is no end-to-end proof that a mapper-emitted Llama7B attention descriptor stream matches the selected specialized performance model and composed RTL hierarchy."
+        },
+        "routed_ppa": {
+          "status": "open",
+          "summary": "Measured wrapper control exists elsewhere in the matrix, but mapper-selected buffering, synchronization, descriptor traffic, and final hierarchy overhead have not been routed as one representative implementation."
+        },
+        "activity": {
+          "status": "open",
+          "summary": "No workload trace from a canonical Llama7B mapper output drives activity power for the final composed hierarchy."
+        },
+        "composition": {
+          "status": "open",
+          "summary": "Memory, topology, and scheduler estimators constrain the architecture, but their selected policies are not yet unified into one legal mapper output consumed by the final recost."
+        },
+        "scale_validation": {
+          "status": "open",
+          "summary": "The promoted mapper optimization is narrow to an nm2 softmax-tail benchmark; Llama7B-scale attention mapping remains analytic and does not establish broad mapper optimality."
+        }
+      },
+      "evidence": [
+        {
+          "path": "npu/mapper/onnx_to_schedule.py",
+          "kind": "mapper_source",
+          "dimensions": [
+            "rtl",
+            "composition"
+          ],
+          "note": "Implements descriptor lowering, capacity checks, and bounded splitting, but does not emit the selected full score32 Llama7B hierarchy as one canonical schedule."
+        },
+        {
+          "path": "docs/proposals/prop_l2_mapper_memory_aware_split_v1/analysis_report.md",
+          "kind": "proposal_analysis",
+          "dimensions": [
+            "equivalence",
+            "composition",
+            "scale_validation"
+          ],
+          "note": "Promotes a bounded mapper policy on one nm2 softmax-tail benchmark while explicitly retaining broader mapper search as open."
+        },
+        {
+          "path": "docs/proposals/prop_l2_decoder_attention_kv_hbm_closed_onchip_schedule_v1/analysis_report.md",
+          "kind": "proposal_analysis",
+          "dimensions": [
+            "composition",
+            "scale_validation"
+          ],
+          "note": "Records a Llama7B on-chip schedule choice, but the proposal identifies it as an analytic service simulator with optimistic combinations still requiring RTL validation."
+        },
+        {
+          "path": "docs/proposals/prop_l2_decoder_attention_kv_subtile_pipeline_schedule_v1/analysis_report.md",
+          "kind": "proposal_analysis",
+          "dimensions": [
+            "routed_ppa",
+            "activity",
+            "composition",
+            "scale_validation"
+          ],
+          "note": "Shows that the selected 986-cycle attention schedule originated from an analytic dual-MAC/online-normalization point without RTL/PPA or numerical closure."
+        }
+      ],
+      "caveats": [
+        "Do not interpret a legal analytic schedule row as proof that the mapper can emit, synchronize, and execute the selected hierarchy.",
+        "The narrow softmax-tail mapper win demonstrates that mapper policy can materially rerank hardware, which increases rather than removes the need for a Llama7B-specific mapper closure.",
+        "Mapper closure must preserve the already-promoted score32 quality and exact four-group reduction semantics rather than substituting an easier approximate schedule."
+      ],
+      "next_gate": "Define a canonical Llama7B score32 mapper IR covering producer, selected SRAM hierarchy, exact five-phase NoC transport, four-group reduction, RMSNorm placement, and CDC events; emit a deterministic descriptor stream, prove mapper/performance/RTL event and tensor equivalence, measure its control/buffering PPA and activity, and consume those results in the final Pareto recost."
     },
     {
       "id": "external_memory_boundary",
