@@ -4,16 +4,21 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("ingress", [False, True])
+@pytest.mark.parametrize("ingress", [False, True, "kv"])
 def test_live_kq_concurrent_canonical_archive(ingress):
     root = Path(__file__).resolve().parents[3]
     directory = root / "docs/proposals/prop_l2_decoder_attention_score32_exact_kv_ingress_revision_llama7b_v1"
     filename = "canonical_live_key_ingress_concurrent_cluster_result.json" if ingress else "canonical_live_kq_concurrent_cluster_result.json"
+    if ingress == "kv":
+        filename = "canonical_live_kv_ingress_concurrent_cluster_result.json"
     report = json.loads((directory / filename).read_text())
     baseline = json.loads((directory / "canonical_concurrent_cluster_result.json").read_text())
     assert report["passed"] and report["live_kq_stage"]
-    assert len(report["source_hashes"]) == (41 if ingress else 38)
-    assert len(report["generated_hashes"]) == (17 if ingress else 15)
+    assert len(report["source_hashes"]) == (44 if ingress == "kv" else 41 if ingress else 38)
+    assert len(report["generated_hashes"]) == (19 if ingress == "kv" else 17 if ingress else 15)
+    if ingress == "kv":
+        assert report["live_value_ingress"]
+        assert "npu/sim/rtl/attention_score32_exact_kv_value_ingress.sv" in report["source_hashes"]
     if ingress:
         assert report["live_key_ingress"]
         assert "npu/sim/rtl/attention_kv_paired_head_schedule.sv" in report["source_hashes"]
@@ -31,6 +36,9 @@ def test_live_kq_concurrent_canonical_archive(ingress):
         start = 36214 if cluster["cluster"] == 0 else 36216
         start += 512 if ingress else 0
         stride = 36472 if ingress else 35960
+        if ingress == "kv":
+            start = 51224 if cluster["cluster"] == 0 else 51229
+            stride = 50184
         assert [g["first_output_cycle"] for g in cluster["groups"]] == [start + stride*i for i in range(4)]
         assert cluster["last_output_cycle"] == start + stride*3 + 127
         summary = cluster["summary"]

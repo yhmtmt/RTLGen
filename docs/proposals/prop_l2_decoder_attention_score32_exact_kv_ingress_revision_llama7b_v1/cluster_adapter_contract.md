@@ -338,6 +338,24 @@ run those same tensors through real refill/mesh, score production, full-model
 mapper lowering, or routed/activity evaluation.
 ## Concurrent canonical producers with live K/Q staging
 
+The latest `canonical_live_kv_ingress_concurrent_cluster_result.json` also
+connects the real V ingress adapter to the concurrent cluster's generated SRAM
+fill port. Both separate endpoint replays pass all 512 numerical rows, identical
+to the canonical reference and earlier sidecar replay. Every accepted V row and
+its buffer/stream/slot/slice coordinates are checked against canonical rows;
+each endpoint accepts 131,072 V flits, 65,536 V rows and 32 fill targets, with
+65,536 SRAM requests/responses, 32 command accepts/releases and zero errors.
+The runner verified 44 source hashes and 19 generated-input hashes at completion.
+
+The initial 200,000-cycle watchdog expired after three head groups. A bounded
+240,000-cycle rerun completed at cycles 201,903 (p54) and 201,908 (p53), with
+50,184 cycles between head-group output starts. These serialized testbench
+delivery cycles are not workload latency or PPA. K/V memory delivery and Q
+writes remain testbench-controlled; shared refill/mesh, all-16-endpoint canonical
+execution, mapper lowering, technology SRAM, CDC and activity-backed PPA remain
+open. Earlier sections below record the incremental evidence, not the latest
+composition boundary.
+
 The subsequent `canonical_live_key_ingress_concurrent_cluster_result.json`
 adds the real paired-head scheduler and ping-pong K transposer before the stage.
 Both endpoint replays pass all 512 canonical numerical rows, with 41 source
