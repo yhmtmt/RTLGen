@@ -56,6 +56,24 @@ class CanonicalAttentionFixture:
                                   token=tile * 1024 + c.token, dimension=c.dimension) & 255)
         return bytes(values)
 
+    def producer_value_slice(self, *, producers: int, producer: int, group: int,
+                             tile: int, block: int, stream: int, value_slice: int):
+        """Eight token rows by eight dimensions for one producer V response."""
+        if producers not in (53, 54):
+            raise ValueError("invalid producer family")
+        bounded(producer, producers, "producer")
+        bounded(group, 4, "query group")
+        bounded(tile, 128, "tile")
+        bounded(stream, 2, "stream")
+        bounded(value_slice, 16, "value slice")
+        counts = exact_local_cluster_gqa8_command_block_counts(producers=producers, group_index=group)
+        bounded(block, counts[producer], "producer block")
+        slot = exact_local_cluster_gqa8_slot_bases(producers=producers, group_index=group)[producer] + block
+        return tuple(tuple(self.kv(tensor="v", head=group,
+                                  token=tile * 1024 + stream * 512 + slot * 8 + row,
+                                  dimension=value_slice * 8 + lane)
+                           for lane in range(8)) for row in range(8))
+
     def producer_stream(self, *, producers: int, producer: int, group: int, tile: int):
         """Yield (16 Q lanes, 16 K lanes, block-last), in real stage order."""
         if producers not in (53, 54):

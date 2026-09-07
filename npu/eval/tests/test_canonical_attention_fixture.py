@@ -43,3 +43,28 @@ def test_invalid_coordinates_are_rejected():
         CanonicalAttentionFixture(layer=True)
     with pytest.raises(ValueError):
         CanonicalAttentionFixture().memory_flit(tile=0, address=1)
+
+
+@pytest.mark.parametrize("producers", [53, 54])
+@pytest.mark.parametrize("group", range(4))
+def test_producer_value_slices_match_canonical_memory(producers, group):
+    fixture = CanonicalAttentionFixture(layer=7)
+    bases = exact_local_cluster_gqa8_slot_bases(producers=producers, group_index=group)
+    rows_checked = 0
+    for producer, base in enumerate(bases):
+        end = bases[producer + 1] if producer + 1 < producers else 64
+        for block in range(end - base):
+            for stream in range(2):
+                for value_slice in range(16):
+                    rows = fixture.producer_value_slice(producers=producers, producer=producer,
+                        group=group, tile=2, block=block, stream=stream, value_slice=value_slice)
+                    for row, values in enumerate(rows):
+                        address = encode_kv_byte_address(tensor="v", kv_head=group,
+                            token=stream * 512 + (base + block) * 8 + row, dimension=value_slice * 8)
+                        flit = fixture.memory_flit(tile=2, address=address & ~31)
+                        assert bytes(v & 255 for v in values) == flit[address % 32:address % 32 + 8]
+                        rows_checked += 1
+        with pytest.raises(ValueError):
+            fixture.producer_value_slice(producers=producers, producer=producer, group=group,
+                tile=2, block=end - base, stream=0, value_slice=0)
+    assert rows_checked == 16384
