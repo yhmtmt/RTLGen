@@ -121,3 +121,15 @@ the destination ownership guard must be verified. A segment identifies the
 head/source partition, not a unique paired span; repeated segment values must
 not bypass the guard's terminal-packet completion rule. The scheduler's `done`
 continues to mean descriptor acceptance, not downstream numerical completion.
+
+The mesh wrapper now exposes `PAIRED_K=1` and propagates 22-bit descriptor counts
+through the scheduler, destination guard, packet submission telemetry, and all
+16 packetizer lanes. Widths are derived locally from the mode; the legacy
+default retains its original interface widths. Both modes elaborate without
+port-width mismatch warnings. The widened guard regression performs 66,003
+actual descriptor completions, crossing the old 16-bit boundary while
+alternating sources and reusing terminal tag 3. A next descriptor for the same
+destination remains blocked during delayed completion. This verifies the
+guard's ownership rule independently of the mesh. Paired payload delivery
+through the wrapper into the transpose buffer remains unverified, so the
+legacy default has not been switched and no composed PPA claim is made.

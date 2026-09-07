@@ -11,7 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 RTL = ROOT / "npu/sim/rtl/attention_kv_destination_descriptor_guard16.sv"
 
 
-def test_destination_guard_waits_for_terminal_packet_completion(tmp_path: Path) -> None:
+@pytest.mark.parametrize("width", [16, 22])
+def test_destination_guard_waits_for_terminal_packet_completion(tmp_path: Path, width: int) -> None:
     if shutil.which("iverilog") is None or shutil.which("vvp") is None:
         pytest.skip("iverilog and vvp are required")
     tb = tmp_path / "tb.sv"
@@ -37,11 +38,12 @@ module tb;
   wire [15:0] destination_locked;
   wire [15:0] descriptor_final_pending;
   wire [16*4-1:0] locked_descriptor_source;
-  wire [15:0] accepted_descriptor_count;
-  wire [15:0] completed_descriptor_count;
+  wire [TB_COUNT_BITS-1:0] accepted_descriptor_count;
+  wire [TB_COUNT_BITS-1:0] completed_descriptor_count;
   wire protocol_error;
+  integer span;
 
-  attention_kv_destination_descriptor_guard16 dut (.*);
+  attention_kv_destination_descriptor_guard16 #(.COUNT_WIDTH(TB_COUNT_BITS)) dut (.*);
   always #1 clk = ~clk;
 
   task accept_descriptor;
@@ -125,6 +127,26 @@ module tb;
     if (destination_locked != 0 || accepted_descriptor_count != 3 ||
         completed_descriptor_count != 3 || protocol_error) $finish(1);
 
+    // Paired spans reuse packet tags and alternate resident/HBM sources.
+    // Cross the old 16-bit boundary through real handshakes, not forced state.
+    for (span=0; span<EXTRA_SPANS; span=span+1) begin
+      accept_descriptor((span%2) ? 3 : 0, 5);
+      accept_final_packet((span%2) ? 3 : 0, 5, 8'h03);
+      descriptor_source = (span%2) ? 0 : 3;
+      descriptor_destination = 5;
+      descriptor_valid = 1;
+      repeat(3) begin
+        #0;
+        if(descriptor_ready || guarded_valid || !destination_locked[5]) $fatal(1,"early ownership transfer");
+        @(posedge clk); @(negedge clk);
+      end
+      descriptor_valid = 0;
+      complete_packet((span%2) ? 3 : 0, 5, 8'h03);
+      if(destination_locked[5] || protocol_error ||
+         accepted_descriptor_count != span+4 || completed_descriptor_count != span+4)
+        $fatal(1,"paired count or completion");
+    end
+
     accept_final_packet(7, 7, 8'h55);
     if (!protocol_error) $finish(1);
     descriptor_valid = 1;
@@ -138,7 +160,8 @@ module tb;
     $finish(0);
   end
 endmodule
-""",
+""".replace("TB_COUNT_BITS", str(width))
+        .replace("EXTRA_SPANS", "66000" if width == 22 else "0"),
         encoding="utf-8",
     )
     binary = tmp_path / "guard.vvp"
@@ -158,4 +181,5 @@ endmodule
         timeout=60,
     )
     assert completed.returncode == 0, completed.stdout + completed.stderr
-    assert "PASS accepted=3 completed=3" in completed.stdout
+    total = 66003 if width == 22 else 3
+    assert f"PASS accepted={total} completed={total}" in completed.stdout

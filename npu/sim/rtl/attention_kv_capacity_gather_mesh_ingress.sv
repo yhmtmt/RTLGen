@@ -2,7 +2,11 @@
 
 // Exact transient-capacity K/V gather path from static Llama7B descriptors to
 // resident-cache writes and canonical per-cluster ingress flits.
-module attention_kv_capacity_gather_mesh_ingress (
+module attention_kv_capacity_gather_mesh_ingress #(
+  parameter PAIRED_K = 0,
+  localparam COUNT_WIDTH = PAIRED_K ? 22 : 16,
+  localparam LANE_COUNT_WIDTH = PAIRED_K ? 22 : 14
+) (
   input wire clk,
   input wire rst_n,
   input wire enable,
@@ -33,13 +37,13 @@ module attention_kv_capacity_gather_mesh_ingress (
   output wire refill_complete,
   output wire consume_complete,
   output wire [5:0] completed_layer_count,
-  output wire [15:0] generated_descriptor_count,
-  output wire [16*14-1:0] lane_accepted_descriptor_count,
+  output wire [COUNT_WIDTH-1:0] generated_descriptor_count,
+  output wire [16*LANE_COUNT_WIDTH-1:0] lane_accepted_descriptor_count,
   output wire [16*25-1:0] lane_generated_packet_count,
   output wire [24:0] accepted_packet_command_count,
-  output wire [15:0] guarded_descriptor_count,
-  output wire [15:0] submitted_descriptor_count,
-  output wire [15:0] completed_descriptor_count,
+  output wire [COUNT_WIDTH-1:0] guarded_descriptor_count,
+  output wire [COUNT_WIDTH-1:0] submitted_descriptor_count,
+  output wire [COUNT_WIDTH-1:0] completed_descriptor_count,
   output wire schedule_packet_submitted,
   output wire [15:0] destination_descriptor_locked,
   output wire [15:0] descriptor_final_pending,
@@ -131,7 +135,7 @@ module attention_kv_capacity_gather_mesh_ingress (
     end
   end
 
-  attention_kv_capacity_gather_scheduler u_scheduler (
+  attention_kv_capacity_gather_scheduler #(.PAIRED_K(PAIRED_K)) u_scheduler (
     .clk(clk), .rst_n(rst_n), .enable(enable),
     .desc_valid(scheduler_desc_valid), .desc_ready(scheduler_desc_ready),
     .desc_layer(scheduler_desc_layer), .desc_tile(scheduler_desc_tile),
@@ -167,7 +171,7 @@ module attention_kv_capacity_gather_mesh_ingress (
     .protocol_error(barrier_protocol_error)
   );
 
-  attention_kv_gather_span_dispatch16 u_dispatch (
+  attention_kv_gather_span_dispatch16 #(.COUNT_WIDTH(LANE_COUNT_WIDTH)) u_dispatch (
     .clk(clk), .rst_n(rst_n),
     .desc_valid(guarded_desc_valid), .desc_ready(guarded_desc_ready),
     .desc_layer(scheduler_desc_layer), .desc_tile(scheduler_desc_tile),
@@ -202,7 +206,7 @@ module attention_kv_capacity_gather_mesh_ingress (
     .packetizer_protocol_error(packetizer_protocol_error)
   );
 
-  attention_kv_destination_descriptor_guard16 u_descriptor_guard (
+  attention_kv_destination_descriptor_guard16 #(.COUNT_WIDTH(COUNT_WIDTH)) u_descriptor_guard (
     .clk(clk), .rst_n(rst_n),
     .descriptor_valid(released_desc_valid), .descriptor_ready(released_desc_ready),
     .descriptor_source(scheduler_desc_source_endpoint),
@@ -224,7 +228,7 @@ module attention_kv_capacity_gather_mesh_ingress (
     .protocol_error(descriptor_guard_protocol_error)
   );
 
-  attention_kv_gather_packet_mesh4x4 u_packet_mesh (
+  attention_kv_gather_packet_mesh4x4 #(.COUNT_WIDTH(COUNT_WIDTH)) u_packet_mesh (
     .clk(clk), .rst_n(rst_n), .cmd_valid(cmd_valid), .cmd_ready(cmd_ready),
     .cmd_layer(cmd_layer), .cmd_tile(cmd_tile),
     .cmd_operation_consume(cmd_operation_consume), .cmd_source_hbm(cmd_source_hbm),

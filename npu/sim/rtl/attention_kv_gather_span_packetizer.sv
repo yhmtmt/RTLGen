@@ -3,7 +3,7 @@
 // Expands one exact K/V contiguous gather span into 256-byte, eight-flit
 // packet commands. A downstream descriptor-pair scheduler must install the
 // receive descriptor before releasing the corresponding transmit descriptor.
-module attention_kv_gather_span_packetizer (
+module attention_kv_gather_span_packetizer #(parameter COUNT_WIDTH = 14) (
   input wire clk,
   input wire rst_n,
 
@@ -44,7 +44,7 @@ module attention_kv_gather_span_packetizer (
   output wire cmd_descriptor_last,
   output wire cmd_schedule_last,
 
-  output reg [13:0] accepted_descriptor_count,
+  output reg [COUNT_WIDTH-1:0] accepted_descriptor_count,
   output reg [24:0] generated_packet_count,
   output reg protocol_error
 );
