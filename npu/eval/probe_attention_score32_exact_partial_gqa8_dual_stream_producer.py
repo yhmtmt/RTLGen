@@ -253,7 +253,9 @@ def _raw_scores(block: list[tuple[list[int], list[int]]], head_lane: int) -> lis
     ]
 
 
-def _expected(workload: dict[str, object]) -> list[dict[str, object]]:
+def _expected(workload: dict[str, object], input_provider=None) -> list[dict[str, object]]:
+    block_beats = input_provider.block_beats if input_provider is not None else _block_beats
+    values_for = input_provider.values_for if input_provider is not None else _values_for
     heads = int(workload["heads"])
     command_count = int(workload["command_count"])
     block_counts_per_stream = tuple(int(value) for value in workload["block_counts_per_stream"])
@@ -268,7 +270,7 @@ def _expected(workload: dict[str, object]) -> list[dict[str, object]]:
         for head_lane in range(8):
             stream_partials = []
             for stream in range(2):
-                blocks = _block_beats(
+                blocks = block_beats(
                     stream,
                     command_index,
                     block_count_per_stream=block_count_per_stream,
@@ -289,7 +291,7 @@ def _expected(workload: dict[str, object]) -> list[dict[str, object]]:
                         command_id=int(command["command_id"]),
                         head_id=int(command["head_base"]) + head_lane,
                         score_rows=score_rows,
-                        value_blocks=_values_for(
+                        value_blocks=values_for(
                             stream,
                             command_index,
                             block_count_per_stream=block_count_per_stream,
@@ -319,7 +321,10 @@ def _testbench(
     workload: dict[str, object],
     output_ready_pattern: tuple[bool, ...],
     stress_interfaces: bool,
+    input_provider=None,
 ) -> str:
+    block_beats = input_provider.block_beats if input_provider is not None else _block_beats
+    values_for = input_provider.values_for if input_provider is not None else _values_for
     heads = int(workload["heads"])
     command_count = int(workload["command_count"])
     block_counts_per_stream = tuple(int(value) for value in workload["block_counts_per_stream"])
@@ -336,8 +341,8 @@ def _testbench(
         block_count_per_stream = block_counts_per_stream[command_index]
         beat_offsets.append(len(beats0))
         block_offsets.append(total_blocks)
-        blocks0 = _block_beats(0, command_index, block_count_per_stream=block_count_per_stream, head_dim=head_dim)
-        blocks1 = _block_beats(1, command_index, block_count_per_stream=block_count_per_stream, head_dim=head_dim)
+        blocks0 = block_beats(0, command_index, block_count_per_stream=block_count_per_stream, head_dim=head_dim)
+        blocks1 = block_beats(1, command_index, block_count_per_stream=block_count_per_stream, head_dim=head_dim)
         for block in range(block_count_per_stream):
             for beat in range(head_dim):
                 queries0, keys0 = blocks0[block][beat]
@@ -367,7 +372,7 @@ def _testbench(
     for stream in range(2):
         for command_index in range(len(commands)):
             block_count_per_stream = block_counts_per_stream[command_index]
-            values = _values_for(stream, command_index, block_count_per_stream=block_count_per_stream)
+            values = values_for(stream, command_index, block_count_per_stream=block_count_per_stream)
             for block in range(block_count_per_stream):
                 for value_slice in range(16):
                     flat = [lane for row in values[block][value_slice] for lane in row]
@@ -664,6 +669,7 @@ def _run_case(
     head_bases: tuple[int, ...] | None,
     output_ready_pattern: tuple[bool, ...],
     stress_interfaces: bool,
+    input_provider=None,
 ) -> JsonDict:
     workload = _resolve_workload(
         config,
@@ -674,7 +680,9 @@ def _run_case(
         head_dim=head_dim,
         head_bases=head_bases,
     )
-    expected = _expected(workload)
+    if input_provider is not None:
+        input_provider.validate_workload(workload)
+    expected = _expected(workload, input_provider)
     resolved_heads = int(workload["heads"])
     with tempfile.TemporaryDirectory(prefix=f"score32_exact_partial_dual_stream_h{heads}_") as temp_dir_name:
         temp_dir = Path(temp_dir_name)
@@ -693,15 +701,16 @@ def _run_case(
         generate_tree(run_config, temp_dir / "rtl")
         tb_path = temp_dir / "tb.sv"
         fakeram_path = temp_dir / "fakeram45_2048x39.sv"
-        tb_path.write_text(
-            _testbench(
+        testbench = _testbench(
                 top_name=str(run_config["top_name"]),
                 workload=workload,
                 output_ready_pattern=output_ready_pattern,
                 stress_interfaces=stress_interfaces,
-            ),
-            encoding="utf-8",
-        )
+                input_provider=input_provider,
+            )
+        if input_provider is not None and hasattr(input_provider, "transform_testbench"):
+            testbench = input_provider.transform_testbench(testbench)
+        tb_path.write_text(testbench, encoding="utf-8")
         fakeram_path.write_text(_FAKERAM_MODEL, encoding="utf-8")
         simv = temp_dir / "simv"
         compiled = subprocess.run(
@@ -715,6 +724,8 @@ def _run_case(
                 str(temp_dir / "rtl" / "top.v"),
                 str(fakeram_path),
                 str(tb_path),
+                *(input_provider.rtl_sources() if input_provider is not None
+                  and hasattr(input_provider, "rtl_sources") else []),
             ],
             capture_output=True,
             text=True,
@@ -817,6 +828,7 @@ def build_report(
     head_bases: tuple[int, ...] | None = None,
     output_ready_pattern: tuple[bool, ...] | None = None,
     stress_interfaces: bool | None = None,
+    input_provider=None,
 ) -> JsonDict:
     base_config = json.loads(json.dumps(config or _default_config()))
     configured_mode = base_config.get("probe_defaults", {}).get("interface_mode", "stress")
@@ -836,8 +848,11 @@ def build_report(
         head_bases=head_bases,
         output_ready_pattern=ready_pattern,
         stress_interfaces=use_stress,
+        input_provider=input_provider,
     )
-    reference_cycles = base_config.get("probe_defaults", {}).get("llama_wave_reference_cycles")
+    # Historical stress-fixture timing is not a canonical workload baseline.
+    reference_cycles = (base_config.get("probe_defaults", {}).get("llama_wave_reference_cycles")
+                        if input_provider is None else None)
     reference_delta = None
     if isinstance(reference_cycles, int):
         reference_delta = int(result["summary"]["drain_cycles"]) - reference_cycles
@@ -868,6 +883,7 @@ def build_report(
         "merge_complete_count": int(result["summary"]["merge_complete_count"]),
         "result_stall_cycles": int(result["summary"]["result_stall_cycles"]),
         "interface_mode": result["interface_mode"],
+        "input_fixture": input_provider.identity() if input_provider is not None else {"kind": "placement_dependent_arithmetic_stress"},
         "llama_wave_reference_cycles": reference_cycles,
         "llama_wave_drain_delta_vs_986": reference_delta,
         "stream_protocol_error": [

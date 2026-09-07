@@ -1,7 +1,32 @@
 # Canonical ingress to cluster adapter: implementation contract
 
-This contract records the next integration boundary from the existing RTL ports.
-It is not evidence of an implemented adapter or permission to recost the frontier.
+This contract records the integration boundary from the existing RTL ports and
+the incremental evidence below. Historical gap descriptions are followed by
+their implemented checks; they must not be read as the current closure status.
+The bounded K path is implemented and tested as described below. V integration,
+live score production, full-model execution, and physical recost remain open.
+
+## Canonical full-transport gate
+
+`test_canonical_refill_mesh_and_kq_stage` now drives the real layer-0 refill,
+resident/HBM gather, paired mesh, transpose, and wide K/Q stage with canonical
+tensor sidecars for tiles 0, 1, and 2, head group zero. Its independent producer
+oracle uses canonical tensor coordinates and the rotated slot assignment;
+checks compare all accepted Q/K/last words under producer backpressure.
+The p53 and p54 full simulations passed in 683.60 and 694.31 seconds of host
+runtime respectively, each checking
+69,632 refill writes, 394 completed descriptors, 12,288 ingress and transpose
+beats, and 24,576 producer-facing K/Q/last beats.
+Host runtime is not hardware latency or permission to recost PPA.
+The short canonical query-initialization checks pass for both families (two
+tests, 31.07 seconds), and the legacy counterparts pass (two tests, 10.54
+seconds). CI includes both short gates, not the long transport simulations.
+
+This gate uses deterministic int8 tensors, not pretrained model inputs. Its
+consumer is the K/Q stage interface, not the arithmetic score producer. Even a
+passing result would not establish V delivery, nonzero-layer mesh rotation,
+live numerical reduction, full-model cadence, activity-backed power, or a new
+physically credible Pareto point.
 
 Source: `attention_kv_capacity_gather_mesh_ingress` emits per-endpoint valid/ready,
 layer, tile, 20-bit canonical tile-byte address, and 256-bit data.
@@ -161,6 +186,115 @@ mesh-to-stage-to-score-producer execution or full-model equivalence.
 
 ## Arithmetic stress fixture versus resident queries
 
+### Direct canonical arithmetic evidence
+
+`canonical_concurrent_cluster_result.json` now records passing concurrent
+cluster replays for endpoint 0 (54 producers) and endpoint 8 (53 producers).
+Each executes eight temporal waves across four head groups, checking all 512
+numerical output rows against the canonical reference. Each also completes
+32 SRAM commands/releases, 65,536 fills, and 65,536 requests/responses with
+zero reported errors. The runner exited successfully after validating 36
+project/config hashes and 15 generated RTL/testbench/sidecar hashes.
+
+First output cycles are 17,432 / 33,824 / 50,216 / 66,608 for p54 and
+17,437 / 33,829 / 50,221 / 66,613 for p53; final rows are at 66,735 and
+66,740. This reproduces the earlier stress-fixture cadence for these canonical
+inputs, not a reduced workload latency. Both runs use direct canonical K/Q and
+SRAM-fill sidecars with an always-ready cluster output. They do not include
+the live ingress path or shared mesh, test all sixteen endpoint tensor sets,
+or establish technology SRAM, clock-domain composition, power, or PPA closure.
+
+`canonical_composed_numerical_result.json` retains the eight composed reports
+from the full 19-test regression (201.89 seconds). For each selected producer,
+the stage-only, scheduled-transpose, V-ingress-array, and generated-SRAM modes
+all have the same numerical digest as the direct canonical producer reference.
+`test_canonical_composed_archive.py` checks this cross-composition equality and
+the explicit scope limits. Source `d936a94b` contains the executed fixture
+implementation. The drain-cycle observations belong to serialized diagnostic
+fixtures and are not full-model performance estimates.
+
+The `sram` numerical-fixture mode now connects V ingress to the generated
+banked cluster-SRAM service and uses that service's ready/valid responses at
+the selected numerical producer. Both families pass (64.96 seconds total),
+with 8,192 accepted service fill rows, nonzero balanced request/response counts,
+no service protocol error, and 512 exact numerical rows per case. SRAM,
+stage, and producer command admission are coordinated, and completed commands
+release the SRAM buffer before the next head is filled. The retained
+testbench V array is only a write-coverage monitor in this mode; it no longer
+drives producer responses.
+
+This verifies the generated service's functional path with one active
+producer (two request lanes), not simultaneous-producer bank contention or
+mesh-fed source timing. Its inferred arrays remain unclosed against technology
+SRAM macros. No physical SRAM, routed PPA, or activity-power claim follows.
+
+The numerical fixture's `kv` mode now also fills its response store from the
+real V-ingress adapter. Both p53 and p54 cases pass (52.44 seconds total),
+checking four complete V heads: 16,384 accepted V flits and 8,192 transposed
+rows per case, alongside the scheduled K path and 512 numerical result rows.
+Preloaded V values are removed, response rows start unknown, duplicate writes
+are rejected, and every producer read must follow an accepted ingress fill.
+V row acceptance is stalled independently. This verifies selected-producer
+V coordinate mapping and numerical use of the ingressed values.
+
+The V response store is still a testbench array, not the generated cluster
+SRAM service. Only selected-producer rows are retained there; all ingress rows
+are counted, while numerical checks cover the selected producer's rows.
+Full physical SRAM/banking arbitration, mesh source service, simultaneous
+producers, and activity-backed PPA therefore remain unverified.
+
+The composed test now additionally uses `attention_kv_paired_head_schedule`
+to drive canonical flits through the actual paired transposer, wide K/Q stage,
+and selected numerical producer. Both families pass, alongside the two
+stage-only cases (four tests, 50.69 seconds). Each scheduler-driven run checks
+512 accepted spans, 16,384 ingress flits and transpose beats, and 512 exact
+numerical rows over four groups. All stage banks receive canonical K data,
+although only one producer's arithmetic is instantiated. Producer backpressure
+and stalled-beat stability remain required. The earlier hand-ordered
+transpose variant passed before replacement; the current test exercises RTL
+delivery-order control.
+
+Canonical bytes still come from a zero-latency testbench array. The scheduler's
+resident-prefix classification is not connected to resident/HBM service in
+this fixture. V is also testbench-served. This does not establish source
+service, descriptor ownership through the mesh, simultaneous producers,
+cluster cadence, or routed/activity-backed PPA.
+
+The next bounded interface gate now also passes:
+`test_live_canonical_kq_stage_to_numerical_producer` connects the real wide
+K/Q stage to p53 producer 11 and p54 producer 10, each across all four groups.
+Both pass (19.94 seconds total), comparing 1,024 numerical output rows and
+every accepted K/Q/last beat. The fixture requires actual producer backpressure
+and asserts valid/data stability through every stall. Commands are accepted by
+the stage and producer together, and the next head waits for numerical command
+completion. Ten direct canonical cases and the legacy small arithmetic probe
+also pass after the shared probe change (11 tests, 30.32 seconds).
+
+This composition loads stage query/key write ports directly. Unselected
+producer keys are zero-filled and their ready signals tied high; V responses
+still come from the canonical testbench oracle. It does not connect the mesh,
+transpose, or V ingress, run all producers simultaneously, or measure cluster
+cadence. Those limits are explicit in its `input_fixture` report metadata.
+
+`canonical_numerical_producer_result.json` archives ten direct-producer RTL
+comparisons at source `f63d3796`: p53 producers 0, 11, 22, 33, 52 and p54
+producers 0, 10, 20, 30, 53. Each executes all four groups at 128 dimensions
+using layer-7, tile-2 canonical Q/K/V tensors and the mapped one/two-block
+assignment. All 5,120 output rows match the numerical reference, including
+max, exponential sum, numerator slices, and identifiers. The final suite
+passes 11 tests in 28.62 seconds; two legacy arithmetic regressions also passed
+in the preceding combined run.
+
+These are standalone producer runs with testbench V responses, not live
+mesh-to-stage-to-producer or V-ingress execution. The inherited arithmetic
+probe's requantization command schedule is retained; it is not a calibrated
+model workload. Its 1,950–2,228-cycle drain counts are fixture-specific and
+must not replace full-cluster or model latency. Historical 986-cycle comparison
+fields are explicitly null for canonical inputs. The next composed numerical
+gate must preserve real K/Q ready propagation, command ownership and V-response
+coordinates, then compare the resulting producer/reduction output to these
+same canonical tensors.
+
 The existing exact-cluster `_stream_block_beats` oracle in
 `probe_attention_score32_exact_local16_global_tree_gqa8.py` deliberately varies
 Q with cluster, producer, wave, stream, and block index. Five scope-regression
@@ -191,3 +325,61 @@ over every emitted beat, K memory/producer correspondence at four dimension
 boundaries for every block/lane, and unchanged cached K/V across decode-token
 changes. This source is not yet wired into the full collected numerical RTL
 replay; it establishes a consistent input contract for that next integration.
+
+The canonical source now drives the paired-sequencer/transpose/wide-K/Q RTL
+test for all four head groups and both producer families. Each case loads
+canonical K memory flits and one resident Q array, then checks every accepted
+producer-facing K/Q/last beat against sidecars generated independently by
+`CanonicalAttentionFixture.producer_stream`. All 24 cases pass (16 prior
+pattern cases plus eight canonical cases); the canonical cases check 65,536
+producer beats in total under independent producer stalls. This verifies the
+canonical tensor-to-local-K/Q interface at tile 2, layer 7. It does not yet
+run those same tensors through real refill/mesh, score production, full-model
+mapper lowering, or routed/activity evaluation.
+## Concurrent canonical producers with live K/Q staging
+
+The latest `canonical_live_kv_ingress_concurrent_cluster_result.json` also
+connects the real V ingress adapter to the concurrent cluster's generated SRAM
+fill port. Both separate endpoint replays pass all 512 numerical rows, identical
+to the canonical reference and earlier sidecar replay. Every accepted V row and
+its buffer/stream/slot/slice coordinates are checked against canonical rows;
+each endpoint accepts 131,072 V flits, 65,536 V rows and 32 fill targets, with
+65,536 SRAM requests/responses, 32 command accepts/releases and zero errors.
+The runner verified 44 source hashes and 19 generated-input hashes at completion.
+
+The initial 200,000-cycle watchdog expired after three head groups. A bounded
+240,000-cycle rerun completed at cycles 201,903 (p54) and 201,908 (p53), with
+50,184 cycles between head-group output starts. These serialized testbench
+delivery cycles are not workload latency or PPA. K/V memory delivery and Q
+writes remain testbench-controlled; shared refill/mesh, all-16-endpoint canonical
+execution, mapper lowering, technology SRAM, CDC and activity-backed PPA remain
+open. Earlier sections below record the incremental evidence, not the latest
+composition boundary.
+
+The subsequent `canonical_live_key_ingress_concurrent_cluster_result.json`
+adds the real paired-head scheduler and ping-pong K transposer before the stage.
+Both endpoint replays pass all 512 canonical numerical rows, with 41 source
+and 17 generated-input hashes checked after execution. The testbench requires
+4,096 accepted spans and 131,072 accepted input flits and transpose outputs per
+endpoint. Last-output cycles are 146,269 (p54) and 146,271 (p53), under serialized
+testbench memory delivery; these are diagnostic cycles, not workload latency.
+K memory remains a testbench array and Q writes/V SRAM fills remain sidecars.
+This closes local K ingress-to-all-producer numerical composition, not live
+refill/shared mesh, V ingress, all-16-endpoint execution, or physical PPA.
+
+`canonical_live_kq_concurrent_cluster_result.json` retains the successful
+`run_canonical_cluster.py --live-kq-stage` replay of endpoints 0 (54 producers)
+and 8 (53 producers), separately. Each uses the real wide K/Q stage connected
+to every concurrent numerical producer across four head groups and eight waves.
+All 512 output rows per endpoint equal both the canonical reference and the
+prior direct-sidecar cluster result. Accepted stage beats and stalled-beat
+stability are checked in RTL; nonzero backpressure is required. The runner
+verified 38 source and 15 generated-input hashes after both runs.
+
+Each endpoint accepted 65,536 SRAM fill rows, requests and responses, with
+32 command accepts/releases and zero reported errors. Serialized stage filling
+gives last-output cycles 144,221 and 144,223 respectively; these diagnostic
+cycles are not a workload recost or a performance improvement. K/Q stage writes
+and V SRAM fills still originate from testbench sidecars, not live transpose,
+V ingress or shared mesh. Technology SRAM, all-16-endpoint canonical numerical
+composition, mapper execution, CDC and activity-backed PPA remain unclosed.

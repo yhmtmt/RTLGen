@@ -1,0 +1,1506 @@
+{
+  "source_commit": "f63d3796",
+  "scope": "Direct canonical tensor numerical producer probe; not live ingress, full cluster, model quality, or PPA evidence.",
+  "reports": [
+    {
+      "decision": "score32_exact_partial_dual_stream_gqa8_pass",
+      "passed": true,
+      "top_name": "attention_score32_exact_partial_gqa8_dual_stream_producer_b8",
+      "heads": 32,
+      "commands": 4,
+      "blocks_per_stream": 2,
+      "block_counts_per_stream": [
+        2,
+        1,
+        1,
+        1
+      ],
+      "head_dim": 128,
+      "head_bases": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "outputs": 512,
+      "expected_outputs": 512,
+      "command_accept_cycles": [
+        {
+          "index": 0,
+          "command_id": 29184,
+          "head_base": 0,
+          "cycle": 0
+        },
+        {
+          "index": 1,
+          "command_id": 29185,
+          "head_base": 8,
+          "cycle": 767
+        },
+        {
+          "index": 2,
+          "command_id": 29186,
+          "head_base": 16,
+          "cycle": 1252
+        },
+        {
+          "index": 3,
+          "command_id": 29187,
+          "head_base": 24,
+          "cycle": 1738
+        }
+      ],
+      "integrated_drain_cycles": 2226,
+      "command_accept_count": 4,
+      "command_complete_count": 4,
+      "stream_command_accept_count": [
+        4,
+        4
+      ],
+      "stream_complete_count": [
+        4,
+        4
+      ],
+      "merge_complete_count": 512,
+      "result_stall_cycles": 255,
+      "interface_mode": "stress",
+      "input_fixture": {
+        "kind": "canonical_tensor_direct_producer",
+        "producers": 53,
+        "producer": 0,
+        "tile": 2,
+        "layer": 7,
+        "seed": 29,
+        "decode_token": 131072,
+        "live_ingress": false,
+        "model_quality": false
+      },
+      "llama_wave_reference_cycles": null,
+      "llama_wave_drain_delta_vs_986": null,
+      "stream_protocol_error": [
+        false,
+        false
+      ],
+      "merge_protocol_error": false,
+      "protocol_error": false,
+      "service_model": {
+        "streams": 2,
+        "query_heads_per_stream": 8,
+        "query_head_groups": 4,
+        "token_lanes_per_head": 8,
+        "structural_score_macs_per_cycle": 128,
+        "command_broadcast_mode": "same_head_base_broadcast_to_both_stream_groups",
+        "head_mapping_contract": "explicit_head_base_plus_lane_no_tile_or_wave_inference",
+        "producer_input_contract": "packed_dual_stream_query_key_atomic_ready_valid",
+        "value_memory_contract": "per_stream_gqa_coalesced_value_reads",
+        "output_schedule_contract": "serialized_head_then_slice_exact_partial_stream",
+        "producer_partial_protocol": {
+          "command_id_bits": 16,
+          "head_id_bits": 5,
+          "global_max_bits": 32,
+          "exp_sum_bits": 33,
+          "slice_index_bits": 4,
+          "partial_payload_bits_per_beat": 328,
+          "partial_link_bits_per_beat": 419
+        },
+        "producer_block_workload_assumptions": {
+          "command_block_count_range": [
+            1,
+            8
+          ],
+          "probe_command_count": 4,
+          "per_wave_local_block_ceiling_per_stream": 2,
+          "persistent_local_reducer_waves": 8,
+          "probe_blocks_per_stream": 2,
+          "probe_block_counts_per_stream": [
+            2,
+            1,
+            1,
+            1
+          ],
+          "probe_blocks_per_stream_uniform": false,
+          "probe_head_dim": 128,
+          "probe_head_bases": [
+            0,
+            8,
+            16,
+            24
+          ],
+          "probe_total_heads": 32,
+          "probe_token_streams": 2,
+          "multiple_head_groups_run_in_order": true,
+          "head_base_alignment_bits": 3,
+          "global_tile_tokens": 1024,
+          "global_tile_token_blocks": 128,
+          "per_datapath_group_commands_per_wave": 4,
+          "worst_loaded_total_blocks_per_stream_per_datapath_per_wave": 5,
+          "worst_loaded_two_block_commands_per_datapath_per_wave": 1
+        },
+        "comparison_baseline_contract": "python_structured_exact_partial_stream_reference",
+        "comparison_cycle_origin": "cycle0_on_atomic_dual_stream_input_issue",
+        "diagnostic_only_baseline": "none",
+        "llama_wave_functional_service_reference": null,
+        "remaining_abstractions": [
+          "53or54_way_global_cluster_aggregation_open",
+          "8_wave_persistent_state_open",
+          "noc_sram_ppa_open"
+        ]
+      },
+      "observed_rows_sha256": "61f2df54c82850ecbc5fc9679e1d4427fe0b2ec53213a95e7ccc284e6dce9775",
+      "observed_rows_count": 512,
+      "expected_rows_sha256": "61f2df54c82850ecbc5fc9679e1d4427fe0b2ec53213a95e7ccc284e6dce9775",
+      "expected_rows_count": 512,
+      "equivalence_evidence_policy": "structured_compare_then_commit_counts_and_sha256"
+    },
+    {
+      "decision": "score32_exact_partial_dual_stream_gqa8_pass",
+      "passed": true,
+      "top_name": "attention_score32_exact_partial_gqa8_dual_stream_producer_b8",
+      "heads": 32,
+      "commands": 4,
+      "blocks_per_stream": 2,
+      "block_counts_per_stream": [
+        1,
+        2,
+        1,
+        1
+      ],
+      "head_dim": 128,
+      "head_bases": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "outputs": 512,
+      "expected_outputs": 512,
+      "command_accept_cycles": [
+        {
+          "index": 0,
+          "command_id": 29184,
+          "head_base": 0,
+          "cycle": 0
+        },
+        {
+          "index": 1,
+          "command_id": 29185,
+          "head_base": 8,
+          "cycle": 487
+        },
+        {
+          "index": 2,
+          "command_id": 29186,
+          "head_base": 16,
+          "cycle": 1252
+        },
+        {
+          "index": 3,
+          "command_id": 29187,
+          "head_base": 24,
+          "cycle": 1738
+        }
+      ],
+      "integrated_drain_cycles": 2226,
+      "command_accept_count": 4,
+      "command_complete_count": 4,
+      "stream_command_accept_count": [
+        4,
+        4
+      ],
+      "stream_complete_count": [
+        4,
+        4
+      ],
+      "merge_complete_count": 512,
+      "result_stall_cycles": 255,
+      "interface_mode": "stress",
+      "input_fixture": {
+        "kind": "canonical_tensor_direct_producer",
+        "producers": 53,
+        "producer": 11,
+        "tile": 2,
+        "layer": 7,
+        "seed": 29,
+        "decode_token": 131072,
+        "live_ingress": false,
+        "model_quality": false
+      },
+      "llama_wave_reference_cycles": null,
+      "llama_wave_drain_delta_vs_986": null,
+      "stream_protocol_error": [
+        false,
+        false
+      ],
+      "merge_protocol_error": false,
+      "protocol_error": false,
+      "service_model": {
+        "streams": 2,
+        "query_heads_per_stream": 8,
+        "query_head_groups": 4,
+        "token_lanes_per_head": 8,
+        "structural_score_macs_per_cycle": 128,
+        "command_broadcast_mode": "same_head_base_broadcast_to_both_stream_groups",
+        "head_mapping_contract": "explicit_head_base_plus_lane_no_tile_or_wave_inference",
+        "producer_input_contract": "packed_dual_stream_query_key_atomic_ready_valid",
+        "value_memory_contract": "per_stream_gqa_coalesced_value_reads",
+        "output_schedule_contract": "serialized_head_then_slice_exact_partial_stream",
+        "producer_partial_protocol": {
+          "command_id_bits": 16,
+          "head_id_bits": 5,
+          "global_max_bits": 32,
+          "exp_sum_bits": 33,
+          "slice_index_bits": 4,
+          "partial_payload_bits_per_beat": 328,
+          "partial_link_bits_per_beat": 419
+        },
+        "producer_block_workload_assumptions": {
+          "command_block_count_range": [
+            1,
+            8
+          ],
+          "probe_command_count": 4,
+          "per_wave_local_block_ceiling_per_stream": 2,
+          "persistent_local_reducer_waves": 8,
+          "probe_blocks_per_stream": 2,
+          "probe_block_counts_per_stream": [
+            1,
+            2,
+            1,
+            1
+          ],
+          "probe_blocks_per_stream_uniform": false,
+          "probe_head_dim": 128,
+          "probe_head_bases": [
+            0,
+            8,
+            16,
+            24
+          ],
+          "probe_total_heads": 32,
+          "probe_token_streams": 2,
+          "multiple_head_groups_run_in_order": true,
+          "head_base_alignment_bits": 3,
+          "global_tile_tokens": 1024,
+          "global_tile_token_blocks": 128,
+          "per_datapath_group_commands_per_wave": 4,
+          "worst_loaded_total_blocks_per_stream_per_datapath_per_wave": 5,
+          "worst_loaded_two_block_commands_per_datapath_per_wave": 1
+        },
+        "comparison_baseline_contract": "python_structured_exact_partial_stream_reference",
+        "comparison_cycle_origin": "cycle0_on_atomic_dual_stream_input_issue",
+        "diagnostic_only_baseline": "none",
+        "llama_wave_functional_service_reference": null,
+        "remaining_abstractions": [
+          "53or54_way_global_cluster_aggregation_open",
+          "8_wave_persistent_state_open",
+          "noc_sram_ppa_open"
+        ]
+      },
+      "observed_rows_sha256": "c54f35da2caf0d873dec59e1f1b7cd306dccbd81bc08cfc3960a18f104d47797",
+      "observed_rows_count": 512,
+      "expected_rows_sha256": "c54f35da2caf0d873dec59e1f1b7cd306dccbd81bc08cfc3960a18f104d47797",
+      "expected_rows_count": 512,
+      "equivalence_evidence_policy": "structured_compare_then_commit_counts_and_sha256"
+    },
+    {
+      "decision": "score32_exact_partial_dual_stream_gqa8_pass",
+      "passed": true,
+      "top_name": "attention_score32_exact_partial_gqa8_dual_stream_producer_b8",
+      "heads": 32,
+      "commands": 4,
+      "blocks_per_stream": 2,
+      "block_counts_per_stream": [
+        1,
+        1,
+        2,
+        1
+      ],
+      "head_dim": 128,
+      "head_bases": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "outputs": 512,
+      "expected_outputs": 512,
+      "command_accept_cycles": [
+        {
+          "index": 0,
+          "command_id": 29184,
+          "head_base": 0,
+          "cycle": 0
+        },
+        {
+          "index": 1,
+          "command_id": 29185,
+          "head_base": 8,
+          "cycle": 487
+        },
+        {
+          "index": 2,
+          "command_id": 29186,
+          "head_base": 16,
+          "cycle": 976
+        },
+        {
+          "index": 3,
+          "command_id": 29187,
+          "head_base": 24,
+          "cycle": 1740
+        }
+      ],
+      "integrated_drain_cycles": 2226,
+      "command_accept_count": 4,
+      "command_complete_count": 4,
+      "stream_command_accept_count": [
+        4,
+        4
+      ],
+      "stream_complete_count": [
+        4,
+        4
+      ],
+      "merge_complete_count": 512,
+      "result_stall_cycles": 255,
+      "interface_mode": "stress",
+      "input_fixture": {
+        "kind": "canonical_tensor_direct_producer",
+        "producers": 53,
+        "producer": 22,
+        "tile": 2,
+        "layer": 7,
+        "seed": 29,
+        "decode_token": 131072,
+        "live_ingress": false,
+        "model_quality": false
+      },
+      "llama_wave_reference_cycles": null,
+      "llama_wave_drain_delta_vs_986": null,
+      "stream_protocol_error": [
+        false,
+        false
+      ],
+      "merge_protocol_error": false,
+      "protocol_error": false,
+      "service_model": {
+        "streams": 2,
+        "query_heads_per_stream": 8,
+        "query_head_groups": 4,
+        "token_lanes_per_head": 8,
+        "structural_score_macs_per_cycle": 128,
+        "command_broadcast_mode": "same_head_base_broadcast_to_both_stream_groups",
+        "head_mapping_contract": "explicit_head_base_plus_lane_no_tile_or_wave_inference",
+        "producer_input_contract": "packed_dual_stream_query_key_atomic_ready_valid",
+        "value_memory_contract": "per_stream_gqa_coalesced_value_reads",
+        "output_schedule_contract": "serialized_head_then_slice_exact_partial_stream",
+        "producer_partial_protocol": {
+          "command_id_bits": 16,
+          "head_id_bits": 5,
+          "global_max_bits": 32,
+          "exp_sum_bits": 33,
+          "slice_index_bits": 4,
+          "partial_payload_bits_per_beat": 328,
+          "partial_link_bits_per_beat": 419
+        },
+        "producer_block_workload_assumptions": {
+          "command_block_count_range": [
+            1,
+            8
+          ],
+          "probe_command_count": 4,
+          "per_wave_local_block_ceiling_per_stream": 2,
+          "persistent_local_reducer_waves": 8,
+          "probe_blocks_per_stream": 2,
+          "probe_block_counts_per_stream": [
+            1,
+            1,
+            2,
+            1
+          ],
+          "probe_blocks_per_stream_uniform": false,
+          "probe_head_dim": 128,
+          "probe_head_bases": [
+            0,
+            8,
+            16,
+            24
+          ],
+          "probe_total_heads": 32,
+          "probe_token_streams": 2,
+          "multiple_head_groups_run_in_order": true,
+          "head_base_alignment_bits": 3,
+          "global_tile_tokens": 1024,
+          "global_tile_token_blocks": 128,
+          "per_datapath_group_commands_per_wave": 4,
+          "worst_loaded_total_blocks_per_stream_per_datapath_per_wave": 5,
+          "worst_loaded_two_block_commands_per_datapath_per_wave": 1
+        },
+        "comparison_baseline_contract": "python_structured_exact_partial_stream_reference",
+        "comparison_cycle_origin": "cycle0_on_atomic_dual_stream_input_issue",
+        "diagnostic_only_baseline": "none",
+        "llama_wave_functional_service_reference": null,
+        "remaining_abstractions": [
+          "53or54_way_global_cluster_aggregation_open",
+          "8_wave_persistent_state_open",
+          "noc_sram_ppa_open"
+        ]
+      },
+      "observed_rows_sha256": "1f72a41251f8c33d016499a6a24cfe791239cb71072068a12afeeb88da59cea9",
+      "observed_rows_count": 512,
+      "expected_rows_sha256": "1f72a41251f8c33d016499a6a24cfe791239cb71072068a12afeeb88da59cea9",
+      "expected_rows_count": 512,
+      "equivalence_evidence_policy": "structured_compare_then_commit_counts_and_sha256"
+    },
+    {
+      "decision": "score32_exact_partial_dual_stream_gqa8_pass",
+      "passed": true,
+      "top_name": "attention_score32_exact_partial_gqa8_dual_stream_producer_b8",
+      "heads": 32,
+      "commands": 4,
+      "blocks_per_stream": 2,
+      "block_counts_per_stream": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "head_dim": 128,
+      "head_bases": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "outputs": 512,
+      "expected_outputs": 512,
+      "command_accept_cycles": [
+        {
+          "index": 0,
+          "command_id": 29184,
+          "head_base": 0,
+          "cycle": 0
+        },
+        {
+          "index": 1,
+          "command_id": 29185,
+          "head_base": 8,
+          "cycle": 487
+        },
+        {
+          "index": 2,
+          "command_id": 29186,
+          "head_base": 16,
+          "cycle": 976
+        },
+        {
+          "index": 3,
+          "command_id": 29187,
+          "head_base": 24,
+          "cycle": 1462
+        }
+      ],
+      "integrated_drain_cycles": 2228,
+      "command_accept_count": 4,
+      "command_complete_count": 4,
+      "stream_command_accept_count": [
+        4,
+        4
+      ],
+      "stream_complete_count": [
+        4,
+        4
+      ],
+      "merge_complete_count": 512,
+      "result_stall_cycles": 256,
+      "interface_mode": "stress",
+      "input_fixture": {
+        "kind": "canonical_tensor_direct_producer",
+        "producers": 53,
+        "producer": 33,
+        "tile": 2,
+        "layer": 7,
+        "seed": 29,
+        "decode_token": 131072,
+        "live_ingress": false,
+        "model_quality": false
+      },
+      "llama_wave_reference_cycles": null,
+      "llama_wave_drain_delta_vs_986": null,
+      "stream_protocol_error": [
+        false,
+        false
+      ],
+      "merge_protocol_error": false,
+      "protocol_error": false,
+      "service_model": {
+        "streams": 2,
+        "query_heads_per_stream": 8,
+        "query_head_groups": 4,
+        "token_lanes_per_head": 8,
+        "structural_score_macs_per_cycle": 128,
+        "command_broadcast_mode": "same_head_base_broadcast_to_both_stream_groups",
+        "head_mapping_contract": "explicit_head_base_plus_lane_no_tile_or_wave_inference",
+        "producer_input_contract": "packed_dual_stream_query_key_atomic_ready_valid",
+        "value_memory_contract": "per_stream_gqa_coalesced_value_reads",
+        "output_schedule_contract": "serialized_head_then_slice_exact_partial_stream",
+        "producer_partial_protocol": {
+          "command_id_bits": 16,
+          "head_id_bits": 5,
+          "global_max_bits": 32,
+          "exp_sum_bits": 33,
+          "slice_index_bits": 4,
+          "partial_payload_bits_per_beat": 328,
+          "partial_link_bits_per_beat": 419
+        },
+        "producer_block_workload_assumptions": {
+          "command_block_count_range": [
+            1,
+            8
+          ],
+          "probe_command_count": 4,
+          "per_wave_local_block_ceiling_per_stream": 2,
+          "persistent_local_reducer_waves": 8,
+          "probe_blocks_per_stream": 2,
+          "probe_block_counts_per_stream": [
+            1,
+            1,
+            1,
+            2
+          ],
+          "probe_blocks_per_stream_uniform": false,
+          "probe_head_dim": 128,
+          "probe_head_bases": [
+            0,
+            8,
+            16,
+            24
+          ],
+          "probe_total_heads": 32,
+          "probe_token_streams": 2,
+          "multiple_head_groups_run_in_order": true,
+          "head_base_alignment_bits": 3,
+          "global_tile_tokens": 1024,
+          "global_tile_token_blocks": 128,
+          "per_datapath_group_commands_per_wave": 4,
+          "worst_loaded_total_blocks_per_stream_per_datapath_per_wave": 5,
+          "worst_loaded_two_block_commands_per_datapath_per_wave": 1
+        },
+        "comparison_baseline_contract": "python_structured_exact_partial_stream_reference",
+        "comparison_cycle_origin": "cycle0_on_atomic_dual_stream_input_issue",
+        "diagnostic_only_baseline": "none",
+        "llama_wave_functional_service_reference": null,
+        "remaining_abstractions": [
+          "53or54_way_global_cluster_aggregation_open",
+          "8_wave_persistent_state_open",
+          "noc_sram_ppa_open"
+        ]
+      },
+      "observed_rows_sha256": "9b9d7398c7bfb1f16ce386feee25051e03788b90f4f9136da80cc3ff5bf6f698",
+      "observed_rows_count": 512,
+      "expected_rows_sha256": "9b9d7398c7bfb1f16ce386feee25051e03788b90f4f9136da80cc3ff5bf6f698",
+      "expected_rows_count": 512,
+      "equivalence_evidence_policy": "structured_compare_then_commit_counts_and_sha256"
+    },
+    {
+      "decision": "score32_exact_partial_dual_stream_gqa8_pass",
+      "passed": true,
+      "top_name": "attention_score32_exact_partial_gqa8_dual_stream_producer_b8",
+      "heads": 32,
+      "commands": 4,
+      "blocks_per_stream": 1,
+      "block_counts_per_stream": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "head_dim": 128,
+      "head_bases": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "outputs": 512,
+      "expected_outputs": 512,
+      "command_accept_cycles": [
+        {
+          "index": 0,
+          "command_id": 29184,
+          "head_base": 0,
+          "cycle": 0
+        },
+        {
+          "index": 1,
+          "command_id": 29185,
+          "head_base": 8,
+          "cycle": 487
+        },
+        {
+          "index": 2,
+          "command_id": 29186,
+          "head_base": 16,
+          "cycle": 976
+        },
+        {
+          "index": 3,
+          "command_id": 29187,
+          "head_base": 24,
+          "cycle": 1462
+        }
+      ],
+      "integrated_drain_cycles": 1950,
+      "command_accept_count": 4,
+      "command_complete_count": 4,
+      "stream_command_accept_count": [
+        4,
+        4
+      ],
+      "stream_complete_count": [
+        4,
+        4
+      ],
+      "merge_complete_count": 512,
+      "result_stall_cycles": 255,
+      "interface_mode": "stress",
+      "input_fixture": {
+        "kind": "canonical_tensor_direct_producer",
+        "producers": 53,
+        "producer": 52,
+        "tile": 2,
+        "layer": 7,
+        "seed": 29,
+        "decode_token": 131072,
+        "live_ingress": false,
+        "model_quality": false
+      },
+      "llama_wave_reference_cycles": null,
+      "llama_wave_drain_delta_vs_986": null,
+      "stream_protocol_error": [
+        false,
+        false
+      ],
+      "merge_protocol_error": false,
+      "protocol_error": false,
+      "service_model": {
+        "streams": 2,
+        "query_heads_per_stream": 8,
+        "query_head_groups": 4,
+        "token_lanes_per_head": 8,
+        "structural_score_macs_per_cycle": 128,
+        "command_broadcast_mode": "same_head_base_broadcast_to_both_stream_groups",
+        "head_mapping_contract": "explicit_head_base_plus_lane_no_tile_or_wave_inference",
+        "producer_input_contract": "packed_dual_stream_query_key_atomic_ready_valid",
+        "value_memory_contract": "per_stream_gqa_coalesced_value_reads",
+        "output_schedule_contract": "serialized_head_then_slice_exact_partial_stream",
+        "producer_partial_protocol": {
+          "command_id_bits": 16,
+          "head_id_bits": 5,
+          "global_max_bits": 32,
+          "exp_sum_bits": 33,
+          "slice_index_bits": 4,
+          "partial_payload_bits_per_beat": 328,
+          "partial_link_bits_per_beat": 419
+        },
+        "producer_block_workload_assumptions": {
+          "command_block_count_range": [
+            1,
+            8
+          ],
+          "probe_command_count": 4,
+          "per_wave_local_block_ceiling_per_stream": 2,
+          "persistent_local_reducer_waves": 8,
+          "probe_blocks_per_stream": 1,
+          "probe_block_counts_per_stream": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "probe_blocks_per_stream_uniform": true,
+          "probe_head_dim": 128,
+          "probe_head_bases": [
+            0,
+            8,
+            16,
+            24
+          ],
+          "probe_total_heads": 32,
+          "probe_token_streams": 2,
+          "multiple_head_groups_run_in_order": true,
+          "head_base_alignment_bits": 3,
+          "global_tile_tokens": 1024,
+          "global_tile_token_blocks": 128,
+          "per_datapath_group_commands_per_wave": 4,
+          "worst_loaded_total_blocks_per_stream_per_datapath_per_wave": 5,
+          "worst_loaded_two_block_commands_per_datapath_per_wave": 1
+        },
+        "comparison_baseline_contract": "python_structured_exact_partial_stream_reference",
+        "comparison_cycle_origin": "cycle0_on_atomic_dual_stream_input_issue",
+        "diagnostic_only_baseline": "none",
+        "llama_wave_functional_service_reference": null,
+        "remaining_abstractions": [
+          "53or54_way_global_cluster_aggregation_open",
+          "8_wave_persistent_state_open",
+          "noc_sram_ppa_open"
+        ]
+      },
+      "observed_rows_sha256": "91fad47ebcc9912c5fd8bb2d96d2946cb2dd5c9963874ca7b934d5ac5b91b1f0",
+      "observed_rows_count": 512,
+      "expected_rows_sha256": "91fad47ebcc9912c5fd8bb2d96d2946cb2dd5c9963874ca7b934d5ac5b91b1f0",
+      "expected_rows_count": 512,
+      "equivalence_evidence_policy": "structured_compare_then_commit_counts_and_sha256"
+    },
+    {
+      "decision": "score32_exact_partial_dual_stream_gqa8_pass",
+      "passed": true,
+      "top_name": "attention_score32_exact_partial_gqa8_dual_stream_producer_b8",
+      "heads": 32,
+      "commands": 4,
+      "blocks_per_stream": 2,
+      "block_counts_per_stream": [
+        2,
+        1,
+        1,
+        1
+      ],
+      "head_dim": 128,
+      "head_bases": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "outputs": 512,
+      "expected_outputs": 512,
+      "command_accept_cycles": [
+        {
+          "index": 0,
+          "command_id": 29184,
+          "head_base": 0,
+          "cycle": 0
+        },
+        {
+          "index": 1,
+          "command_id": 29185,
+          "head_base": 8,
+          "cycle": 767
+        },
+        {
+          "index": 2,
+          "command_id": 29186,
+          "head_base": 16,
+          "cycle": 1252
+        },
+        {
+          "index": 3,
+          "command_id": 29187,
+          "head_base": 24,
+          "cycle": 1738
+        }
+      ],
+      "integrated_drain_cycles": 2226,
+      "command_accept_count": 4,
+      "command_complete_count": 4,
+      "stream_command_accept_count": [
+        4,
+        4
+      ],
+      "stream_complete_count": [
+        4,
+        4
+      ],
+      "merge_complete_count": 512,
+      "result_stall_cycles": 255,
+      "interface_mode": "stress",
+      "input_fixture": {
+        "kind": "canonical_tensor_direct_producer",
+        "producers": 54,
+        "producer": 0,
+        "tile": 2,
+        "layer": 7,
+        "seed": 29,
+        "decode_token": 131072,
+        "live_ingress": false,
+        "model_quality": false
+      },
+      "llama_wave_reference_cycles": null,
+      "llama_wave_drain_delta_vs_986": null,
+      "stream_protocol_error": [
+        false,
+        false
+      ],
+      "merge_protocol_error": false,
+      "protocol_error": false,
+      "service_model": {
+        "streams": 2,
+        "query_heads_per_stream": 8,
+        "query_head_groups": 4,
+        "token_lanes_per_head": 8,
+        "structural_score_macs_per_cycle": 128,
+        "command_broadcast_mode": "same_head_base_broadcast_to_both_stream_groups",
+        "head_mapping_contract": "explicit_head_base_plus_lane_no_tile_or_wave_inference",
+        "producer_input_contract": "packed_dual_stream_query_key_atomic_ready_valid",
+        "value_memory_contract": "per_stream_gqa_coalesced_value_reads",
+        "output_schedule_contract": "serialized_head_then_slice_exact_partial_stream",
+        "producer_partial_protocol": {
+          "command_id_bits": 16,
+          "head_id_bits": 5,
+          "global_max_bits": 32,
+          "exp_sum_bits": 33,
+          "slice_index_bits": 4,
+          "partial_payload_bits_per_beat": 328,
+          "partial_link_bits_per_beat": 419
+        },
+        "producer_block_workload_assumptions": {
+          "command_block_count_range": [
+            1,
+            8
+          ],
+          "probe_command_count": 4,
+          "per_wave_local_block_ceiling_per_stream": 2,
+          "persistent_local_reducer_waves": 8,
+          "probe_blocks_per_stream": 2,
+          "probe_block_counts_per_stream": [
+            2,
+            1,
+            1,
+            1
+          ],
+          "probe_blocks_per_stream_uniform": false,
+          "probe_head_dim": 128,
+          "probe_head_bases": [
+            0,
+            8,
+            16,
+            24
+          ],
+          "probe_total_heads": 32,
+          "probe_token_streams": 2,
+          "multiple_head_groups_run_in_order": true,
+          "head_base_alignment_bits": 3,
+          "global_tile_tokens": 1024,
+          "global_tile_token_blocks": 128,
+          "per_datapath_group_commands_per_wave": 4,
+          "worst_loaded_total_blocks_per_stream_per_datapath_per_wave": 5,
+          "worst_loaded_two_block_commands_per_datapath_per_wave": 1
+        },
+        "comparison_baseline_contract": "python_structured_exact_partial_stream_reference",
+        "comparison_cycle_origin": "cycle0_on_atomic_dual_stream_input_issue",
+        "diagnostic_only_baseline": "none",
+        "llama_wave_functional_service_reference": null,
+        "remaining_abstractions": [
+          "53or54_way_global_cluster_aggregation_open",
+          "8_wave_persistent_state_open",
+          "noc_sram_ppa_open"
+        ]
+      },
+      "observed_rows_sha256": "61f2df54c82850ecbc5fc9679e1d4427fe0b2ec53213a95e7ccc284e6dce9775",
+      "observed_rows_count": 512,
+      "expected_rows_sha256": "61f2df54c82850ecbc5fc9679e1d4427fe0b2ec53213a95e7ccc284e6dce9775",
+      "expected_rows_count": 512,
+      "equivalence_evidence_policy": "structured_compare_then_commit_counts_and_sha256"
+    },
+    {
+      "decision": "score32_exact_partial_dual_stream_gqa8_pass",
+      "passed": true,
+      "top_name": "attention_score32_exact_partial_gqa8_dual_stream_producer_b8",
+      "heads": 32,
+      "commands": 4,
+      "blocks_per_stream": 2,
+      "block_counts_per_stream": [
+        1,
+        2,
+        1,
+        1
+      ],
+      "head_dim": 128,
+      "head_bases": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "outputs": 512,
+      "expected_outputs": 512,
+      "command_accept_cycles": [
+        {
+          "index": 0,
+          "command_id": 29184,
+          "head_base": 0,
+          "cycle": 0
+        },
+        {
+          "index": 1,
+          "command_id": 29185,
+          "head_base": 8,
+          "cycle": 487
+        },
+        {
+          "index": 2,
+          "command_id": 29186,
+          "head_base": 16,
+          "cycle": 1252
+        },
+        {
+          "index": 3,
+          "command_id": 29187,
+          "head_base": 24,
+          "cycle": 1738
+        }
+      ],
+      "integrated_drain_cycles": 2226,
+      "command_accept_count": 4,
+      "command_complete_count": 4,
+      "stream_command_accept_count": [
+        4,
+        4
+      ],
+      "stream_complete_count": [
+        4,
+        4
+      ],
+      "merge_complete_count": 512,
+      "result_stall_cycles": 255,
+      "interface_mode": "stress",
+      "input_fixture": {
+        "kind": "canonical_tensor_direct_producer",
+        "producers": 54,
+        "producer": 10,
+        "tile": 2,
+        "layer": 7,
+        "seed": 29,
+        "decode_token": 131072,
+        "live_ingress": false,
+        "model_quality": false
+      },
+      "llama_wave_reference_cycles": null,
+      "llama_wave_drain_delta_vs_986": null,
+      "stream_protocol_error": [
+        false,
+        false
+      ],
+      "merge_protocol_error": false,
+      "protocol_error": false,
+      "service_model": {
+        "streams": 2,
+        "query_heads_per_stream": 8,
+        "query_head_groups": 4,
+        "token_lanes_per_head": 8,
+        "structural_score_macs_per_cycle": 128,
+        "command_broadcast_mode": "same_head_base_broadcast_to_both_stream_groups",
+        "head_mapping_contract": "explicit_head_base_plus_lane_no_tile_or_wave_inference",
+        "producer_input_contract": "packed_dual_stream_query_key_atomic_ready_valid",
+        "value_memory_contract": "per_stream_gqa_coalesced_value_reads",
+        "output_schedule_contract": "serialized_head_then_slice_exact_partial_stream",
+        "producer_partial_protocol": {
+          "command_id_bits": 16,
+          "head_id_bits": 5,
+          "global_max_bits": 32,
+          "exp_sum_bits": 33,
+          "slice_index_bits": 4,
+          "partial_payload_bits_per_beat": 328,
+          "partial_link_bits_per_beat": 419
+        },
+        "producer_block_workload_assumptions": {
+          "command_block_count_range": [
+            1,
+            8
+          ],
+          "probe_command_count": 4,
+          "per_wave_local_block_ceiling_per_stream": 2,
+          "persistent_local_reducer_waves": 8,
+          "probe_blocks_per_stream": 2,
+          "probe_block_counts_per_stream": [
+            1,
+            2,
+            1,
+            1
+          ],
+          "probe_blocks_per_stream_uniform": false,
+          "probe_head_dim": 128,
+          "probe_head_bases": [
+            0,
+            8,
+            16,
+            24
+          ],
+          "probe_total_heads": 32,
+          "probe_token_streams": 2,
+          "multiple_head_groups_run_in_order": true,
+          "head_base_alignment_bits": 3,
+          "global_tile_tokens": 1024,
+          "global_tile_token_blocks": 128,
+          "per_datapath_group_commands_per_wave": 4,
+          "worst_loaded_total_blocks_per_stream_per_datapath_per_wave": 5,
+          "worst_loaded_two_block_commands_per_datapath_per_wave": 1
+        },
+        "comparison_baseline_contract": "python_structured_exact_partial_stream_reference",
+        "comparison_cycle_origin": "cycle0_on_atomic_dual_stream_input_issue",
+        "diagnostic_only_baseline": "none",
+        "llama_wave_functional_service_reference": null,
+        "remaining_abstractions": [
+          "53or54_way_global_cluster_aggregation_open",
+          "8_wave_persistent_state_open",
+          "noc_sram_ppa_open"
+        ]
+      },
+      "observed_rows_sha256": "3809e371efc85573ccaa983bf4fff56370dbb903b4e22ba6c737e5f4b11d2b58",
+      "observed_rows_count": 512,
+      "expected_rows_sha256": "3809e371efc85573ccaa983bf4fff56370dbb903b4e22ba6c737e5f4b11d2b58",
+      "expected_rows_count": 512,
+      "equivalence_evidence_policy": "structured_compare_then_commit_counts_and_sha256"
+    },
+    {
+      "decision": "score32_exact_partial_dual_stream_gqa8_pass",
+      "passed": true,
+      "top_name": "attention_score32_exact_partial_gqa8_dual_stream_producer_b8",
+      "heads": 32,
+      "commands": 4,
+      "blocks_per_stream": 2,
+      "block_counts_per_stream": [
+        1,
+        1,
+        2,
+        1
+      ],
+      "head_dim": 128,
+      "head_bases": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "outputs": 512,
+      "expected_outputs": 512,
+      "command_accept_cycles": [
+        {
+          "index": 0,
+          "command_id": 29184,
+          "head_base": 0,
+          "cycle": 0
+        },
+        {
+          "index": 1,
+          "command_id": 29185,
+          "head_base": 8,
+          "cycle": 487
+        },
+        {
+          "index": 2,
+          "command_id": 29186,
+          "head_base": 16,
+          "cycle": 976
+        },
+        {
+          "index": 3,
+          "command_id": 29187,
+          "head_base": 24,
+          "cycle": 1740
+        }
+      ],
+      "integrated_drain_cycles": 2226,
+      "command_accept_count": 4,
+      "command_complete_count": 4,
+      "stream_command_accept_count": [
+        4,
+        4
+      ],
+      "stream_complete_count": [
+        4,
+        4
+      ],
+      "merge_complete_count": 512,
+      "result_stall_cycles": 255,
+      "interface_mode": "stress",
+      "input_fixture": {
+        "kind": "canonical_tensor_direct_producer",
+        "producers": 54,
+        "producer": 20,
+        "tile": 2,
+        "layer": 7,
+        "seed": 29,
+        "decode_token": 131072,
+        "live_ingress": false,
+        "model_quality": false
+      },
+      "llama_wave_reference_cycles": null,
+      "llama_wave_drain_delta_vs_986": null,
+      "stream_protocol_error": [
+        false,
+        false
+      ],
+      "merge_protocol_error": false,
+      "protocol_error": false,
+      "service_model": {
+        "streams": 2,
+        "query_heads_per_stream": 8,
+        "query_head_groups": 4,
+        "token_lanes_per_head": 8,
+        "structural_score_macs_per_cycle": 128,
+        "command_broadcast_mode": "same_head_base_broadcast_to_both_stream_groups",
+        "head_mapping_contract": "explicit_head_base_plus_lane_no_tile_or_wave_inference",
+        "producer_input_contract": "packed_dual_stream_query_key_atomic_ready_valid",
+        "value_memory_contract": "per_stream_gqa_coalesced_value_reads",
+        "output_schedule_contract": "serialized_head_then_slice_exact_partial_stream",
+        "producer_partial_protocol": {
+          "command_id_bits": 16,
+          "head_id_bits": 5,
+          "global_max_bits": 32,
+          "exp_sum_bits": 33,
+          "slice_index_bits": 4,
+          "partial_payload_bits_per_beat": 328,
+          "partial_link_bits_per_beat": 419
+        },
+        "producer_block_workload_assumptions": {
+          "command_block_count_range": [
+            1,
+            8
+          ],
+          "probe_command_count": 4,
+          "per_wave_local_block_ceiling_per_stream": 2,
+          "persistent_local_reducer_waves": 8,
+          "probe_blocks_per_stream": 2,
+          "probe_block_counts_per_stream": [
+            1,
+            1,
+            2,
+            1
+          ],
+          "probe_blocks_per_stream_uniform": false,
+          "probe_head_dim": 128,
+          "probe_head_bases": [
+            0,
+            8,
+            16,
+            24
+          ],
+          "probe_total_heads": 32,
+          "probe_token_streams": 2,
+          "multiple_head_groups_run_in_order": true,
+          "head_base_alignment_bits": 3,
+          "global_tile_tokens": 1024,
+          "global_tile_token_blocks": 128,
+          "per_datapath_group_commands_per_wave": 4,
+          "worst_loaded_total_blocks_per_stream_per_datapath_per_wave": 5,
+          "worst_loaded_two_block_commands_per_datapath_per_wave": 1
+        },
+        "comparison_baseline_contract": "python_structured_exact_partial_stream_reference",
+        "comparison_cycle_origin": "cycle0_on_atomic_dual_stream_input_issue",
+        "diagnostic_only_baseline": "none",
+        "llama_wave_functional_service_reference": null,
+        "remaining_abstractions": [
+          "53or54_way_global_cluster_aggregation_open",
+          "8_wave_persistent_state_open",
+          "noc_sram_ppa_open"
+        ]
+      },
+      "observed_rows_sha256": "05aabfa1f0d1163ff324e5bcce620e281987bf3c4ee87c55b98d0cfdc2716f0a",
+      "observed_rows_count": 512,
+      "expected_rows_sha256": "05aabfa1f0d1163ff324e5bcce620e281987bf3c4ee87c55b98d0cfdc2716f0a",
+      "expected_rows_count": 512,
+      "equivalence_evidence_policy": "structured_compare_then_commit_counts_and_sha256"
+    },
+    {
+      "decision": "score32_exact_partial_dual_stream_gqa8_pass",
+      "passed": true,
+      "top_name": "attention_score32_exact_partial_gqa8_dual_stream_producer_b8",
+      "heads": 32,
+      "commands": 4,
+      "blocks_per_stream": 2,
+      "block_counts_per_stream": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "head_dim": 128,
+      "head_bases": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "outputs": 512,
+      "expected_outputs": 512,
+      "command_accept_cycles": [
+        {
+          "index": 0,
+          "command_id": 29184,
+          "head_base": 0,
+          "cycle": 0
+        },
+        {
+          "index": 1,
+          "command_id": 29185,
+          "head_base": 8,
+          "cycle": 487
+        },
+        {
+          "index": 2,
+          "command_id": 29186,
+          "head_base": 16,
+          "cycle": 976
+        },
+        {
+          "index": 3,
+          "command_id": 29187,
+          "head_base": 24,
+          "cycle": 1462
+        }
+      ],
+      "integrated_drain_cycles": 2228,
+      "command_accept_count": 4,
+      "command_complete_count": 4,
+      "stream_command_accept_count": [
+        4,
+        4
+      ],
+      "stream_complete_count": [
+        4,
+        4
+      ],
+      "merge_complete_count": 512,
+      "result_stall_cycles": 256,
+      "interface_mode": "stress",
+      "input_fixture": {
+        "kind": "canonical_tensor_direct_producer",
+        "producers": 54,
+        "producer": 30,
+        "tile": 2,
+        "layer": 7,
+        "seed": 29,
+        "decode_token": 131072,
+        "live_ingress": false,
+        "model_quality": false
+      },
+      "llama_wave_reference_cycles": null,
+      "llama_wave_drain_delta_vs_986": null,
+      "stream_protocol_error": [
+        false,
+        false
+      ],
+      "merge_protocol_error": false,
+      "protocol_error": false,
+      "service_model": {
+        "streams": 2,
+        "query_heads_per_stream": 8,
+        "query_head_groups": 4,
+        "token_lanes_per_head": 8,
+        "structural_score_macs_per_cycle": 128,
+        "command_broadcast_mode": "same_head_base_broadcast_to_both_stream_groups",
+        "head_mapping_contract": "explicit_head_base_plus_lane_no_tile_or_wave_inference",
+        "producer_input_contract": "packed_dual_stream_query_key_atomic_ready_valid",
+        "value_memory_contract": "per_stream_gqa_coalesced_value_reads",
+        "output_schedule_contract": "serialized_head_then_slice_exact_partial_stream",
+        "producer_partial_protocol": {
+          "command_id_bits": 16,
+          "head_id_bits": 5,
+          "global_max_bits": 32,
+          "exp_sum_bits": 33,
+          "slice_index_bits": 4,
+          "partial_payload_bits_per_beat": 328,
+          "partial_link_bits_per_beat": 419
+        },
+        "producer_block_workload_assumptions": {
+          "command_block_count_range": [
+            1,
+            8
+          ],
+          "probe_command_count": 4,
+          "per_wave_local_block_ceiling_per_stream": 2,
+          "persistent_local_reducer_waves": 8,
+          "probe_blocks_per_stream": 2,
+          "probe_block_counts_per_stream": [
+            1,
+            1,
+            1,
+            2
+          ],
+          "probe_blocks_per_stream_uniform": false,
+          "probe_head_dim": 128,
+          "probe_head_bases": [
+            0,
+            8,
+            16,
+            24
+          ],
+          "probe_total_heads": 32,
+          "probe_token_streams": 2,
+          "multiple_head_groups_run_in_order": true,
+          "head_base_alignment_bits": 3,
+          "global_tile_tokens": 1024,
+          "global_tile_token_blocks": 128,
+          "per_datapath_group_commands_per_wave": 4,
+          "worst_loaded_total_blocks_per_stream_per_datapath_per_wave": 5,
+          "worst_loaded_two_block_commands_per_datapath_per_wave": 1
+        },
+        "comparison_baseline_contract": "python_structured_exact_partial_stream_reference",
+        "comparison_cycle_origin": "cycle0_on_atomic_dual_stream_input_issue",
+        "diagnostic_only_baseline": "none",
+        "llama_wave_functional_service_reference": null,
+        "remaining_abstractions": [
+          "53or54_way_global_cluster_aggregation_open",
+          "8_wave_persistent_state_open",
+          "noc_sram_ppa_open"
+        ]
+      },
+      "observed_rows_sha256": "dfac74af332069ab70ed4c6f778b8f6f1d0b299c068d84b64dc9ff71d74323cd",
+      "observed_rows_count": 512,
+      "expected_rows_sha256": "dfac74af332069ab70ed4c6f778b8f6f1d0b299c068d84b64dc9ff71d74323cd",
+      "expected_rows_count": 512,
+      "equivalence_evidence_policy": "structured_compare_then_commit_counts_and_sha256"
+    },
+    {
+      "decision": "score32_exact_partial_dual_stream_gqa8_pass",
+      "passed": true,
+      "top_name": "attention_score32_exact_partial_gqa8_dual_stream_producer_b8",
+      "heads": 32,
+      "commands": 4,
+      "blocks_per_stream": 1,
+      "block_counts_per_stream": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "head_dim": 128,
+      "head_bases": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "outputs": 512,
+      "expected_outputs": 512,
+      "command_accept_cycles": [
+        {
+          "index": 0,
+          "command_id": 29184,
+          "head_base": 0,
+          "cycle": 0
+        },
+        {
+          "index": 1,
+          "command_id": 29185,
+          "head_base": 8,
+          "cycle": 487
+        },
+        {
+          "index": 2,
+          "command_id": 29186,
+          "head_base": 16,
+          "cycle": 976
+        },
+        {
+          "index": 3,
+          "command_id": 29187,
+          "head_base": 24,
+          "cycle": 1462
+        }
+      ],
+      "integrated_drain_cycles": 1950,
+      "command_accept_count": 4,
+      "command_complete_count": 4,
+      "stream_command_accept_count": [
+        4,
+        4
+      ],
+      "stream_complete_count": [
+        4,
+        4
+      ],
+      "merge_complete_count": 512,
+      "result_stall_cycles": 255,
+      "interface_mode": "stress",
+      "input_fixture": {
+        "kind": "canonical_tensor_direct_producer",
+        "producers": 54,
+        "producer": 53,
+        "tile": 2,
+        "layer": 7,
+        "seed": 29,
+        "decode_token": 131072,
+        "live_ingress": false,
+        "model_quality": false
+      },
+      "llama_wave_reference_cycles": null,
+      "llama_wave_drain_delta_vs_986": null,
+      "stream_protocol_error": [
+        false,
+        false
+      ],
+      "merge_protocol_error": false,
+      "protocol_error": false,
+      "service_model": {
+        "streams": 2,
+        "query_heads_per_stream": 8,
+        "query_head_groups": 4,
+        "token_lanes_per_head": 8,
+        "structural_score_macs_per_cycle": 128,
+        "command_broadcast_mode": "same_head_base_broadcast_to_both_stream_groups",
+        "head_mapping_contract": "explicit_head_base_plus_lane_no_tile_or_wave_inference",
+        "producer_input_contract": "packed_dual_stream_query_key_atomic_ready_valid",
+        "value_memory_contract": "per_stream_gqa_coalesced_value_reads",
+        "output_schedule_contract": "serialized_head_then_slice_exact_partial_stream",
+        "producer_partial_protocol": {
+          "command_id_bits": 16,
+          "head_id_bits": 5,
+          "global_max_bits": 32,
+          "exp_sum_bits": 33,
+          "slice_index_bits": 4,
+          "partial_payload_bits_per_beat": 328,
+          "partial_link_bits_per_beat": 419
+        },
+        "producer_block_workload_assumptions": {
+          "command_block_count_range": [
+            1,
+            8
+          ],
+          "probe_command_count": 4,
+          "per_wave_local_block_ceiling_per_stream": 2,
+          "persistent_local_reducer_waves": 8,
+          "probe_blocks_per_stream": 1,
+          "probe_block_counts_per_stream": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "probe_blocks_per_stream_uniform": true,
+          "probe_head_dim": 128,
+          "probe_head_bases": [
+            0,
+            8,
+            16,
+            24
+          ],
+          "probe_total_heads": 32,
+          "probe_token_streams": 2,
+          "multiple_head_groups_run_in_order": true,
+          "head_base_alignment_bits": 3,
+          "global_tile_tokens": 1024,
+          "global_tile_token_blocks": 128,
+          "per_datapath_group_commands_per_wave": 4,
+          "worst_loaded_total_blocks_per_stream_per_datapath_per_wave": 5,
+          "worst_loaded_two_block_commands_per_datapath_per_wave": 1
+        },
+        "comparison_baseline_contract": "python_structured_exact_partial_stream_reference",
+        "comparison_cycle_origin": "cycle0_on_atomic_dual_stream_input_issue",
+        "diagnostic_only_baseline": "none",
+        "llama_wave_functional_service_reference": null,
+        "remaining_abstractions": [
+          "53or54_way_global_cluster_aggregation_open",
+          "8_wave_persistent_state_open",
+          "noc_sram_ppa_open"
+        ]
+      },
+      "observed_rows_sha256": "91fad47ebcc9912c5fd8bb2d96d2946cb2dd5c9963874ca7b934d5ac5b91b1f0",
+      "observed_rows_count": 512,
+      "expected_rows_sha256": "91fad47ebcc9912c5fd8bb2d96d2946cb2dd5c9963874ca7b934d5ac5b91b1f0",
+      "expected_rows_count": 512,
+      "equivalence_evidence_policy": "structured_compare_then_commit_counts_and_sha256"
+    }
+  ]
+}
