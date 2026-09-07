@@ -209,7 +209,7 @@ Evidence:
 
 - status: `rtl_unmeasured`
 - confidence: `low`
-- summary: The bounded exact hierarchy is now functionally composed across the producer, cluster-SRAM service, local reducer, and finalized global tree for the full four-group GQA8 rotation, and the corrected exact-reduction rerank already consumes that path. What remains open is a representative composed routed macro with measured activity, buffering/control overhead, and final system-level composition.
+- summary: Local direct p54 and p53 cluster-wrapper replays now measure all 512 exact output rows over four GQA8 groups per representative. Conservative group starts are 17437, 33829, 50221, and 66613 single-clock cycles; the last row arrives at 66740. These measurements supplement the bounded rotated hierarchy proof. Representative routed composition, activity power, canonical K/V ingress, CDC, and cadence-integrated workload recost remain open.
 - next gate: Materialize a representative composed producer/service/reducer block with routed PPA and activity, then close the remaining CDC/buffering and memory-system composition gaps.
 
 | Dimension | Status | Summary |
@@ -227,6 +227,7 @@ Caveats:
 
 Evidence:
 - `docs/proposals/prop_l2_decoder_attention_decode_score_multivalue_integrated_service_llama7b_v1/analysis_report.md` (proposal_analysis; `rtl`, `equivalence`): Anchors the exact integrated service portion of the producer-service-reducer stack.
+- `docs/proposals/prop_l2_decoder_attention_score32_exact_cluster_release_cadence_llama7b_v1/local_cadence_result.json` (generated_audit; `equivalence`, `composition`): Local direct p54/p53 Verilator replay with exact-row audits, all output cycles, and verified source/configuration hashes. Group spacing is 16392 cycles. This is functional single-clock evidence; all sixteen physical copies, routed PPA, activity, independent clocks, and actual cluster payload transport through the mesh remain unverified.
 - `docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_equivalence_llama7b_v1/analysis_report.md` (proposal_analysis; `equivalence`, `composition`): Historical one-group producer-to-SRAM-to-finalized-tree proof that the four-group rotated closure extends.
 - `docs/proposals/prop_l2_decoder_attention_score32_exact_local16_global_tree_cluster_sram_gqa8_rotation_equivalence_llama7b_v1/analysis_report.md` (proposal_analysis; `equivalence`, `composition`): Promoted four-group rotation equivalence closes the bounded full-GQA8 rotated producer-to-SRAM-to-finalized-tree hierarchy.
 - `npu/docs/generated/attention_score32_exact_partial_gqa8_dual_stream_producer_llama_wave_worst4_group_major.md` (generated_audit; `equivalence`, `composition`): Captures the worst-loaded producer cadence and command-distribution proof consumed by the bounded hierarchy analysis.

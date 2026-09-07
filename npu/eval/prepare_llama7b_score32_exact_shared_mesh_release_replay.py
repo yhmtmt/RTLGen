@@ -169,7 +169,7 @@ def build_replay(cadence: JsonDict, *, cadence_path: Path | None = None) -> Json
         "remaining_abstractions": [
             "The p54 trace is replicated over endpoints 0-7 and the p53 trace over endpoints 8-15.",
             "The no-stall measured inter-row deltas are conservatively dilated by downstream stalls; a directly composed producer/reducer/mesh replay is still stronger evidence.",
-            "VC0 SRAM writes are not yet wired as the cluster fill plane, so this contract times VC1 but does not prove VC0-to-compute data dependence.",
+            "Historical VC0 traffic lacks canonical K/V tensor addresses and cannot directly feed the cluster fill plane; this contract times VC1 but does not prove VC0-to-compute data dependence.",
             "HBM/DRAM service remains outside the chip RTL boundary.",
         ],
     }

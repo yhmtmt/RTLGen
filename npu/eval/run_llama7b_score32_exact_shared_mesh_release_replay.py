@@ -38,6 +38,8 @@ SUMMARY_RE = re.compile(
     r"release_coupled_cycles=(?P<release_cycles>\d+) "
     r"release_vc0_done_cycle=(?P<release_vc0_done>\d+) "
     r"release_vc1_done_cycle=(?P<release_vc1_done>\d+) "
+    r"release_overlap_valid=(?P<release_overlap_valid>\d+) "
+    r"release_overlap_arb=(?P<release_overlap_arb>\d+) "
     r"release_arb_decisions=(?P<release_arb_decisions>\d+) "
     r"release_source_fires=(?P<release_source_fires>\d+)"
 )
@@ -108,6 +110,8 @@ def build_result(
             "service_cycles": release_cycles,
             "vc0_done_cycle": vc0_done,
             "vc1_done_cycle": vc1_done,
+            "inter_vc_overlap_valid_cycles": int(values["release_overlap_valid"]),
+            "inter_vc_overlap_arbitrated_cycles": int(values["release_overlap_arb"]),
             "standalone_eager_envelope_cycles": int(values["envelope_cycles"]),
             "release_arbiter_decisions_checked": int(values["release_arb_decisions"]),
             "release_source_handshakes_checked": int(values["release_source_fires"]),
@@ -142,11 +146,14 @@ def build_result(
                 "downstream stalls retain one beat and dilate later releases without an unbounded replay queue",
                 "the full exact VC0 and stats-once VC1 payloads traverse one shared registered-credit mesh",
                 "the Python endpoint VC arbiter agrees with every recorded RTL arbitration cycle",
+                "inter-VC overlap counts describe this input cadence and are not assumed positive",
             ],
             "does_not_prove": replay["remaining_abstractions"],
         },
         "next_gate": (
-            "Wire VC0 destination SRAM residency into each cluster fill interface, then replay the "
+            "Replace historical VC0 traffic with canonical addressed K/V ingress; connect "
+            "per-cluster ejection target/control to the exact K/V transposers and verify "
+            "backpressure through full representative K and V heads. Then replay the "
             "producer/reducer/shared-mesh path without trace-derived VC1 sources."
         ),
     }
@@ -161,6 +168,8 @@ def render_markdown(result: JsonDict) -> str:
         f"- completion: `{observation['service_cycles']}` cycles",
         f"- VC0 completion: `{observation['vc0_done_cycle']}` cycles",
         f"- VC1 completion: `{observation['vc1_done_cycle']}` cycles",
+        f"- simultaneous VC0/VC1 valid cycles: `{observation['inter_vc_overlap_valid_cycles']}`",
+        f"- simultaneous VC0/VC1 arbitrated cycles: `{observation['inter_vc_overlap_arbitrated_cycles']}`",
         f"- eager capacity envelope: `{observation['standalone_eager_envelope_cycles']}` cycles",
         "",
         "## Proves",

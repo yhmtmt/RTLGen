@@ -470,11 +470,15 @@ def test_exact_dual_producer_shared_mesh_full_replay(tmp_path: Path) -> None:
                 f"+ARB_TRACE={release_trace}",
                 f"+RELEASE_TRACE={producer_release_trace}",
             ],
-            check=True,
+            check=False,
             cwd=REPO_ROOT,
             capture_output=True,
             text=True,
             timeout=1200,
+        )
+        assert release_run.returncode == 0, (
+            f"release-cadence vvp failed\nstdout:\n{release_run.stdout}\n"
+            f"stderr:\n{release_run.stderr}"
         )
         release_match = PASS_RE.search(release_run.stdout)
         assert release_match is not None, release_run.stdout
@@ -494,6 +498,9 @@ def test_exact_dual_producer_shared_mesh_full_replay(tmp_path: Path) -> None:
         assert release["service_cycles"] == max(
             release["vc0_done_cycle"], release["vc1_done_cycle"]
         )
+        # Measured releases may start after VC0 drains. Retain the overlap
+        # counts as observations; only eager stress modes require overlap.
+        assert release["overlap_arb"] <= release["overlap_valid"]
         release_arb_decisions = _assert_arbiter_trace_matches_model(release_trace)
         release_source_fires = _assert_release_trace_matches_model(
             producer_release_trace,
@@ -505,6 +512,8 @@ def test_exact_dual_producer_shared_mesh_full_replay(tmp_path: Path) -> None:
             f"release_coupled_cycles={release['service_cycles']} "
             f"release_vc0_done_cycle={release['vc0_done_cycle']} "
             f"release_vc1_done_cycle={release['vc1_done_cycle']} "
+            f"release_overlap_valid={release['overlap_valid']} "
+            f"release_overlap_arb={release['overlap_arb']} "
             f"release_arb_decisions={release_arb_decisions} "
             f"release_source_fires={release_source_fires}"
         )

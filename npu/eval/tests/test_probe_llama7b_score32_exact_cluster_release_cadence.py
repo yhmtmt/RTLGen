@@ -9,6 +9,7 @@ from npu.eval.probe_llama7b_score32_exact_cluster_release_cadence import (
     _prepare_guarded_rtl,
     _write_behavioral_memories,
     _verilator_two_stage_commands,
+    _verilator_control_file_text,
     _alias_module_family,
     extract_cluster_cadence,
     render_markdown,
@@ -186,6 +187,15 @@ def test_verilator_two_stage_flow_avoids_binary_hierarchy_bug(
 def test_module_family_alias_removes_verilator_double_underscore_boundary() -> None:
     source = "module long__cluster; long__cluster__child u(); endmodule\n"
     aliased = _alias_module_family(source, prefix="long__cluster", alias="cadence_p54")
-    assert aliased == "module cadence_p54; cadence_p54__child u(); endmodule\n"
+    assert aliased == "module cadence_p54; cadence_p54_h_child u(); endmodule\n"
     with pytest.raises(ValueError, match="contain no double underscore"):
         _alias_module_family(source, prefix="long__cluster", alias="bad__alias")
+
+
+def test_verilator_control_partitions_repeated_cluster_blocks() -> None:
+    text = _verilator_control_file_text("cadence_p54")
+    assert 'hier_block -module "cadence_p54"' not in text
+    assert text.count("hier_block") == 3
+    assert 'hier_block -module "cadence_p54_h_compute_cluster_h_producer"' in text
+    assert 'hier_block -module "cadence_p54_h_compute_cluster_h_reducer"' in text
+    assert 'hier_block -module "cadence_p54_h_sram_endpoint"' in text
