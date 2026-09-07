@@ -3,7 +3,7 @@
   "title": "Llama7B Architecture Closure Matrix",
   "model": "llama7b",
   "scope": "Decoder-attention architecture exploration with persistent closure tracking",
-  "as_of": "2026-09-06",
+  "as_of": "2026-09-07",
   "source_commit_floor": "09a9854c357a419a70bc04417509b451de235c2a",
   "generated_markdown": "npu/docs/generated/llama7b_architecture_closure.md",
   "component_order": [
@@ -696,7 +696,7 @@
         },
         "equivalence": {
           "status": "open",
-          "summary": "No single promoted equivalence gate closes the final selected NoC behavior against the end-to-end attention contract."
+          "summary": "The collected arithmetic-stress streams from all sixteen exact cluster replays now pass shared-mesh replay with 512 exact finalized rows, 8192 source handshakes, and 79396 arbitration decisions checked. This is separate-cluster trace-coupled evidence, not a single promoted gate for canonical mapped attention or live producer/mesh feedback."
         },
         "routed_ppa": {
           "status": "measured_component",
@@ -708,7 +708,7 @@
         },
         "composition": {
           "status": "open",
-          "summary": "The final topology/scheduler composition at Llama7B scale is still under study rather than promoted as fixed."
+          "summary": "The final topology/scheduler composition remains open. Ascending K-plane delivery conflicts with the paired-stream transpose contract. An opt-in paired scheduler matches all 2,113,984 full-model descriptors and propagates widened counters through the mesh wrapper. Bounded nonuniform-payload real-refill-to-mesh-to-transpose-to-K/Q tests pass for p53 and p54 over three heads including a resident/HBM split, checking 24,576 producer-facing beats per family. This diagnostic evaluation does not execute score production or establish full-model mapped attention equivalence, workload latency, or physical closure."
         },
         "scale_validation": {
           "status": "open",
@@ -758,12 +758,25 @@
             "scale_validation"
           ],
           "note": "Shows that topology/scheduler pairing work exists at Llama7B scale, but the pair space is not yet closed."
+        },
+        {
+          "path": "docs/proposals/prop_l2_decoder_attention_score32_exact_kv_ingress_revision_llama7b_v1/cluster_adapter_contract.md",
+          "kind": "proposal_gate",
+          "dimensions": ["rtl", "equivalence", "composition"],
+          "note": "Records the reproduced ascending-order mismatch, exhaustive paired source-address and descriptor checks, 22-bit counter propagation, and bounded p53/p54 real-refill-to-mesh-to-K/Q passes. Full-model mapped attention and score-production composition remain unproven."
+        },
+        {
+          "path": "docs/proposals/prop_l2_decoder_attention_score32_exact_shared_mesh_release_replay_llama7b_v1/measured_numerical_result.md",
+          "kind": "proposal_gate",
+          "dimensions": ["equivalence", "composition"],
+          "note": "Records passing exact numerical replay of all collected cluster leaves through the shared mesh at 73845 cycles. Historical VC0, placement-varying stress queries, separate cluster runs, and absent physical/CDC closure bound the claim."
         }
       ],
       "caveats": [
         "NoC costs are no longer free and a complete segmented-mesh physical anchor exists, but the final architecture still depends on a partially analytic topology/scheduler choice.",
         "The exact hierarchy-matched router activity job remains pending behind the bare-router routed anchor; current traffic profiling must not be labeled measured NoC energy.",
-        "The current frontier can still move if the selected pair changes under stricter physical constraints."
+        "The current frontier can still move if the selected pair changes under stricter physical constraints.",
+        "Paired K delivery increases descriptor work to 66,062 per layer (2,113,984 full-model descriptors). Byte conservation does not make its completion fences, latency, control area, or power equivalent to the legacy schedule."
       ],
       "next_gate": "Measure the bare-router routed anchor, run exact hierarchy-matched post-route activity power, then fix the final topology/scheduler pair and rerun the clustered frontier."
     },

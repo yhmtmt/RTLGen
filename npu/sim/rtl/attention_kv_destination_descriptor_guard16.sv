@@ -2,7 +2,7 @@
 
 // Holds one descriptor ownership token per destination until its terminal
 // packet completes at ejection. Packets within a descriptor remain pipelined.
-module attention_kv_destination_descriptor_guard16 (
+module attention_kv_destination_descriptor_guard16 #(parameter COUNT_WIDTH = 16) (
   input wire clk,
   input wire rst_n,
 
@@ -26,8 +26,8 @@ module attention_kv_destination_descriptor_guard16 (
   output reg [15:0] destination_locked,
   output reg [15:0] descriptor_final_pending,
   output wire [16*4-1:0] locked_descriptor_source,
-  output reg [15:0] accepted_descriptor_count,
-  output reg [15:0] completed_descriptor_count,
+  output reg [COUNT_WIDTH-1:0] accepted_descriptor_count,
+  output reg [COUNT_WIDTH-1:0] completed_descriptor_count,
   output reg protocol_error
 );
   reg [3:0] locked_source_q [0:15];

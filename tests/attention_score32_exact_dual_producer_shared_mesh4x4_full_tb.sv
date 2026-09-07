@@ -154,6 +154,13 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
   reg vc1_root_stall_observed = 1'b0;
   reg service_envelope_mode = 1'b0;
   reg release_cadence_mode = 1'b0;
+  reg numerical_payload_mode = 1'b0;
+  reg [418:0] numerical_leaf [0:8191];
+  reg [345:0] numerical_root [0:511];
+  reg [31:0] numerical_release [0:8191];
+  reg [2047:0] numerical_leaf_path;
+  reg [2047:0] numerical_root_path;
+  reg [2047:0] numerical_release_path;
   reg vc1_all_input_done;
   reg vc1_release_group_available;
   reg [31:0] vc1_p54_release_cycle [0:VC1_TOTAL_ROWS-1];
@@ -444,7 +451,9 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
     input integer source;
     input integer row;
     begin
-      if (source < 8)
+      if (numerical_payload_mode)
+        release_cycle_for_source = numerical_release[source*512 + row];
+      else if (source < 8)
         release_cycle_for_source = vc1_p54_release_cycle[row];
       else
         release_cycle_for_source = vc1_p53_release_cycle[row];
@@ -570,11 +579,15 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
           (!release_cadence_mode ||
            cycle >= vc1_source_next_release_cycle[comb_source_i]);
         vc1_source_beat_data[comb_source_i*VC1_BEAT_W +: VC1_BEAT_W] =
+          numerical_payload_mode ?
+          numerical_leaf[comb_source_i*512 + vc1_active_group_id*128 + vc1_source_beat_index[comb_source_i]] :
           make_canonical_beat(vc1_active_group_id, vc1_source_beat_index[comb_source_i]);
       end
       vc1_root_local_beat_valid = (vc1_root_beat_index < VC1_GROUP_BEATS) &&
         (!release_cadence_mode || cycle >= vc1_root_next_release_cycle);
       vc1_root_local_beat_data =
+        numerical_payload_mode ?
+        numerical_leaf[15*512 + vc1_active_group_id*128 + vc1_root_beat_index] :
         make_canonical_beat(vc1_active_group_id, vc1_root_beat_index);
     end
   end
@@ -732,7 +745,7 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
       vc1_root_count <= 0;
       vc1_stream_active <= 1'b0;
       vc1_root_beat_index <= 0;
-      vc1_root_next_release_cycle <= vc1_p53_release_cycle[0];
+      vc1_root_next_release_cycle <= release_cycle_for_source(15, 0);
       vc1_root_stall_observed <= 1'b0;
       stalled_root_command <= 0;
       stalled_root_head <= 0;
@@ -794,12 +807,12 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
               (vc1_active_group_id * VC1_GROUP_BEATS + vc1_root_beat_index + 1) <
                 VC1_TOTAL_ROWS)
             vc1_root_next_release_cycle <= cycle +
-              vc1_p53_release_cycle[
+              release_cycle_for_source(15,
                 vc1_active_group_id * VC1_GROUP_BEATS + vc1_root_beat_index + 1
-              ] -
-              vc1_p53_release_cycle[
+              ) -
+              release_cycle_for_source(15,
                 vc1_active_group_id * VC1_GROUP_BEATS + vc1_root_beat_index
-              ];
+              );
           vc1_root_beat_index <= vc1_root_beat_index + 1;
         end
         for (mon_source_i = 0; mon_source_i < VC1_SOURCE_COUNT; mon_source_i = mon_source_i + 1)
@@ -990,7 +1003,7 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
       end
 
       if (vc1_root_valid && vc1_root_ready) begin
-        if (vc1_root_command_id !== BASE_COMMAND_ID + (vc1_root_count / VC1_GROUP_BEATS) ||
+        if (vc1_root_command_id !== vc1_base_command_id + (vc1_root_count / VC1_GROUP_BEATS) ||
             vc1_root_head_id !== ((vc1_root_count / 16) % 8) +
               ((vc1_root_count / VC1_GROUP_BEATS) * 8) ||
             vc1_root_slice !== (vc1_root_count % 16) ||
@@ -998,7 +1011,11 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
           $fatal(1, "vc1 root metadata mismatch row=%0d cmd=%h head=%0d slice=%0d last=%0d",
             vc1_root_count, vc1_root_command_id, vc1_root_head_id,
             vc1_root_slice, vc1_root_last);
-        for (mon_lane_i = 0; mon_lane_i < 8; mon_lane_i = mon_lane_i + 1)
+        if (numerical_payload_mode) begin
+          if ({vc1_root_value, vc1_root_last, vc1_root_slice, vc1_root_head_id,
+               vc1_root_command_id} !== numerical_root[vc1_root_count])
+            $fatal(1, "numerical root mismatch row=%0d", vc1_root_count);
+        end else for (mon_lane_i = 0; mon_lane_i < 8; mon_lane_i = mon_lane_i + 1)
           if (vc1_root_value[mon_lane_i*40 +: 40] !== 40'h0ffff)
             $fatal(1, "vc1 root canonical mismatch row=%0d lane=%0d value=%h",
               vc1_root_count, mon_lane_i, vc1_root_value[mon_lane_i*40 +: 40]);
@@ -1114,9 +1131,21 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
   initial begin
     service_envelope_mode = $test$plusargs("SERVICE_ENVELOPE");
     release_cadence_mode = $test$plusargs("RELEASE_CADENCE");
+    numerical_payload_mode = $test$plusargs("NUMERICAL_PAYLOAD");
+    if (numerical_payload_mode) begin
+      if (!release_cadence_mode ||
+          !$value$plusargs("NUMERICAL_LEAF=%s", numerical_leaf_path) ||
+          !$value$plusargs("NUMERICAL_ROOT=%s", numerical_root_path) ||
+          !$value$plusargs("NUMERICAL_RELEASE=%s", numerical_release_path) ||
+          !$value$plusargs("NUMERICAL_COMMAND_BASE=%d", vc1_base_command_id))
+        $fatal(1, "NUMERICAL_PAYLOAD requires release cadence, leaf/root files and command base");
+      $readmemh(numerical_leaf_path, numerical_leaf);
+      $readmemh(numerical_root_path, numerical_root);
+      $readmemh(numerical_release_path, numerical_release);
+    end
     if (service_envelope_mode && release_cadence_mode)
       $fatal(1, "SERVICE_ENVELOPE and RELEASE_CADENCE are mutually exclusive");
-    if (release_cadence_mode) begin
+    if (release_cadence_mode && !numerical_payload_mode) begin
       if (!$value$plusargs("RELEASE_P54=%s", release_p54_path) ||
           !$value$plusargs("RELEASE_P53=%s", release_p53_path))
         $fatal(1, "RELEASE_CADENCE requires RELEASE_P54 and RELEASE_P53");

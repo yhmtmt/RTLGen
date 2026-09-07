@@ -116,6 +116,12 @@ jobs:
             tests/test_attention_kv_gather_packet_mesh4x4_rtl.py \
             tests/test_attention_kv_destination_descriptor_guard16_rtl.py \
             tests/test_attention_kv_capacity_gather_mesh_ingress_elaboration.py \
+            tests/test_kv_gather_key_ordering.py \
+            tests/test_kv_paired_head_schedule.py \
+            tests/test_paired_key_address.py \
+            tests/test_paired_capacity_gather_scheduler.py \
+            tests/test_paired_schedule_key_transpose.py \
+            tests/test_paired_capacity_mesh_transpose.py::test_continuous_fixture_query_initialization \
             tests/test_llm_decoder_attention_score32_noc_phase2_endpoint_rtl.py \
             tests/test_llm_decoder_attention_score32_noc_phase2_schedule.py
 

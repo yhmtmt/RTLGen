@@ -2,7 +2,7 @@
 
 // Concurrent exact K/V packet transport over the existing endpoint-backed
 // deterministic-XY mesh. Receive state is installed before transmit release.
-module attention_kv_gather_packet_mesh4x4 (
+module attention_kv_gather_packet_mesh4x4 #(parameter COUNT_WIDTH = 16) (
   input wire clk,
   input wire rst_n,
 
@@ -58,7 +58,7 @@ module attention_kv_gather_packet_mesh4x4 (
   output wire [16*32-1:0] router_max_input_occupancy,
   output wire [16*5*32-1:0] router_route_flit_count,
   output reg [24:0] accepted_packet_command_count,
-  output reg [15:0] submitted_descriptor_count,
+  output reg [COUNT_WIDTH-1:0] submitted_descriptor_count,
   output reg schedule_packet_submitted,
   output reg command_protocol_error,
   output wire protocol_error

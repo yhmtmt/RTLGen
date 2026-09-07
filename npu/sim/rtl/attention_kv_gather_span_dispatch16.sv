@@ -3,7 +3,7 @@
 // Routes each exact gather span to the packetizer at its physical injection
 // endpoint. Independent sources expand spans concurrently; a busy selected
 // source alone backpressures the descriptor scheduler.
-module attention_kv_gather_span_dispatch16 (
+module attention_kv_gather_span_dispatch16 #(parameter COUNT_WIDTH = 14) (
   input wire clk,
   input wire rst_n,
 
@@ -43,7 +43,7 @@ module attention_kv_gather_span_dispatch16 (
   output wire [16*4-1:0] cmd_flit_count,
   output wire [15:0] cmd_descriptor_last,
   output wire [15:0] cmd_schedule_last,
-  output wire [16*14-1:0] accepted_descriptor_count,
+  output wire [16*COUNT_WIDTH-1:0] accepted_descriptor_count,
   output wire [16*25-1:0] generated_packet_count,
   output wire [15:0] packetizer_protocol_error
 );
@@ -53,7 +53,7 @@ module attention_kv_gather_span_dispatch16 (
   genvar lane_g;
   generate
     for (lane_g = 0; lane_g < 16; lane_g = lane_g + 1) begin : gen_lanes
-      attention_kv_gather_span_packetizer u_packetizer (
+      attention_kv_gather_span_packetizer #(.COUNT_WIDTH(COUNT_WIDTH)) u_packetizer (
         .clk(clk),
         .rst_n(rst_n),
         .desc_valid(desc_valid && (desc_source_endpoint == lane_g[3:0])),
@@ -96,7 +96,7 @@ module attention_kv_gather_span_dispatch16 (
         .cmd_descriptor_last(cmd_descriptor_last[lane_g]),
         .cmd_schedule_last(cmd_schedule_last[lane_g]),
         .accepted_descriptor_count(
-          accepted_descriptor_count[(lane_g*14) +: 14]
+          accepted_descriptor_count[(lane_g*COUNT_WIDTH) +: COUNT_WIDTH]
         ),
         .generated_packet_count(generated_packet_count[(lane_g*25) +: 25]),
         .protocol_error(packetizer_protocol_error[lane_g])

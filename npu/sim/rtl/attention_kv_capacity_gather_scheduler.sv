@@ -3,7 +3,9 @@
 // Exact Llama7B int8 K/V gather schedule for a 68 MiB shared resident cache.
 // The external HBM controller/PHY is outside this boundary; its returned byte
 // ranges enter at four explicit corner endpoints.
-module attention_kv_capacity_gather_scheduler (
+module attention_kv_capacity_gather_scheduler #(
+  parameter PAIRED_K = 0
+) (
   input  wire clk,
   input  wire rst_n,
   input  wire enable,
@@ -26,7 +28,7 @@ module attention_kv_capacity_gather_scheduler (
   output wire desc_last,
 
   output reg done,
-  output reg [15:0] generated_descriptor_count,
+  output reg [(PAIRED_K ? 22 : 16)-1:0] generated_descriptor_count,
   output reg protocol_error
 );
   localparam PHASE_REFILL = 1'b0;
@@ -35,7 +37,7 @@ module attention_kv_capacity_gather_scheduler (
   localparam [20:0] TAIL_BYTES = 21'h004000;
   localparam [20:0] TAIL_HBM_BYTES = 21'h01c000;
   localparam [3:0] ALL_PLANES = 4'd8;
-  localparam [15:0] EXPECTED_DESCRIPTORS = 16'd33344;
+  localparam [21:0] EXPECTED_DESCRIPTORS = PAIRED_K ? 22'd2113984 : 22'd33344;
 
   reg phase_q;
   reg [4:0] layer_q;
@@ -45,6 +47,26 @@ module attention_kv_capacity_gather_scheduler (
   reg [3:0] tile_lane_q;
   reg tensor_q;
   reg split_q;
+  reg [6:0] paired_index_q;
+  wire paired_active = PAIRED_K && phase_q == PHASE_CONSUME && !tensor_q;
+  wire [19:0] paired_canonical;
+  wire [33:0] paired_source;
+  wire paired_hbm;
+  wire [3:0] paired_endpoint;
+  generate if (PAIRED_K) begin : paired_address
+    attention_kv_paired_key_address address_map (
+      .layer(layer_q), .tile({wave_q, tile_lane_q}), .kv_head(group_q),
+      .head_byte_offset({paired_index_q[0], paired_index_q[6:1], 10'd0}),
+      .canonical_address(paired_canonical), .source_byte_address(paired_source),
+      .source_hbm(paired_hbm), .source_endpoint(paired_endpoint),
+      .destination_cluster(), .protocol_error()
+    );
+  end else begin : legacy_address
+    assign paired_canonical = 0;
+    assign paired_source = 0;
+    assign paired_hbm = 0;
+    assign paired_endpoint = 0;
+  end endgenerate
 
   reg [6:0] tile_r;
   reg [3:0] descriptor_segment_r;
@@ -129,19 +151,21 @@ module attention_kv_capacity_gather_scheduler (
   assign desc_valid = enable && !done;
   assign desc_layer = layer_q;
   assign desc_tile = tile_r;
-  assign desc_segment = descriptor_segment_r;
+  assign desc_segment = paired_active ?
+    {1'b0, group_q, 1'b0} + ((tile_r == 7'd2 && paired_hbm) ? 4'd1 : 4'd0) :
+    descriptor_segment_r;
   assign desc_operation_consume = phase_q == PHASE_CONSUME;
-  assign desc_source_hbm = source_hbm_r;
-  assign desc_source_endpoint = source_endpoint_r;
+  assign desc_source_hbm = paired_active ? paired_hbm : source_hbm_r;
+  assign desc_source_endpoint = paired_active ? paired_endpoint : source_endpoint_r;
   assign desc_destination_cluster = destination_cluster_r;
   assign desc_plane = plane_r;
-  assign desc_canonical_base_address = canonical_base_r;
-  assign desc_source_byte_address = source_hbm_r ?
-    hbm_address_r : resident_address_r;
+  assign desc_canonical_base_address = paired_active ? paired_canonical : canonical_base_r;
+  assign desc_source_byte_address = paired_active ? paired_source :
+    (source_hbm_r ? hbm_address_r : resident_address_r);
   assign desc_destination_is_resident_cache = phase_q == PHASE_REFILL;
   assign desc_destination_byte_address = phase_q == PHASE_REFILL ?
-    resident_address_r : {14'd0, canonical_base_r};
-  assign desc_payload_bytes = payload_r;
+    resident_address_r : {14'd0, desc_canonical_base_address};
+  assign desc_payload_bytes = paired_active ? 21'd1024 : payload_r;
   assign desc_last = phase_q == PHASE_CONSUME &&
     layer_q == 5'd31 && group_q == 2'd3 && wave_q == 3'd7 &&
     tile_lane_q == 4'd15 && tensor_q && !split_q;
@@ -158,6 +182,7 @@ module attention_kv_capacity_gather_scheduler (
       tile_lane_q <= 4'd0;
       tensor_q <= 1'b0;
       split_q <= 1'b0;
+      paired_index_q <= 7'd0;
       done <= 1'b0;
       generated_descriptor_count <= 16'd0;
       protocol_error <= 1'b0;
@@ -174,9 +199,12 @@ module attention_kv_capacity_gather_scheduler (
         end else begin
           refill_segment_q <= refill_segment_q + 1'b1;
         end
-      end else if ({wave_q, tile_lane_q} == 7'd2 && !split_q) begin
+      end else if (paired_active && paired_index_q != 7'd127) begin
+        paired_index_q <= paired_index_q + 1'b1;
+      end else if (!paired_active && {wave_q, tile_lane_q} == 7'd2 && !split_q) begin
         split_q <= 1'b1;
       end else begin
+        paired_index_q <= 7'd0;
         split_q <= 1'b0;
         if (tile_lane_q != 4'd15) begin
           tile_lane_q <= tile_lane_q + 1'b1;
