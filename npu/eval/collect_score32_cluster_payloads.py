@@ -16,15 +16,22 @@ from npu.eval import probe_llama7b_score32_exact_cluster_release_cadence as cade
 from npu.eval.cluster_numerical_payload import pack_all_endpoints
 
 
+def loaded_project_sources() -> set[Path]:
+    """Pin imported generators and reference models, including transitive ones."""
+    paths = {Path(__file__).resolve()}
+    for module in tuple(sys.modules.values()):
+        filename = getattr(module, "__file__", None)
+        if filename:
+            path = Path(filename).resolve()
+            if path.is_relative_to(ROOT) and path.suffix == ".py" and path.is_file():
+                paths.add(path)
+    return paths
+
+
 def collect(config_path: Path, *, compile_timeout: int, run_timeout: int) -> dict:
     config_path = config_path.resolve()
-    sources = [Path(__file__).resolve(), config_path,
-        ROOT / "npu/eval/cluster_numerical_payload.py",
-        ROOT / "npu/eval/probe_llama7b_score32_exact_cluster_release_cadence.py",
-        ROOT / "npu/eval/gqa8_compositional_exact.py",
-        ROOT / "npu/eval/probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py",
-        ROOT / "npu/rtlgen/gen_attention_score32_exact_local16_global_tree_cluster_sram_gqa8.py"]
-    identities = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}
+    sources = loaded_project_sources() | {config_path}
+    identities = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(sources)}
     config = json.loads(config_path.read_text())
     observations = []
     with tempfile.TemporaryDirectory(prefix="score32_all_cluster_payloads_") as name:
@@ -74,6 +81,8 @@ def collect(config_path: Path, *, compile_timeout: int, run_timeout: int) -> dic
                     cluster=endpoint, expected_rows=reference["cluster_rows"][endpoint]))
                 print(f"Endpoint {endpoint}: exact rows verified", flush=True)
     words = pack_all_endpoints(observations)
+    if not loaded_project_sources().issubset(sources):
+        raise RuntimeError("new unpinned project dependency loaded during collection")
     for path, expected in identities.items():
         if hashlib.sha256((ROOT / path).read_bytes()).hexdigest() != expected:
             raise RuntimeError(f"source changed during collection: {path}")
