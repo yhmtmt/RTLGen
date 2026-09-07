@@ -1,14 +1,14 @@
 """Paired canonical K flits through a real transposer into every producer."""
 
 
-def write_key_flits(path, *, fixture, cluster):
+def write_key_flits(path, *, fixture, cluster, value=False):
     """Command-major canonical memory; each command covers one head/tile."""
     with path.open("w") as output:
         for group in range(4):
             for wave in range(8):
                 tile = cluster + 16 * wave
                 for offset in range(0, 131072, 32):
-                    data = fixture.memory_flit(tile=tile, address=group * 131072 + offset)
+                    data = fixture.memory_flit(tile=tile, address=(524288 if value else 0) + group * 131072 + offset)
                     output.write(f"{int.from_bytes(data, 'little'):064x}\n")
 
 

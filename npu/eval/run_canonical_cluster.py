@@ -15,11 +15,13 @@ from npu.eval import probe_llama7b_score32_exact_cluster_release_cadence as cade
 from npu.eval.canonical_attention_cluster_reference import canonical_cluster_rows
 from npu.eval.canonical_cluster_kq_stage import attach_cluster_kq_stage
 from npu.eval.canonical_cluster_key_ingress import attach_cluster_key_ingress, write_key_flits
+from npu.eval.canonical_cluster_value_ingress import attach_cluster_value_ingress
 from npu.eval.collect_score32_cluster_payloads import loaded_project_sources
 from npu.sim.perf.canonical_attention_fixture import CanonicalAttentionFixture
 
 
-def run(*, live_kq_stage=False, live_key_ingress=False):
+def run(*, live_kq_stage=False, live_key_ingress=False, live_value_ingress=False):
+    live_key_ingress = live_key_ingress or live_value_ingress
     live_kq_stage = live_kq_stage or live_key_ingress
     fixture = CanonicalAttentionFixture()
     config_path = cadence.DEFAULT_CONFIG
@@ -31,6 +33,10 @@ def run(*, live_kq_stage=False, live_key_ingress=False):
     if live_key_ingress:
         extra_rtl += [ROOT / "npu/sim/rtl" / name for name in (
             "attention_score32_exact_kv_key_pingpong_transpose.sv", "attention_kv_paired_head_schedule.sv")]
+        sources.update(extra_rtl)
+    if live_value_ingress:
+        extra_rtl += [ROOT / "npu/sim/rtl" / name for name in (
+            "attention_score32_exact_kv_value_ingress.sv", "attention_score32_exact_kv_ingress_transpose.sv")]
         sources.update(extra_rtl)
     hashes = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(sources)}
     config = json.loads(config_path.read_text())
@@ -58,6 +64,8 @@ def run(*, live_kq_stage=False, live_key_ingress=False):
                 testbench = attach_cluster_kq_stage(testbench, producers=producers)
             if live_key_ingress:
                 testbench = attach_cluster_key_ingress(testbench, producers=producers)
+            if live_value_ingress:
+                testbench = attach_cluster_value_ingress(testbench, producers=producers)
             tb.write_text(testbench)
             control = build / "cluster.vlt"
             control.write_text(cadence._verilator_control_file_text(top))
@@ -77,6 +85,8 @@ def run(*, live_kq_stage=False, live_key_ingress=False):
             cadence._write_cluster_sidecars(run_dir, cluster=endpoint, logical_head_groups=4, canonical_fixture=fixture)
             if live_key_ingress:
                 write_key_flits(run_dir / "canonical_k_flits.memh", fixture=fixture, cluster=endpoint)
+            if live_value_ingress:
+                write_key_flits(run_dir / "canonical_v_flits.memh", fixture=fixture, cluster=endpoint, value=True)
             for path in sorted(run_dir.glob("*.memh")):
                 generated_hashes[str(path.relative_to(work))] = hashlib.sha256(path.read_bytes()).hexdigest()
             print(f"Replaying all {producers} concurrent producers for endpoint {endpoint}", flush=True)
@@ -94,7 +104,7 @@ def run(*, live_kq_stage=False, live_key_ingress=False):
     for path, digest in hashes.items():
         if hashlib.sha256((ROOT / path).read_bytes()).hexdigest() != digest:
             raise RuntimeError(f"source changed during replay: {path}")
-    return {"passed": True, "live_kq_stage": live_kq_stage, "live_key_ingress": live_key_ingress, "source_hashes": hashes, "generated_hashes": generated_hashes,
+    return {"passed": True, "live_kq_stage": live_kq_stage, "live_key_ingress": live_key_ingress, "live_value_ingress": live_value_ingress, "source_hashes": hashes, "generated_hashes": generated_hashes,
         "clusters": observations, "scope": "Two separate concurrent cluster RTL runs with canonical sidecar inputs; not live ingress or shared mesh, technology SRAM, workload recost, or PPA."}
 
 
@@ -103,6 +113,7 @@ if __name__ == "__main__":
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--live-kq-stage", action="store_true")
     parser.add_argument("--live-key-ingress", action="store_true")
+    parser.add_argument("--live-value-ingress", action="store_true")
     args = parser.parse_args()
-    result = run(live_kq_stage=args.live_kq_stage, live_key_ingress=args.live_key_ingress)
+    result = run(live_kq_stage=args.live_kq_stage, live_key_ingress=args.live_key_ingress, live_value_ingress=args.live_value_ingress)
     args.out.write_text(json.dumps(result, indent=2) + "\n")
