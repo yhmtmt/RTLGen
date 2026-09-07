@@ -122,6 +122,7 @@ jobs:
             tests/test_paired_capacity_gather_scheduler.py \
             tests/test_paired_schedule_key_transpose.py \
             tests/test_paired_capacity_mesh_transpose.py::test_continuous_fixture_query_initialization \
+            tests/test_paired_capacity_mesh_transpose.py::test_canonical_fixture_query_initialization \
             tests/test_llm_decoder_attention_score32_noc_phase2_endpoint_rtl.py \
             tests/test_llm_decoder_attention_score32_noc_phase2_schedule.py
 

@@ -1,7 +1,28 @@
 # Canonical ingress to cluster adapter: implementation contract
 
-This contract records the next integration boundary from the existing RTL ports.
-It is not evidence of an implemented adapter or permission to recost the frontier.
+This contract records the integration boundary from the existing RTL ports and
+the incremental evidence below. Historical gap descriptions are followed by
+their implemented checks; they must not be read as the current closure status.
+The bounded K path is implemented and tested as described below. V integration,
+live score production, full-model execution, and physical recost remain open.
+
+## Canonical full-transport gate in progress
+
+`test_canonical_refill_mesh_and_kq_stage` now drives the real layer-0 refill,
+resident/HBM gather, paired mesh, transpose, and wide K/Q stage with canonical
+tensor sidecars for tiles 0, 1, and 2, head group zero. Its independent producer
+oracle uses canonical tensor coordinates and the rotated slot assignment;
+checks compare all accepted Q/K/last words under producer backpressure.
+Both p53 and p54 full simulations are pending: no pass or timing claim is made.
+The short canonical query-initialization checks pass for both families (two
+tests, 31.07 seconds), and the legacy counterparts pass (two tests, 10.54
+seconds). CI includes both short gates, not the long transport simulations.
+
+This gate uses deterministic int8 tensors, not pretrained model inputs. Its
+consumer is the K/Q stage interface, not the arithmetic score producer. Even a
+passing result would not establish V delivery, nonzero-layer mesh rotation,
+live numerical reduction, full-model cadence, activity-backed power, or a new
+physically credible Pareto point.
 
 Source: `attention_kv_capacity_gather_mesh_ingress` emits per-endpoint valid/ready,
 layer, tile, 20-bit canonical tile-byte address, and 256-bit data.

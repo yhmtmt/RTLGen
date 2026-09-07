@@ -1,6 +1,10 @@
 `timescale 1ns/1ps
 module tb;
 localparam WITH_STAGE=STAGE_ENABLED;
+localparam CANONICAL=CANONICAL_ENABLED;
+reg [255:0] canonical_hbm[0:98303];
+reg [63:0] canonical_query[0:127];
+reg [256:0] canonical_expected[0:3*PRODUCER_COUNT*256-1];
 reg clk=0,rst_n=0; always #1 clk=~clk;
 integer cycle=0,progress_fd;
 wire [21:0] generated_descriptor_count,completed_descriptor_count;
@@ -45,8 +49,18 @@ function automatic [255:0] source_payload;
  input [32:0] a;
  integer b;
  begin
-  for(b=0;b<32;b=b+1)
+  if(CANONICAL) source_payload=canonical_hbm[a/32];
+  else for(b=0;b<32;b=b+1)
    source_payload[b*8+:8]=tensor_byte(a[15:10],a[16],a[9:7],a[6:0]+b);
+ end
+endfunction
+function automatic [7:0] expected_key_byte;
+ input integer tile,slot,stream,token,dimension;
+ integer a;
+ begin
+  a=tile*1048576+stream*65536+slot*1024+token*128+dimension;
+  if(CANONICAL) expected_key_byte=canonical_hbm[a/32][(a%32)*8+:8];
+  else expected_key_byte=tensor_byte(slot,stream,token,dimension);
  end
 endfunction
 
@@ -90,7 +104,10 @@ generate for(g=0;g<3;g=g+1) begin : transposers
   reg [127:0] expected_k,expected_q;
   function automatic [7:0] query_byte;
    input integer d,l;
-   begin query_byte=(d*5+l*7)&255;end
+   begin
+    if(CANONICAL) query_byte=canonical_query[d][l*8+:8];
+    else query_byte=(d*5+l*7)&255;
+   end
   endfunction
   always_comb for(q_lane=0;q_lane<8;q_lane=q_lane+1)
    qdata[q_lane*8+:8]=query_byte(query_dimension,q_lane);
@@ -125,11 +142,13 @@ generate for(g=0;g<3;g=g+1) begin : transposers
     slot=p+(p<(64-PRODUCER_COUNT)?p:(64-PRODUCER_COUNT))+accepted[p]/128;
     dim=accepted[p]%128;
     for(b=0;b<16;b=b+1) begin
-     expected_k[b*8+:8]=tensor_byte(slot,b/8,b%8,dim);
+     expected_k[b*8+:8]=expected_key_byte(g,slot,b/8,b%8,dim);
      expected_q[b*8+:8]=query_byte(dim,b%8);
     end
     if(pk[p*128+:128]!==expected_k || pq[p*128+:128]!==expected_q || pl[p]!=(dim==127))
      $fatal(1,"staged K/Q mismatch tile=%0d producer=%0d beat=%0d K=%h expectedK=%h Q=%h expectedQ=%h last=%b",g,p,accepted[p],pk[p*128+:128],expected_k,pq[p*128+:128],expected_q,pl[p]);
+    if(CANONICAL && {pq[p*128+:128],pk[p*128+:128],pl[p]} !== canonical_expected[(g*PRODUCER_COUNT+p)*256+accepted[p]])
+     $fatal(1,"canonical producer oracle mismatch tile=%0d producer=%0d beat=%0d",g,p,accepted[p]);
     accepted[p]=accepted[p]+1;
    end
    if(command_done) begin
@@ -173,6 +192,7 @@ end
    if(address[4:0]!=0) $fatal(1,"unaligned source");
    pending[lane]<=1;
    if(source_req_is_hbm[lane]) begin
+    if(CANONICAL && address>=33'd3145728) $fatal(1,"canonical source outside fixture");
     response[lane]<=source_payload(address);
     hbm_reads=hbm_reads+1;
    end else begin
@@ -194,15 +214,15 @@ end
    expected_address=((inputs[lane]/32)%2)*65536+(inputs[lane]/64)*1024+(inputs[lane]%32)*32;
    if(canonical_ingress_layer[lane*5+:5]!=0 || canonical_ingress_tile[lane*7+:7]!=lane ||
       canonical_ingress_tile_byte_address[lane*20+:20]!==expected_address ||
-      canonical_ingress_data[lane*256+:256]!==source_payload({13'd0,expected_address}))
+      canonical_ingress_data[lane*256+:256]!==source_payload(lane*33'd1048576+{13'd0,expected_address}))
      $fatal(1,"paired ingress order/data lane=%0d input=%0d",lane,inputs[lane]);
    inputs[lane]=inputs[lane]+1;
   end
   if(key_valid[lane]&&key_ready[lane]) begin
    for(half_index=0;half_index<2;half_index=half_index+1)
     for(token_index=0;token_index<16;token_index=token_index+1)
-     expected_output[(half_index*16+token_index)*8+:8]=tensor_byte(
-      outputs[lane]/64,token_index/8,token_index%8,(outputs[lane]%64)*2+half_index);
+     expected_output[(half_index*16+token_index)*8+:8]=expected_key_byte(
+      lane,outputs[lane]/64,token_index/8,token_index%8,(outputs[lane]%64)*2+half_index);
    if(key_data[lane*256+:256]!==expected_output) $fatal(1,"transpose data lane=%0d output=%0d",lane,outputs[lane]);
    outputs[lane]=outputs[lane]+1;
   end
@@ -217,6 +237,11 @@ end
  if(cycle>2000000) $fatal(1,"timeout descriptors=%0d completed=%0d",generated_descriptor_count,completed_descriptor_count);
 end
 initial begin
+ if(CANONICAL) begin
+  $readmemh("canonical_hbm.hex",canonical_hbm);
+  $readmemh("canonical_query.hex",canonical_query);
+  $readmemh("canonical_producers.hex",canonical_expected);
+ end
  progress_fd=$fopen("progress.log","w");
  if(!progress_fd) $fatal(1,"cannot open progress log");
  for(init_i=0;init_i<69632;init_i=init_i+1) resident_written[init_i]=0;
