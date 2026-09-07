@@ -72,8 +72,10 @@ resident/HBM ownership for zero, 16 KiB, and full-head resident prefixes. RTL
 tests cover stalls and invalid prefixes. `test_paired_schedule_key_transpose.py`
 connects the sequencer to p53 and p54 transposers and checks 4096 input flits
 and all 4096 numerical output beats under downstream stalls for each case.
-The fixture varies bytes by block slot; it does not exhaust arbitrary tensor
-values or validate the downstream K/Q stage.
+The fixture now varies bytes by block slot, stream, token lane, and dimension,
+and checks every output byte for p53 and p54 (both tests pass). This catches
+permutations that the earlier block-constant fixture could not distinguish.
+It does not exhaust arbitrary tensor values or validate the downstream K/Q stage.
 
 The standalone primitive's `head_done`
 pulse means the final span was accepted, not that remote writes or K/Q staging

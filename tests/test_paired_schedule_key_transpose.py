@@ -19,8 +19,19 @@ reg [4:0] flit=0; integer inputs=0,outputs=0,cycle=0;
 wire ir,kv,ke; wire [255:0] kd;
 wire kr=(cycle%7!=2 && cycle%7!=3);
 wire iv=sv;
-wire [7:0] byte_value={2'd0,offset[15:10]};
 wire [19:0] byte_address=address+{10'd0,flit,5'd0};
+function automatic [7:0] tensor_byte;
+ input integer slot,stream,token,dimension;
+ begin tensor_byte=(slot*13+stream*71+token*17+dimension*3)&255; end
+endfunction
+function automatic [255:0] ingress_payload;
+ input [19:0] a;
+ integer b;
+ begin
+  for(b=0;b<32;b=b+1)
+   ingress_payload[b*8+:8]=tensor_byte(a[15:10],a[16],a[9:7],a[6:0]+b);
+ end
+endfunction
 assign sr=iv && ir && flit==31;
 attention_kv_paired_head_schedule schedule(.clk(clk),.rst_n(rst),
  .head_valid(hv),.head_ready(hr),.head_kv_head(2'd2),
@@ -29,17 +40,21 @@ attention_kv_paired_head_schedule schedule(.clk(clk),.rst_n(rst),
  .span_resident(resident),.span_last(sl),.head_done(sd),.protocol_error(se));
 attention_score32_exact_kv_key_pingpong_transpose #(.PRODUCERS(PRODUCER_COUNT)) transpose(
  .clk(clk),.rst_n(rst),.ingress_valid(iv),.ingress_ready(ir),
- .ingress_tile_byte_addr(byte_address),.ingress_data({32{byte_value}}),
+ .ingress_tile_byte_addr(byte_address),.ingress_data(ingress_payload(byte_address)),
  .ingress_byte_valid(32'hffffffff),.key_valid(kv),.key_ready(kr),
  .key_data(kd),.protocol_error(ke));
-reg [7:0] expected_byte;
+reg [255:0] expected_data;
+integer half_index,token_index;
 always @(posedge clk) if(rst) begin
  cycle<=cycle+1;
  if(se||ke) $fatal(1,"protocol error");
  if(iv&&ir) begin inputs<=inputs+1; flit<=flit+1'b1; end
  if(kv&&kr) begin
-  expected_byte=outputs/64;
-  if(kd !== {32{expected_byte}}) $fatal(1,"numerical transpose mismatch %0d",outputs);
+  for(half_index=0;half_index<2;half_index=half_index+1)
+   for(token_index=0;token_index<16;token_index=token_index+1)
+    expected_data[(half_index*16+token_index)*8+:8]=tensor_byte(
+     outputs/64,token_index/8,token_index%8,(outputs%64)*2+half_index);
+  if(kd !== expected_data) $fatal(1,"numerical transpose mismatch %0d",outputs);
   outputs<=outputs+1;
  end
  if(outputs==4096) begin
