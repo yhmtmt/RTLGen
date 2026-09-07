@@ -75,7 +75,7 @@ and all 4096 numerical output beats under downstream stalls for each case.
 The fixture varies bytes by block slot; it does not exhaust arbitrary tensor
 values or validate the downstream K/Q stage.
 
-This primitive is not yet in the capacity gather scheduler. Its `head_done`
+The standalone primitive's `head_done`
 pulse means the final span was accepted, not that remote writes or K/Q staging
 completed. Source-base adaptation, receive-before-transmit descriptor ordering,
 and completion barriers must preserve that distinction in the integration.
@@ -104,3 +104,20 @@ retain coordinates during a stall. Connecting it to the paired sequencer and
 capacity scheduler, widening counters, and enforcing completion ordering remain
 integration requirements. No composed transport latency or physical cost is
 established by the exhaustive address test.
+
+The capacity scheduler now has an explicit `PAIRED_K=1` integration mode. It
+retains the group/wave/tensor/tile traversal, replaces each K head with 128
+paired 1-KiB spans, and uses the verified address adapter. Its descriptor count
+widens to 22 bits in that mode. `test_paired_capacity_gather_scheduler.py`
+compares all 2,113,984 descriptors (including unchanged V and refill rows)
+against the model with two-cycle backpressure windows, checks stability through
+acceptance, and verifies the final descriptor and terminal count. That test and
+the legacy scheduler and mesh-elaboration tests pass (three tests total).
+
+The mesh wrapper still selects the legacy default (`PAIRED_K=0`). This is a
+comparison baseline, not the corrected ingress path. Before switching it, its
+aggregate and lane counters must be widened and paired span completion through
+the destination ownership guard must be verified. A segment identifies the
+head/source partition, not a unique paired span; repeated segment values must
+not bypass the guard's terminal-packet completion rule. The scheduler's `done`
+continues to mean descriptor acceptance, not downstream numerical completion.
