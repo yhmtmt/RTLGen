@@ -15,7 +15,9 @@ cluster replays, not one simultaneously instantiated full-cluster simulation.
 The original collector output SHA-256 is
 `f82c54c993854f8cc29a1307b4a8443ae442b4b0687df57bceffe9c3fb9b4eed`.
 The archive uses compact serialization; file-byte hashes therefore differ.
-The numerical shared-mesh replay is running and has no passing result yet.
+The numerical shared-mesh replay subsequently passed all 512 finalized rows;
+see `measured_numerical_result.md` in the sibling exact shared-mesh release
+replay proposal for observations and scope.
 
 Scope: these are arithmetic-stress-fixture values. The fixture varies Q with
 placement and must not be relabeled canonical resident decoder queries.

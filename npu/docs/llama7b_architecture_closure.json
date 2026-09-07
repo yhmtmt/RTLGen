@@ -696,7 +696,7 @@
         },
         "equivalence": {
           "status": "open",
-          "summary": "No single promoted equivalence gate closes the final selected NoC behavior against the end-to-end attention contract."
+          "summary": "The collected arithmetic-stress streams from all sixteen exact cluster replays now pass shared-mesh replay with 512 exact finalized rows, 8192 source handshakes, and 79396 arbitration decisions checked. This is separate-cluster trace-coupled evidence, not a single promoted gate for canonical mapped attention or live producer/mesh feedback."
         },
         "routed_ppa": {
           "status": "measured_component",
@@ -763,7 +763,13 @@
           "path": "docs/proposals/prop_l2_decoder_attention_score32_exact_kv_ingress_revision_llama7b_v1/cluster_adapter_contract.md",
           "kind": "proposal_gate",
           "dimensions": ["rtl", "equivalence", "composition"],
-          "note": "Records the reproduced ascending-order mismatch, exhaustive paired source-address and descriptor checks, 22-bit counter propagation, repeated-span ownership checks, and all-head p53/p54 transpose data/metadata tests. Full paired transport and downstream K/Q numerical composition remain unproven."
+          "note": "Records the reproduced ascending-order mismatch, exhaustive paired source-address and descriptor checks, 22-bit counter propagation, and bounded p53/p54 real-refill-to-mesh-to-K/Q passes. Full-model mapped attention and score-production composition remain unproven."
+        },
+        {
+          "path": "docs/proposals/prop_l2_decoder_attention_score32_exact_shared_mesh_release_replay_llama7b_v1/measured_numerical_result.md",
+          "kind": "proposal_gate",
+          "dimensions": ["equivalence", "composition"],
+          "note": "Records passing exact numerical replay of all collected cluster leaves through the shared mesh at 73845 cycles. Historical VC0, placement-varying stress queries, separate cluster runs, and absent physical/CDC closure bound the claim."
         }
       ],
       "caveats": [
