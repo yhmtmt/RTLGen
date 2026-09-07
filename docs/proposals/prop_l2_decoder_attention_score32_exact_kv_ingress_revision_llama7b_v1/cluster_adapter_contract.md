@@ -60,5 +60,8 @@ Before connecting these ports, embody paired-block gather ordering or a sized
 reorder store, including the split resident/HBM ranges and destination ordering
 locks. Verify the resulting full-head RTL delivery, and include its buffering,
 descriptor, and service costs in the eventual PPA/performance comparison.
-This is a source-derived incompatibility; a direct integrated RTL regression
-and corrective implementation remain pending.
+`tests/test_kv_gather_key_ordering.py` reproduces the boundary directly in RTL:
+the first 32 ascending flits pass, the 33rd at 0x00400 raises protocol error,
+and a matching second-stream flit at 0x10000 is accepted without error. Both
+diagnostic cases pass. Full gather-to-transposer composition and a corrective
+implementation remain pending.
