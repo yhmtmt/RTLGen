@@ -178,3 +178,16 @@ dimension; whose K/V depend on their canonical token coordinates; and whose
 producer streams are derived through the real mapper and ingress path. The
 direct query-residency mismatch is an input-fixture distinction, not evidence
 that the K/Q hardware should accept per-producer or per-stream decoder queries.
+
+`npu/sim/perf/canonical_attention_fixture.py` now provides that separate tensor
+source. Q identity includes layer, decode token, global query head, and
+dimension; K/V identity includes layer, tensor, KV head, canonical cache token,
+and dimension. Deterministic SHA-256 sampling supplies int8 stress values
+without encoding placement into tensor identity. It is not pretrained-model
+data or a generation-quality result. Producer streams use the actual rotated
+slot/block assignment and duplicate the resident eight-head Q word.
+Ten tests pass, covering all heads for both producer families, query reuse
+over every emitted beat, K memory/producer correspondence at four dimension
+boundaries for every block/lane, and unchanged cached K/V across decode-token
+changes. This source is not yet wired into the full collected numerical RTL
+replay; it establishes a consistent input contract for that next integration.
