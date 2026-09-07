@@ -63,10 +63,10 @@ had not evaluated before the first write; `always_comb` gives the required
 startup evaluation. The short initialization audit passes for both producer
 families with that change.
 This is a testbench correction, not a change to the K/Q stage RTL. The corrected
-full p53 run subsequently passed in 789.77 seconds; the corrected p54 run
-remains live. Neither failed run supports a passing composed-path claim.
+full p53 and p54 runs subsequently passed in 789.77 and 787.83 seconds,
+respectively. Neither failed run supports a passing composed-path claim.
 
-The corrected p53 pass covers one continuous path through real refill,
+Each corrected pass covers one continuous path through real refill,
 resident/HBM reads, the paired scheduler, mesh, transpose, and wide K/Q stages.
 In addition to the 69,632 refill writes, 12,288 ingress flits, 12,288 transpose
 beats, and 394 completed descriptors, it checks all 24,576 producer-facing
@@ -74,7 +74,7 @@ K/Q beats across the three heads with independent producer stalls and exact
 block-terminal flags. Query values are fixture-supplied, not mapper-generated.
 The score producer and full-model attention computation are not executed.
 
-The executed p53 fixture matches `67a17cc9` after parameter substitution,
+Both executed fixtures match `67a17cc9` after parameter substitution,
 and the RTL sources are unchanged since that commit. Fixture SHA-256:
 `29f81fe19413a5e219a206ce997797b25178fa6dbae48a7f32ee721c9a10ad53`.
 Runner SHA-256:
