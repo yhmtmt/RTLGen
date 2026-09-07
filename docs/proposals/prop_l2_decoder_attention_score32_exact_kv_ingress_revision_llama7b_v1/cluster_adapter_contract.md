@@ -93,5 +93,14 @@ canonical coverage, source ownership, resident bounds, and endpoint selection.
 Tile 2 uses packed 16-KiB head prefixes in the resident cache, rather than
 the HBM layout's 128-KiB head stride. The full-model K consume coverage is
 34 MiB resident plus 2014 MiB HBM. Eleven model tests pass. These address checks
-do not establish RTL source-address equivalence; that comparison remains an
-integration requirement alongside widened counters and completion ordering.
+alone do not establish RTL source-address equivalence.
+
+The standalone `attention_kv_paired_key_address.sv` adapter now matches this
+oracle for all 2,097,152 K spans in `tests/test_paired_key_address.py` (passed).
+The comparison includes canonical address, 34-bit source address, resident/HBM
+selection, source endpoint, and destination cluster. Unaligned offsets are
+also rejected. The adapter is combinational: it does not own valid/ready or
+retain coordinates during a stall. Connecting it to the paired sequencer and
+capacity scheduler, widening counters, and enforcing completion ordering remain
+integration requirements. No composed transport latency or physical cost is
+established by the exhaustive address test.
