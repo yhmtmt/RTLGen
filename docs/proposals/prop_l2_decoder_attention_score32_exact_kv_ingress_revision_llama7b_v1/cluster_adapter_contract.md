@@ -336,3 +336,21 @@ producer beats in total under independent producer stalls. This verifies the
 canonical tensor-to-local-K/Q interface at tile 2, layer 7. It does not yet
 run those same tensors through real refill/mesh, score production, full-model
 mapper lowering, or routed/activity evaluation.
+## Concurrent canonical producers with live K/Q staging
+
+`canonical_live_kq_concurrent_cluster_result.json` retains the successful
+`run_canonical_cluster.py --live-kq-stage` replay of endpoints 0 (54 producers)
+and 8 (53 producers), separately. Each uses the real wide K/Q stage connected
+to every concurrent numerical producer across four head groups and eight waves.
+All 512 output rows per endpoint equal both the canonical reference and the
+prior direct-sidecar cluster result. Accepted stage beats and stalled-beat
+stability are checked in RTL; nonzero backpressure is required. The runner
+verified 38 source and 15 generated-input hashes after both runs.
+
+Each endpoint accepted 65,536 SRAM fill rows, requests and responses, with
+32 command accepts/releases and zero reported errors. Serialized stage filling
+gives last-output cycles 144,221 and 144,223 respectively; these diagnostic
+cycles are not a workload recost or a performance improvement. K/Q stage writes
+and V SRAM fills still originate from testbench sidecars, not live transpose,
+V ingress or shared mesh. Technology SRAM, all-16-endpoint canonical numerical
+composition, mapper execution, CDC and activity-backed PPA remain unclosed.
