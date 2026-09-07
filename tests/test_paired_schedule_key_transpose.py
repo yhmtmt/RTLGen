@@ -3,16 +3,34 @@ import shutil
 import subprocess
 import pytest
 
+from npu.sim.perf.canonical_attention_fixture import CanonicalAttentionFixture
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.mark.parametrize("producers", [53, 54])
 @pytest.mark.parametrize("head", range(4))
 @pytest.mark.parametrize("with_stage", [False, True])
-def test_complete_paired_head_through_transposer(tmp_path, producers, head, with_stage):
+def test_complete_paired_head_through_transposer(tmp_path, producers, head, with_stage, canonical=False):
     if not shutil.which("iverilog") or not shutil.which("vvp"):
         pytest.skip("Icarus unavailable")
     tb = tmp_path / "tb.sv"
+    if canonical:
+        fixture = CanonicalAttentionFixture(layer=7)
+        (tmp_path / "canonical_k.hex").write_text("".join(
+            f"{int.from_bytes(fixture.memory_flit(tile=2, address=head * 131072 + offset), 'little'):064x}\n"
+            for offset in range(0, 131072, 32)))
+        (tmp_path / "canonical_q.hex").write_text("".join(
+            f"{int.from_bytes(bytes(v & 255 for v in fixture.query(group=head, dimension=d)), 'little'):016x}\n"
+            for d in range(128)))
+        expected = [0] * (producers * 256)
+        for producer in range(producers):
+            for beat, (q, k, last) in enumerate(fixture.producer_stream(
+                    producers=producers, producer=producer, group=head, tile=2)):
+                qword = int.from_bytes(bytes(v & 255 for v in q), "little")
+                kword = int.from_bytes(bytes(v & 255 for v in k), "little")
+                expected[producer * 256 + beat] = (qword << 129) | (kword << 1) | int(last)
+        (tmp_path / "canonical_producers.hex").write_text("".join(f"{word:065x}\n" for word in expected))
     extra = 64 - producers
     assignments = [(producer << 1) | block for producer in range(producers)
                    for block in range(2 if head * extra <= producer < (head + 1) * extra else 1)]
@@ -29,6 +47,9 @@ reg [4:0] flit=0; integer inputs=0,outputs=0,cycle=0;
 wire ir,kv,ke; wire [255:0] kd;
 wire [5:0] kp,kpair; wire [1:0] kh; wire kb,kl;
 reg [6:0] mapping[0:63];
+reg [255:0] canonical_lines[0:4095];
+reg [63:0] canonical_queries[0:127];
+reg [256:0] canonical_producers[0:PRODUCER_COUNT*256-1];
 reg held=0; reg [271:0] previous;
 wire [271:0] key_bundle={kd,kp,kpair,kh,kb,kl};
 wire stage_ready,fill_complete,command_ready,command_done,stage_error;
@@ -42,13 +63,21 @@ integer base[0:PRODUCER_COUNT-1],blocks[0:PRODUCER_COUNT-1],accepted[0:PRODUCER_
 integer p,t,q,qi,ready_p; reg [127:0] expected_k,expected_q;
 function automatic [7:0] query_byte;
  input integer dimension,lane;
- begin query_byte=(dimension*5+lane*7)&255; end
+ begin
+  if(CANONICAL_MODE) query_byte=canonical_queries[dimension][lane*8+:8];
+  else query_byte=(dimension*5+lane*7)&255;
+ end
 endfunction
 wire iv=sv;
 wire [19:0] byte_address=address+{10'd0,flit,5'd0};
 function automatic [7:0] tensor_byte;
  input integer slot,stream,token,dimension;
- begin tensor_byte=(slot*13+stream*71+token*17+dimension*3)&255; end
+ integer flat;
+ begin
+  flat=stream*65536+slot*1024+token*128+dimension;
+  if(CANONICAL_MODE) tensor_byte=canonical_lines[flat/32][(flat%32)*8+:8];
+  else tensor_byte=(slot*13+stream*71+token*17+dimension*3)&255;
+ end
 endfunction
 function automatic [255:0] ingress_payload;
  input [19:0] a;
@@ -89,6 +118,8 @@ always @(posedge clk) if(rst) begin
  if(se||ke||stage_error) $fatal(1,"protocol error");
  for(p=0;p<PRODUCER_COUNT;p=p+1) if(pv[p]&&pr[p]) begin
   if(accepted[p]>=blocks[p]*128) $fatal(1,"extra producer beat");
+  if(CANONICAL_MODE && {pq[p*128+:128],pk[p*128+:128],pl[p]} !== canonical_producers[p*256+accepted[p]])
+   $fatal(1,"canonical producer-stream oracle mismatch producer=%0d beat=%0d",p,accepted[p]);
   for(t=0;t<16;t=t+1) begin
    expected_k[t*8+:8]=tensor_byte(base[p]+accepted[p]/128,t/8,t%8,accepted[p]%128);
    expected_q[t*8+:8]=query_byte(accepted[p]%128,t%8);
@@ -119,6 +150,11 @@ always @(posedge clk) if(rst) begin
 end
 initial begin
  STAGE_INIT
+ if(CANONICAL_MODE) begin
+  $readmemh("canonical_k.hex",canonical_lines);
+  $readmemh("canonical_q.hex",canonical_queries);
+  $readmemh("canonical_producers.hex",canonical_producers);
+ end
  $readmemh("mapping.hex",mapping); repeat(3) @(negedge clk); rst=1;
  if(WITH_STAGE) begin
   fv=1; @(negedge clk);fv=0;
@@ -139,7 +175,8 @@ end
 initial begin #200000; $fatal(1,"timeout"); end
 endmodule
 '''.replace("PRODUCER_COUNT", str(producers)).replace("HEAD_INDEX", str(head))
-       .replace("WITH_STAGE", "1" if with_stage else "0").replace("STAGE_INIT", stage_init))
+       .replace("WITH_STAGE", "1" if with_stage else "0").replace("STAGE_INIT", stage_init)
+       .replace("CANONICAL_MODE", "1" if canonical else "0"))
     binary = tmp_path / "simv"
     rtl = ROOT / "npu/sim/rtl"
     subprocess.run(["iverilog", "-g2012", "-s", "tb", "-o", str(binary), str(tb),
@@ -150,3 +187,10 @@ endmodule
     result = subprocess.run(["vvp", str(binary)], cwd=tmp_path, capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stdout + result.stderr
     assert "PASS full paired head" in result.stdout
+
+
+@pytest.mark.parametrize("producers", [53, 54])
+@pytest.mark.parametrize("head", range(4))
+def test_canonical_tensor_through_paired_transpose_and_stage(tmp_path, producers, head):
+    test_complete_paired_head_through_transposer(tmp_path, producers, head,
+                                              with_stage=True, canonical=True)

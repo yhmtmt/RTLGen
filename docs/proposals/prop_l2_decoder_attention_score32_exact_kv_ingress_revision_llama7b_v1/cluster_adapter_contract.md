@@ -191,3 +191,14 @@ over every emitted beat, K memory/producer correspondence at four dimension
 boundaries for every block/lane, and unchanged cached K/V across decode-token
 changes. This source is not yet wired into the full collected numerical RTL
 replay; it establishes a consistent input contract for that next integration.
+
+The canonical source now drives the paired-sequencer/transpose/wide-K/Q RTL
+test for all four head groups and both producer families. Each case loads
+canonical K memory flits and one resident Q array, then checks every accepted
+producer-facing K/Q/last beat against sidecars generated independently by
+`CanonicalAttentionFixture.producer_stream`. All 24 cases pass (16 prior
+pattern cases plus eight canonical cases); the canonical cases check 65,536
+producer beats in total under independent producer stalls. This verifies the
+canonical tensor-to-local-K/Q interface at tile 2, layer 7. It does not yet
+run those same tensors through real refill/mesh, score production, full-model
+mapper lowering, or routed/activity evaluation.
