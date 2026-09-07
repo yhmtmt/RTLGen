@@ -41,7 +41,7 @@ def extract_module_family(rtl: str, *, prefix: str) -> str:
     return "\n\n".join(modules) + "\n"
 
 
-def _cluster_driver_data(*, cluster: int, logical_head_groups: int) -> JsonDict:
+def _cluster_driver_data(*, cluster: int, logical_head_groups: int, canonical_fixture=None) -> JsonDict:
     from npu.eval import probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 as probe
 
     producers = probe.CLUSTER_PRODUCERS[cluster]
@@ -58,6 +58,18 @@ def _cluster_driver_data(*, cluster: int, logical_head_groups: int) -> JsonDict:
                 producers=producers,
                 group_index=int(command["group_index"]),
             )[producer]
+            if canonical_fixture is not None:
+                if canonical_fixture.layer != 0:
+                    raise ValueError("canonical cluster driver currently requires layer zero destination mapping")
+                beats = canonical_fixture.producer_stream(producers=producers, producer=producer,
+                    group=int(command["group_index"]), tile=cluster + 16 * int(command["wave_index"]))
+                for queries, keys, last in beats:
+                    query_streams[producer].append(probe.full_probe._pack(list(queries), 8))
+                    key_streams[producer].append(probe.full_probe._pack(list(keys), 8))
+                    last_streams[producer].append(int(last))
+                    cursor += 1
+                beat_limits[command_index][producer] = cursor
+                continue
             blocks = [
                 probe.full_probe._stream_block_beats(
                     cluster=cluster,
@@ -105,21 +117,35 @@ def _cluster_driver_data(*, cluster: int, logical_head_groups: int) -> JsonDict:
     }
 
 
-def _write_cluster_sidecars(directory: Path, *, cluster: int, logical_head_groups: int) -> JsonDict:
+def _canonical_cluster_fill_rows(fixture, *, cluster: int, wave: int, group: int) -> list[int]:
+    if fixture.layer != 0:
+        raise ValueError("canonical cluster driver currently requires layer zero destination mapping")
+    return [int.from_bytes(bytes(fixture.kv(tensor="v", head=group,
+                token=(cluster + 16 * wave) * 1024 + stream * 512 + slot * 8 + row,
+                dimension=value_slice * 8 + lane) & 255
+            for row in range(8) for lane in range(8)), "little")
+            for stream in range(2) for slot in range(64) for value_slice in range(16)]
+
+
+def _write_cluster_sidecars(directory: Path, *, cluster: int, logical_head_groups: int,
+                            canonical_fixture=None) -> JsonDict:
     from npu.eval import probe_attention_score32_exact_local16_global_tree_cluster_sram_gqa8 as probe
 
-    data = _cluster_driver_data(cluster=cluster, logical_head_groups=logical_head_groups)
+    data = _cluster_driver_data(cluster=cluster, logical_head_groups=logical_head_groups,
+                               canonical_fixture=canonical_fixture)
     probe._write_memh(directory / "query.memh", data["query_words"], width_bits=128)
     probe._write_memh(directory / "key.memh", data["key_words"], width_bits=128)
     probe._write_memh(directory / "last.memh", data["last_words"], width_bits=1)
     fill_words = [
         value
         for command in data["wave_commands"]
-        for value in probe._fill_rows_for_wave(
+        for value in (_canonical_cluster_fill_rows(canonical_fixture, cluster=cluster,
+                         wave=int(command["wave_index"]), group=int(command["group_index"]))
+                      if canonical_fixture is not None else probe._fill_rows_for_wave(
             cluster=cluster,
             head_base=int(command["head_base"]),
             wave=int(command["wave_index"]),
-        )
+        ))
     ]
     probe._write_memh(directory / "fill.memh", fill_words, width_bits=512)
     return {
