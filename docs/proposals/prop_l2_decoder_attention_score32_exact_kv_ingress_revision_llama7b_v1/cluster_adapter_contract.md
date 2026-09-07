@@ -188,6 +188,21 @@ mesh-to-stage-to-score-producer execution or full-model equivalence.
 
 ### Direct canonical arithmetic evidence
 
+The `sram` numerical-fixture mode now connects V ingress to the generated
+banked cluster-SRAM service and uses that service's ready/valid responses at
+the selected numerical producer. Both families pass (64.96 seconds total),
+with 8,192 accepted service fill rows, nonzero balanced request/response counts,
+no service protocol error, and 512 exact numerical rows per case. SRAM,
+stage, and producer command admission are coordinated, and completed commands
+release the SRAM buffer before the next head is filled. The retained
+testbench V array is only a write-coverage monitor in this mode; it no longer
+drives producer responses.
+
+This verifies the generated service's functional path with one active
+producer (two request lanes), not simultaneous-producer bank contention or
+mesh-fed source timing. Its inferred arrays remain unclosed against technology
+SRAM macros. No physical SRAM, routed PPA, or activity-power claim follows.
+
 The numerical fixture's `kv` mode now also fills its response store from the
 real V-ingress adapter. Both p53 and p54 cases pass (52.44 seconds total),
 checking four complete V heads: 16,384 accepted V flits and 8,192 transposed
