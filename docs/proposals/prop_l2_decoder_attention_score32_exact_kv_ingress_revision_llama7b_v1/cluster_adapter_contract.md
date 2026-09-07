@@ -65,3 +65,23 @@ the first 32 ascending flits pass, the 33rd at 0x00400 raises protocol error,
 and a matching second-stream flit at 0x10000 is accepted without error. Both
 diagnostic cases pass. Full gather-to-transposer composition and a corrective
 implementation remain pending.
+
+The corrective primitive `attention_kv_paired_head_schedule.sv` now emits all
+128 alternating 1 KiB spans for a K head. Its model preserves byte coverage and
+resident/HBM ownership for zero, 16 KiB, and full-head resident prefixes. RTL
+tests cover stalls and invalid prefixes. `test_paired_schedule_key_transpose.py`
+connects the sequencer to p53 and p54 transposers and checks 4096 input flits
+and all 4096 numerical output beats under downstream stalls for each case.
+The fixture varies bytes by block slot; it does not exhaust arbitrary tensor
+values or validate the downstream K/Q stage.
+
+This primitive is not yet in the capacity gather scheduler. Its `head_done`
+pulse means the final span was accepted, not that remote writes or K/Q staging
+completed. Source-base adaptation, receive-before-transmit descriptor ordering,
+and completion barriers must preserve that distinction in the integration.
+
+The paired-span option increases K descriptors to 65,536 per layer. With the
+existing V and refill descriptors, the total is 66,062 per layer and 2,113,984
+over 32 layers, requiring at least 17-bit layer and 22-bit model counters.
+These are control-work counts, not measured latency or PPA. The existing
+aggregate counter widths cannot be reused without a range audit.
