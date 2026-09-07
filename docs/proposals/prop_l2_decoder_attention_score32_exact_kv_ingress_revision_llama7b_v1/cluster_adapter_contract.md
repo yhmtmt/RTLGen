@@ -143,7 +143,8 @@ refill followed by the first K heads of tiles 0, 1, and 2, including the
 resident/HBM split, delivers 12,288 paired flits and transpose beats with all
 394 descriptors completed. See `paired_transport_validation.md` for scope,
 fixture identity, and limitations. Stronger integrated nonuniform-payload runs
-remain pending. A combined 47-test regression covering addressing, scheduling,
+also pass for p53 and p54; continuous mesh-to-wide-K/Q-stage runs remain pending.
+A combined 47-test regression covering addressing, scheduling,
 packetization, ownership, legacy mesh behavior, transpose, and closure-matrix
 checks also passes. This is not full-model or downstream K/Q equivalence.
 
