@@ -77,7 +77,7 @@ and checks every output byte for p53 and p54 across all four KV heads (eight
 tests pass). It also checks producer/block assignment, head, dimension-pair,
 last, and the stability of data and metadata through stalls. This catches
 permutations that the earlier block-constant fixture could not distinguish.
-It does not exhaust arbitrary tensor values or validate the downstream K/Q stage.
+It does not exhaust arbitrary tensor values or close the full mesh-to-producer path.
 
 The standalone primitive's `head_done`
 pulse means the final span was accepted, not that remote writes or K/Q staging
@@ -146,3 +146,13 @@ fixture identity, and limitations. Stronger integrated nonuniform-payload runs
 remain pending. A combined 47-test regression covering addressing, scheduling,
 packetization, ownership, legacy mesh behavior, transpose, and closure-matrix
 checks also passes. This is not full-model or downstream K/Q equivalence.
+
+The all-head paired-sequencer/transpose test now additionally connects the
+wide K/Q stage. Across p53 and p54 and all four heads it fills query memory,
+writes all 4096 transpose beats, then checks every producer-facing K and Q
+beat and block terminal flag under independent producer stalls. Each head
+checks 8192 accepted producer beats (64 blocks times 128 dimensions), including
+the rotated extra-block assignments. All 16 cases pass: eight standalone
+transpose cases and eight transpose-to-stage cases. This closes that local
+interface for the deterministic tensor fixture, not the single composed
+mesh-to-stage-to-score-producer execution or full-model equivalence.
