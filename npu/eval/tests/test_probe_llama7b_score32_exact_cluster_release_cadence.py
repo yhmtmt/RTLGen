@@ -62,6 +62,10 @@ def test_extract_cluster_cadence_preserves_exact_group_release_cycles(
 
     assert report["passed"] is True
     assert report["producer_count"] == 54
+    assert len(report["observed_rows"]) == 512
+    assert report["observed_rows"][0]["value"] == [1, 2, 3, 4, 5, 6, 7, 8]
+    assert report["observed_rows"][-1]["head_id"] == 31
+    assert report["observed_rows"][-1]["slice"] == 15
     assert [group["first_output_cycle"] for group in report["groups"]] == [
         1000,
         1500,

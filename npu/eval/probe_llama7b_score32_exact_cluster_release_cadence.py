@@ -224,6 +224,7 @@ def extract_cluster_cadence(
         "producer_count": probe.CLUSTER_PRODUCERS[cluster],
         "passed": True,
         "exact_row_audit": audit,
+        "observed_rows": rows,
         "summary": summary,
         "groups": groups,
         "last_output_cycle": max(group["last_output_cycle"] for group in groups),
