@@ -73,7 +73,9 @@ tests cover stalls and invalid prefixes. `test_paired_schedule_key_transpose.py`
 connects the sequencer to p53 and p54 transposers and checks 4096 input flits
 and all 4096 numerical output beats under downstream stalls for each case.
 The fixture now varies bytes by block slot, stream, token lane, and dimension,
-and checks every output byte for p53 and p54 (both tests pass). This catches
+and checks every output byte for p53 and p54 across all four KV heads (eight
+tests pass). It also checks producer/block assignment, head, dimension-pair,
+last, and the stability of data and metadata through stalls. This catches
 permutations that the earlier block-constant fixture could not distinguish.
 It does not exhaust arbitrary tensor values or validate the downstream K/Q stage.
 
