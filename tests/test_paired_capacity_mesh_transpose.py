@@ -13,15 +13,26 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @pytest.mark.parametrize("producers", [53, 54])
 def test_refill_resident_and_split_heads_through_mesh(tmp_path, producers):
+    _run_transport(tmp_path, producers, with_stage=False)
+
+
+@pytest.mark.parametrize("producers", [53, 54])
+def test_refill_through_mesh_transpose_and_kq_stage(tmp_path, producers):
+    _run_transport(tmp_path, producers, with_stage=True)
+
+
+def _run_transport(tmp_path, producers, *, with_stage):
     if not shutil.which("iverilog") or not shutil.which("vvp"):
         pytest.skip("Icarus unavailable")
     tb = tmp_path / "tb.sv"
     tb.write_text((ROOT / "tests/paired_capacity_mesh_transpose_tb.sv").read_text()
-                  .replace("PRODUCER_COUNT", str(producers)))
+                  .replace("PRODUCER_COUNT", str(producers))
+                  .replace("STAGE_ENABLED", "1" if with_stage else "0"))
     binary = tmp_path / "simv"
     result = subprocess.run(["iverilog", "-g2012", "-s", "tb", "-o", str(binary), str(tb),
                              *(str(ROOT / p) for p in RTL_FILES),
-                             str(ROOT / "npu/sim/rtl/attention_score32_exact_kv_key_pingpong_transpose.sv")],
+                             str(ROOT / "npu/sim/rtl/attention_score32_exact_kv_key_pingpong_transpose.sv"),
+                             str(ROOT / "npu/sim/rtl/attention_score32_exact_kv_key_stage_wide.sv")],
                             capture_output=True, text=True, timeout=60)
     assert result.returncode == 0, result.stderr
     assert "expects" not in result.stderr, result.stderr
@@ -34,3 +45,5 @@ def test_refill_resident_and_split_heads_through_mesh(tmp_path, producers):
         pytest.fail(f"Transport runtime limit reached; latest simulation progress:\n{tail}\n{error}")
     assert result.returncode == 0, result.stdout + result.stderr
     assert "PASS refill=69632 inputs=12288 outputs=12288 descriptors=394" in result.stdout
+    if with_stage:
+        assert "PASS staged producer beats=24576" in result.stdout
