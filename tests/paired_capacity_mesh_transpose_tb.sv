@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 module tb;
 reg clk=0,rst_n=0; always #1 clk=~clk;
-integer cycle=0;
+integer cycle=0,progress_fd;
 wire [21:0] generated_descriptor_count,completed_descriptor_count;
 // Run real layer-0 refill then heads 0 of tiles 0, 1, and 2. Do not pretend
 // this bounded fixture completes the full model.
@@ -71,6 +71,12 @@ end
 
 always @(posedge clk) if(rst_n) begin
  cycle<=cycle+1;
+ if(cycle%4096==0) begin
+  $fdisplay(progress_fd,"cycle=%0d refill=%0d generated=%0d completed=%0d inputs=%0d,%0d,%0d outputs=%0d,%0d,%0d",
+    cycle,refill_count,generated_descriptor_count,completed_descriptor_count,
+    inputs[0],inputs[1],inputs[2],outputs[0],outputs[1],outputs[2]);
+  $fflush(progress_fd);
+ end
  if(protocol_error || |key_error) $fatal(1,"protocol error cycle=%0d mesh=%b transpose=%b",cycle,protocol_error,key_error);
  if(|canonical_ingress_valid[15:3]) $fatal(1,"unexpected consume destination");
  for(lane=0;lane<16;lane=lane+1) begin
@@ -121,6 +127,8 @@ always @(posedge clk) if(rst_n) begin
  if(cycle>2000000) $fatal(1,"timeout descriptors=%0d completed=%0d",generated_descriptor_count,completed_descriptor_count);
 end
 initial begin
+ progress_fd=$fopen("progress.log","w");
+ if(!progress_fd) $fatal(1,"cannot open progress log");
  for(init_i=0;init_i<69632;init_i=init_i+1) resident_written[init_i]=0;
  for(init_i=0;init_i<3;init_i=init_i+1) begin inputs[init_i]=0;outputs[init_i]=0;end
  for(init_i=0;init_i<16;init_i=init_i+1) response[init_i]=0;

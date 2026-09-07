@@ -1,5 +1,6 @@
 """Real refill + first three paired K heads through the capacity mesh wrapper."""
 from pathlib import Path
+import os
 import shutil
 import subprocess
 
@@ -24,6 +25,12 @@ def test_refill_resident_and_split_heads_through_mesh(tmp_path, producers):
                             capture_output=True, text=True, timeout=60)
     assert result.returncode == 0, result.stderr
     assert "expects" not in result.stderr, result.stderr
-    result = subprocess.run(["vvp", str(binary)], capture_output=True, text=True, timeout=300)
+    try:
+        result = subprocess.run(["vvp", str(binary)], cwd=tmp_path, capture_output=True,
+                                text=True, timeout=int(os.environ.get("RTLGEN_PAIRED_MESH_TIMEOUT", "300")))
+    except subprocess.TimeoutExpired as error:
+        progress = tmp_path / "progress.log"
+        tail = "\n".join(progress.read_text().splitlines()[-5:]) if progress.exists() else "no progress log"
+        pytest.fail(f"Transport runtime limit reached; latest simulation progress:\n{tail}\n{error}")
     assert result.returncode == 0, result.stdout + result.stderr
     assert "PASS refill=69632 inputs=12288 outputs=12288 descriptors=394" in result.stdout
