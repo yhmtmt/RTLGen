@@ -22,3 +22,10 @@ all-sixteen-cluster collection, checks payload metadata and widths, and uses
 each endpoint's own measured cycles. Canonical addressed K/V ingress, direct
 producer-to-mesh backpressure composition, routed PPA, CDC, and activity power
 remain outside this diagnostic.
+
+The diagnostic was repeated successfully in 386.79 s after the provenance
+update in `4fb42b34`. The runner now pins imported project Python dependencies
+(including tree generators and checker models), records generated tree-file
+hashes, and verifies that both original and generated sources remain unchanged
+through replay. This repeat validates those checks with an actual simulation;
+it retains the same synthetic-input scope and is not a measured-leaf replay.
