@@ -53,6 +53,9 @@ jobs:
             npu/eval/tests/test_run_numerical_mesh_provenance.py \
             npu/eval/tests/test_collector_provenance.py \
             npu/eval/tests/test_canonical_composed_archive.py \
+            npu/eval/tests/test_canonical_concurrent_archive.py \
+            npu/eval/tests/test_canonical_cluster_driver.py \
+            npu/eval/tests/test_canonical_cluster_reference.py \
             npu/eval/tests/test_exact_cluster_fixture_scope.py \
             npu/eval/tests/test_canonical_attention_fixture.py \
             npu/eval/tests/test_prepare_llama7b_score32_exact_shared_mesh_release_replay.py \
