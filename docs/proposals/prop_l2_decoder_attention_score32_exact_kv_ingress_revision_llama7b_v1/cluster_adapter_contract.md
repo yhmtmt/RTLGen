@@ -188,6 +188,15 @@ mesh-to-stage-to-score-producer execution or full-model equivalence.
 
 ### Direct canonical arithmetic evidence
 
+`canonical_composed_numerical_result.json` retains the eight composed reports
+from the full 19-test regression (201.89 seconds). For each selected producer,
+the stage-only, scheduled-transpose, V-ingress-array, and generated-SRAM modes
+all have the same numerical digest as the direct canonical producer reference.
+`test_canonical_composed_archive.py` checks this cross-composition equality and
+the explicit scope limits. Source `d936a94b` contains the executed fixture
+implementation. The drain-cycle observations belong to serialized diagnostic
+fixtures and are not full-model performance estimates.
+
 The `sram` numerical-fixture mode now connects V ingress to the generated
 banked cluster-SRAM service and uses that service's ready/valid responses at
 the selected numerical producer. Both families pass (64.96 seconds total),
