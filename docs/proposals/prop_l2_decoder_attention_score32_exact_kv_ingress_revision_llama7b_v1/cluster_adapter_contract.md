@@ -188,6 +188,22 @@ mesh-to-stage-to-score-producer execution or full-model equivalence.
 
 ### Direct canonical arithmetic evidence
 
+`canonical_concurrent_cluster_result.json` now records passing concurrent
+cluster replays for endpoint 0 (54 producers) and endpoint 8 (53 producers).
+Each executes eight temporal waves across four head groups, checking all 512
+numerical output rows against the canonical reference. Each also completes
+32 SRAM commands/releases, 65,536 fills, and 65,536 requests/responses with
+zero reported errors. The runner exited successfully after validating 36
+project/config hashes and 15 generated RTL/testbench/sidecar hashes.
+
+First output cycles are 17,432 / 33,824 / 50,216 / 66,608 for p54 and
+17,437 / 33,829 / 50,221 / 66,613 for p53; final rows are at 66,735 and
+66,740. This reproduces the earlier stress-fixture cadence for these canonical
+inputs, not a reduced workload latency. Both runs use direct canonical K/Q and
+SRAM-fill sidecars with an always-ready cluster output. They do not include
+the live ingress path or shared mesh, test all sixteen endpoint tensor sets,
+or establish technology SRAM, clock-domain composition, power, or PPA closure.
+
 `canonical_composed_numerical_result.json` retains the eight composed reports
 from the full 19-test regression (201.89 seconds). For each selected producer,
 the stage-only, scheduled-transpose, V-ingress-array, and generated-SRAM modes
