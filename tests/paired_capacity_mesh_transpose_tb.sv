@@ -92,7 +92,7 @@ generate for(g=0;g<3;g=g+1) begin : transposers
    input integer d,l;
    begin query_byte=(d*5+l*7)&255;end
   endfunction
-  always @(*) for(q_lane=0;q_lane<8;q_lane=q_lane+1)
+  always_comb for(q_lane=0;q_lane<8;q_lane=q_lane+1)
    qdata[q_lane*8+:8]=query_byte(query_dimension,q_lane);
   attention_score32_exact_kv_key_stage_wide #(.PRODUCERS(PRODUCER_COUNT)) stage (
    .clk(clk),.rst_n(rst_n),.fill_target_valid(!fill_sent),.fill_target_ready(fill_ready),
@@ -109,6 +109,13 @@ generate for(g=0;g<3;g=g+1) begin : transposers
   always @(negedge clk) for(ready_p=0;ready_p<PRODUCER_COUNT;ready_p=ready_p+1)
    pr[ready_p]=(cycle+ready_p+g)%11!=2 && (cycle+ready_p+g)%11!=3;
   always @(posedge clk) if(rst_n) begin
+   if($test$plusargs("QUERY_AUDIT") && cycle==255) begin
+    for(p=0;p<128;p=p+1) begin
+     for(b=0;b<8;b=b+1) expected_q[b*8+:8]=query_byte(p,b);
+     if(stage.query_mem[p] !== expected_q[63:0])
+      $fatal(1,"query initialization tile=%0d dimension=%0d actual=%h expected=%h",g,p,stage.query_mem[p],expected_q[63:0]);
+    end
+   end
    if(!fill_sent&&fill_ready) fill_sent<=1;
    if(fill_sent&&query_dimension<128&&query_ready) query_dimension<=query_dimension+1;
    if(fill_complete&&!command_sent&&command_ready) command_sent<=1;
@@ -122,7 +129,7 @@ generate for(g=0;g<3;g=g+1) begin : transposers
      expected_q[b*8+:8]=query_byte(dim,b%8);
     end
     if(pk[p*128+:128]!==expected_k || pq[p*128+:128]!==expected_q || pl[p]!=(dim==127))
-     $fatal(1,"staged K/Q mismatch tile=%0d producer=%0d beat=%0d",g,p,accepted[p]);
+     $fatal(1,"staged K/Q mismatch tile=%0d producer=%0d beat=%0d K=%h expectedK=%h Q=%h expectedQ=%h last=%b",g,p,accepted[p],pk[p*128+:128],expected_k,pq[p*128+:128],expected_q,pl[p]);
     accepted[p]=accepted[p]+1;
    end
    if(command_done) begin
@@ -146,8 +153,11 @@ always @(*) begin
  end
 end
 
-always @(posedge clk) if(rst_n) begin
+  always @(posedge clk) if(rst_n) begin
  cycle<=cycle+1;
+ if($test$plusargs("QUERY_AUDIT") && cycle==256) begin
+  $display("PASS query initialization");$finish;
+ end
  if(cycle%4096==0) begin
   $fdisplay(progress_fd,"cycle=%0d refill=%0d generated=%0d completed=%0d inputs=%0d,%0d,%0d outputs=%0d,%0d,%0d",
     cycle,refill_count,generated_descriptor_count,completed_descriptor_count,

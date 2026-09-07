@@ -21,7 +21,12 @@ def test_refill_through_mesh_transpose_and_kq_stage(tmp_path, producers):
     _run_transport(tmp_path, producers, with_stage=True)
 
 
-def _run_transport(tmp_path, producers, *, with_stage):
+@pytest.mark.parametrize("producers", [53, 54])
+def test_continuous_fixture_query_initialization(tmp_path, producers):
+    _run_transport(tmp_path, producers, with_stage=True, query_only=True)
+
+
+def _run_transport(tmp_path, producers, *, with_stage, query_only=False):
     if not shutil.which("iverilog") or not shutil.which("vvp"):
         pytest.skip("Icarus unavailable")
     tb = tmp_path / "tb.sv"
@@ -37,13 +42,16 @@ def _run_transport(tmp_path, producers, *, with_stage):
     assert result.returncode == 0, result.stderr
     assert "expects" not in result.stderr, result.stderr
     try:
-        result = subprocess.run(["vvp", str(binary)], cwd=tmp_path, capture_output=True,
+        result = subprocess.run(["vvp", str(binary), *(["+QUERY_AUDIT"] if query_only else [])], cwd=tmp_path, capture_output=True,
                                 text=True, timeout=int(os.environ.get("RTLGEN_PAIRED_MESH_TIMEOUT", "1800")))
     except subprocess.TimeoutExpired as error:
         progress = tmp_path / "progress.log"
         tail = "\n".join(progress.read_text().splitlines()[-5:]) if progress.exists() else "no progress log"
         pytest.fail(f"Transport runtime limit reached; latest simulation progress:\n{tail}\n{error}")
     assert result.returncode == 0, result.stdout + result.stderr
+    if query_only:
+        assert "PASS query initialization" in result.stdout
+        return
     assert "PASS refill=69632 inputs=12288 outputs=12288 descriptors=394" in result.stdout
     if with_stage:
         assert "PASS staged producer beats=24576" in result.stdout

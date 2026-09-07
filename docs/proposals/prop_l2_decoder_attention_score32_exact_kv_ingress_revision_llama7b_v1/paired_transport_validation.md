@@ -53,3 +53,15 @@ Runner SHA-256:
 Separate continuous mesh-to-wide-K/Q-stage p53 and p54 tests are live; neither
 pending outcome is claimed here. Wall-clock test runtime is not simulated
 workload latency or PPA.
+
+## Continuous K/Q diagnostic
+
+The initial continuous p53 mesh-to-stage run failed on producer 0, beat 0.
+A short audit of all 128 query words in each of the three stages reproduced
+unknown data at query dimension 0. The fixture's `always @*` query generator
+had not evaluated before the first write; `always_comb` gives the required
+startup evaluation. The short initialization audit passes with that change.
+This is a testbench correction, not a change to the K/Q stage RTL. The corrected
+full p53 run is live and must pass independently before continuous K/Q closure
+can be claimed. The older p54 run used the same defective initialization and
+cannot support a passing composed-path claim.
