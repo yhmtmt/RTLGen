@@ -16,16 +16,31 @@ from npu.eval.numerical_mesh_sidecars import build_sidecars
 from tests import test_attention_score32_exact_dual_producer_shared_mesh4x4_full as gate
 
 
+def loaded_project_sources() -> list[Path]:
+    """Include imported generator and checker dependencies, not just the driver."""
+    paths = set()
+    for module in tuple(sys.modules.values()):
+        filename = getattr(module, "__file__", None)
+        if filename:
+            path = Path(filename).resolve()
+            if path.suffix == ".py" and path.is_relative_to(ROOT):
+                paths.add(path)
+    return sorted(paths)
+
+
 def run(collection: Path) -> dict:
     report = json.loads(collection.read_text())
     sidecars = build_sidecars(report)
     sources = [collection.resolve(), Path(__file__).resolve(), gate.TB,
         Path(gate.__file__), ROOT / "npu/eval/numerical_mesh_sidecars.py",
-        ROOT / "npu/eval/cluster_numerical_payload.py", *gate.RTL_SOURCES, gate.FAKERAM_MODEL]
+        ROOT / "npu/eval/cluster_numerical_payload.py", *gate.RTL_SOURCES, gate.FAKERAM_MODEL,
+        *loaded_project_sources()]
     hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}
     with tempfile.TemporaryDirectory(prefix="numerical_mesh_") as name:
         work = Path(name)
         tree = gate._generate_tree(work)
+        generated_hashes = {str(p.relative_to(tree)): hashlib.sha256(p.read_bytes()).hexdigest()
+                            for p in sorted(tree.rglob("*")) if p.is_file()}
         binary = work / "simv"
         command = [str(gate._tool("iverilog")), "-g2012", "-s", gate.TOP,
             "-o", str(binary), str(tree / "top.v"),
@@ -55,11 +70,15 @@ def run(collection: Path) -> dict:
         fires = gate._assert_release_trace_matches_model(release, {
             "endpoint_release_cycles": [cycles[i*512:(i+1)*512] for i in range(16)]})
         assert fires == 8192
+        for relative, digest in generated_hashes.items():
+            if hashlib.sha256((tree / relative).read_bytes()).hexdigest() != digest:
+                raise RuntimeError(f"generated source changed during replay: {relative}")
     for path, digest in hashes.items():
         if hashlib.sha256(Path(path).read_bytes()).hexdigest() != digest:
             raise RuntimeError(f"source changed during replay: {path}")
     return {"model": "score32_numerical_mesh_replay_v1", "passed": True,
-        "source_hashes": hashes, "observation": observation,
+        "source_hashes": hashes, "generated_source_hashes": generated_hashes,
+        "observation": observation,
         "source_handshakes_checked": fires, "arbitration_decisions_checked": decisions,
         "scope": "collected exact leaf values through mesh; trace-coupled timing, historical VC0, no physical/CDC claim"}
 
