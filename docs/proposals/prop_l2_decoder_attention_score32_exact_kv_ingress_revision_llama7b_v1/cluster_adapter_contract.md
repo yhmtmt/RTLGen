@@ -186,6 +186,27 @@ mesh-to-stage-to-score-producer execution or full-model equivalence.
 
 ## Arithmetic stress fixture versus resident queries
 
+### Direct canonical arithmetic evidence
+
+`canonical_numerical_producer_result.json` archives ten direct-producer RTL
+comparisons at source `f63d3796`: p53 producers 0, 11, 22, 33, 52 and p54
+producers 0, 10, 20, 30, 53. Each executes all four groups at 128 dimensions
+using layer-7, tile-2 canonical Q/K/V tensors and the mapped one/two-block
+assignment. All 5,120 output rows match the numerical reference, including
+max, exponential sum, numerator slices, and identifiers. The final suite
+passes 11 tests in 28.62 seconds; two legacy arithmetic regressions also passed
+in the preceding combined run.
+
+These are standalone producer runs with testbench V responses, not live
+mesh-to-stage-to-producer or V-ingress execution. The inherited arithmetic
+probe's requantization command schedule is retained; it is not a calibrated
+model workload. Its 1,950–2,228-cycle drain counts are fixture-specific and
+must not replace full-cluster or model latency. Historical 986-cycle comparison
+fields are explicitly null for canonical inputs. The next composed numerical
+gate must preserve real K/Q ready propagation, command ownership and V-response
+coordinates, then compare the resulting producer/reduction output to these
+same canonical tensors.
+
 The existing exact-cluster `_stream_block_beats` oracle in
 `probe_attention_score32_exact_local16_global_tree_gqa8.py` deliberately varies
 Q with cluster, producer, wave, stream, and block index. Five scope-regression
