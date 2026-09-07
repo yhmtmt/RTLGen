@@ -85,3 +85,13 @@ existing V and refill descriptors, the total is 66,062 per layer and 2,113,984
 over 32 layers, requiring at least 17-bit layer and 22-bit model counters.
 These are control-work counts, not measured latency or PPA. The existing
 aggregate counter widths cannot be reused without a range audit.
+
+`addressed_key_spans` in `npu/sim/perf/attention_kv_paired_gather.py` now supplies
+an executable source-address oracle for integration. The exhaustive test visits
+all 2,097,152 K spans across 32 layers, 128 tiles, and four heads, checking
+canonical coverage, source ownership, resident bounds, and endpoint selection.
+Tile 2 uses packed 16-KiB head prefixes in the resident cache, rather than
+the HBM layout's 128-KiB head stride. The full-model K consume coverage is
+34 MiB resident plus 2014 MiB HBM. Eleven model tests pass. These address checks
+do not establish RTL source-address equivalence; that comparison remains an
+integration requirement alongside widened counters and completion ordering.

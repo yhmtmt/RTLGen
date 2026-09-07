@@ -1,6 +1,43 @@
 import pytest
 
 from npu.sim.perf.attention_kv_paired_gather import key_head_spans, llama7b_descriptor_cost
+from npu.sim.perf.attention_kv_paired_gather import addressed_key_spans
+
+
+def test_full_model_paired_addresses_preserve_cache_and_hbm_layout():
+    resident_bytes = hbm_bytes = count = 0
+    for layer in range(32):
+        for tile in range(128):
+            for head in range(4):
+                spans = addressed_key_spans(layer=layer, tile=tile, head=head)
+                assert len({s.canonical_address for s in spans}) == 128
+                for s in spans:
+                    count += 1
+                    offset = s.canonical_address - (head << 17)
+                    resident = tile < 2 or (tile == 2 and offset < 16384)
+                    assert s.source_hbm == (not resident)
+                    assert s.destination_cluster == (3 * layer + tile) % 16
+                    if resident:
+                        resident_bytes += s.payload_bytes
+                        local = (tile << 20) + s.canonical_address if tile < 2 else (2 << 20) + (head << 14) + offset
+                        assert s.source_byte_address == layer * (2176 << 10) + local
+                        assert s.source_endpoint == s.destination_cluster
+                        assert s.source_byte_address + s.payload_bytes <= (layer + 1) * (2176 << 10)
+                    else:
+                        hbm_bytes += s.payload_bytes
+                        assert s.source_byte_address == (layer << 27) + (tile << 20) + s.canonical_address
+                        assert s.source_endpoint == (0, 3, 12, 15)[(layer + tile + head) % 4]
+    assert count == 2097152
+    assert resident_bytes == 32 * (1048576 + 65536)
+    assert resident_bytes + hbm_bytes == 32 * 64 * 1048576
+
+
+@pytest.mark.parametrize("field,value", [("layer", 32), ("tile", -1), ("head", 4), ("head", True)])
+def test_address_oracle_rejects_invalid_coordinates(field, value):
+    args = dict(layer=0, tile=0, head=0)
+    args[field] = value
+    with pytest.raises(ValueError):
+        addressed_key_spans(**args)
 
 
 @pytest.mark.parametrize("resident", [0, 16384, 131072])
