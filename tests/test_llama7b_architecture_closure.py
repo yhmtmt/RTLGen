@@ -94,8 +94,10 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
         self.assertEqual(component["dimensions"]["composition"]["status"], "measured_component")
         self.assertEqual(component["dimensions"]["scale_validation"]["status"], "measured_component")
         summary = component["summary"]
-        self.assertIn("four-group GQA8 rotation", summary)
-        self.assertIn("representative composed routed macro", summary)
+        self.assertIn("four GQA8 groups per representative", summary)
+        self.assertIn("66740", summary)
+        self.assertIn("Representative routed composition", summary)
+        self.assertIn("remain open", summary)
         self.assertNotIn("one-group proof alone", summary)
         evidence_paths = {entry["path"] for entry in component["evidence"]}
         self.assertIn(
@@ -110,6 +112,15 @@ class Llama7BArchitectureClosureTest(unittest.TestCase):
             "analysis_report.md",
             evidence_paths,
         )
+
+    def test_paired_ingress_is_not_promoted_as_transport_or_power_closure(self) -> None:
+        component = next(item for item in self.matrix["components"] if item["id"] == "noc")
+        self.assertEqual(component["status"], "open")
+        self.assertEqual(component["dimensions"]["composition"]["status"], "open")
+        self.assertEqual(component["dimensions"]["activity"]["status"], "open")
+        self.assertIn("2,113,984", component["dimensions"]["composition"]["summary"])
+        self.assertIn("diagnostic evaluation", component["dimensions"]["composition"]["summary"])
+        self.assertTrue(any("cluster_adapter_contract.md" in entry["path"] for entry in component["evidence"]))
 
     def test_pending_schedule_wrapper_activity_is_not_claimed_as_promoted(self) -> None:
         for component_id in ("precision", "score_softmax", "scheduler_cdc", "full_llama7b_recost"):

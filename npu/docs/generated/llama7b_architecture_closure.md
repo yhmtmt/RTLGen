@@ -2,7 +2,7 @@
 
 - source JSON: `npu/docs/llama7b_architecture_closure.json`
 - generated Markdown: `npu/docs/generated/llama7b_architecture_closure.md`
-- as_of: `2026-09-06`
+- as_of: `2026-09-07`
 
 ## Headline
 
@@ -246,13 +246,14 @@ Evidence:
 | `equivalence` | `open` | No single promoted equivalence gate closes the final selected NoC behavior against the end-to-end attention contract. |
 | `routed_ppa` | `measured_component` | Endpoint-router anchors and the promoted segmented 4x4 mesh r7 physical result provide measured NoC component PPA. |
 | `activity` | `open` | Exact traffic profiling exists, but hierarchy-matched post-route router activity power is still blocked on a promoted bare-router PPA anchor; traffic counts alone are not activity-backed energy. |
-| `composition` | `open` | The final topology/scheduler composition at Llama7B scale is still under study rather than promoted as fixed. |
+| `composition` | `open` | The final topology/scheduler composition remains open. Ascending K-plane delivery conflicts with the paired-stream transpose contract. An opt-in paired scheduler now matches all 2,113,984 full-model descriptors and propagates widened counters through the mesh wrapper, but real refill-to-mesh-to-transpose transport is still under diagnostic evaluation. |
 | `scale_validation` | `open` | Topology/scheduler pair studies exist, but a final selected pair is not yet closed as the architecture-level standard. |
 
 Caveats:
 - NoC costs are no longer free and a complete segmented-mesh physical anchor exists, but the final architecture still depends on a partially analytic topology/scheduler choice.
 - The exact hierarchy-matched router activity job remains pending behind the bare-router routed anchor; current traffic profiling must not be labeled measured NoC energy.
 - The current frontier can still move if the selected pair changes under stricter physical constraints.
+- Paired K delivery increases descriptor work to 66,062 per layer (2,113,984 full-model descriptors). Byte conservation does not make its completion fences, latency, control area, or power equivalent to the legacy schedule.
 
 Evidence:
 - `docs/proposals/prop_l1_decoder_attention_endpoint_router_segmented_noc_ppa_v1/analysis_report.md` (proposal_analysis; `rtl`, `routed_ppa`): Provides a routed PPA anchor for one endpoint-router NoC primitive family.
@@ -260,6 +261,7 @@ Evidence:
 - `docs/proposals/prop_l2_decoder_attention_noc_profile_v1/analysis_report.md` (proposal_analysis; `activity`): Captures traffic quantities used to remove the old free-NoC assumption, but does not provide VCD/SAIF-backed routed power.
 - `docs/proposals/prop_l2_decoder_attention_kv_noc_scheduler_selected_v1/analysis_report.md` (proposal_analysis; `composition`, `scale_validation`): Documents a selected scheduler branch, but not yet a final physically closed architecture commitment.
 - `docs/proposals/prop_l2_decoder_attention_kv_dense_tile_topology_scheduler_pairs_llama7b_v1/analysis_report.md` (proposal_analysis; `scale_validation`): Shows that topology/scheduler pairing work exists at Llama7B scale, but the pair space is not yet closed.
+- `docs/proposals/prop_l2_decoder_attention_score32_exact_kv_ingress_revision_llama7b_v1/cluster_adapter_contract.md` (proposal_gate; `rtl`, `equivalence`, `composition`): Records the reproduced ascending-order mismatch, exhaustive paired source-address and descriptor checks, 22-bit counter propagation, repeated-span ownership checks, and all-head p53/p54 transpose data/metadata tests. Full paired transport and downstream K/Q numerical composition remain unproven.
 
 ## SRAM
 
