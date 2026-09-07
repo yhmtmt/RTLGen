@@ -158,3 +158,23 @@ the rotated extra-block assignments. All 16 cases pass: eight standalone
 transpose cases and eight transpose-to-stage cases. This closes that local
 interface for the deterministic tensor fixture, not the single composed
 mesh-to-stage-to-score-producer execution or full-model equivalence.
+
+## Arithmetic stress fixture versus resident queries
+
+The existing exact-cluster `_stream_block_beats` oracle in
+`probe_attention_score32_exact_local16_global_tree_gqa8.py` deliberately varies
+Q with cluster, producer, wave, stream, and block index. Five scope-regression
+cases check that variation across all 128 dimensions. Those Q streams are
+not the resident decoder-query contract: for one decode token and head group,
+the same Q must be reused across token placement, waves, and both K streams.
+The wide K/Q stage embodies that reuse and duplicates its eight-head Q word
+across the two streams.
+
+Therefore, replaying the sixteen collected stress-fixture leaf streams through
+the mesh must not be promoted as proof that the resident K/Q stage drives the
+same workload. Retain that adversarial arithmetic gate, but add a distinct
+canonical tensor fixture whose Q depends only on decode token, head, and
+dimension; whose K/V depend on their canonical token coordinates; and whose
+producer streams are derived through the real mapper and ingress path. The
+direct query-residency mismatch is an input-fixture distinction, not evidence
+that the K/Q hardware should accept per-producer or per-stream decoder queries.
