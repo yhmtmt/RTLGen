@@ -30,9 +30,23 @@ integer refill_count=0,resident_reads=0,hbm_reads=0;
 integer lane,init_i,comb_i,index;
 reg [32:0] address;
 reg [19:0] expected_address;
-reg [7:0] expected_byte;
+reg [255:0] expected_output;
+integer half_index,token_index;
 wire [2:0] key_valid,key_ready,key_error;
 wire [3*256-1:0] key_data;
+
+function automatic [7:0] tensor_byte;
+ input integer slot,stream,token,dimension;
+ begin tensor_byte=(slot*13+stream*71+token*17+dimension*3)&255; end
+endfunction
+function automatic [255:0] source_payload;
+ input [32:0] a;
+ integer b;
+ begin
+  for(b=0;b<32;b=b+1)
+   source_payload[b*8+:8]=tensor_byte(a[15:10],a[16],a[9:7],a[6:0]+b);
+ end
+endfunction
 
 attention_kv_capacity_gather_mesh_ingress #(.PAIRED_K(1)) dut (
  .clk(clk),.rst_n(rst_n),.enable(enable),
@@ -86,7 +100,7 @@ always @(posedge clk) if(rst_n) begin
    if(address[4:0]!=0) $fatal(1,"unaligned source");
    pending[lane]<=1;
    if(source_req_is_hbm[lane]) begin
-    response[lane]<={32{{2'b0,address[15:10]}}};
+    response[lane]<=source_payload(address);
     hbm_reads=hbm_reads+1;
    end else begin
     index=address/32;
@@ -105,16 +119,18 @@ always @(posedge clk) if(rst_n) begin
  for(lane=0;lane<3;lane=lane+1) begin
   if(canonical_ingress_valid[lane]&&canonical_ingress_ready[lane]) begin
    expected_address=((inputs[lane]/32)%2)*65536+(inputs[lane]/64)*1024+(inputs[lane]%32)*32;
-   expected_byte=inputs[lane]/64;
    if(canonical_ingress_layer[lane*5+:5]!=0 || canonical_ingress_tile[lane*7+:7]!=lane ||
       canonical_ingress_tile_byte_address[lane*20+:20]!==expected_address ||
-      canonical_ingress_data[lane*256+:256]!=={32{expected_byte}})
+      canonical_ingress_data[lane*256+:256]!==source_payload({13'd0,expected_address}))
      $fatal(1,"paired ingress order/data lane=%0d input=%0d",lane,inputs[lane]);
    inputs[lane]=inputs[lane]+1;
   end
   if(key_valid[lane]&&key_ready[lane]) begin
-   expected_byte=outputs[lane]/64;
-   if(key_data[lane*256+:256]!=={32{expected_byte}}) $fatal(1,"transpose data");
+   for(half_index=0;half_index<2;half_index=half_index+1)
+    for(token_index=0;token_index<16;token_index=token_index+1)
+     expected_output[(half_index*16+token_index)*8+:8]=tensor_byte(
+      outputs[lane]/64,token_index/8,token_index%8,(outputs[lane]%64)*2+half_index);
+   if(key_data[lane*256+:256]!==expected_output) $fatal(1,"transpose data lane=%0d output=%0d",lane,outputs[lane]);
    outputs[lane]=outputs[lane]+1;
   end
  end
