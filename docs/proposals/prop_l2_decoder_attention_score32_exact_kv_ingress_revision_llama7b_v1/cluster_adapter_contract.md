@@ -188,6 +188,23 @@ mesh-to-stage-to-score-producer execution or full-model equivalence.
 
 ### Direct canonical arithmetic evidence
 
+The composed test now additionally uses `attention_kv_paired_head_schedule`
+to drive canonical flits through the actual paired transposer, wide K/Q stage,
+and selected numerical producer. Both families pass, alongside the two
+stage-only cases (four tests, 50.69 seconds). Each scheduler-driven run checks
+512 accepted spans, 16,384 ingress flits and transpose beats, and 512 exact
+numerical rows over four groups. All stage banks receive canonical K data,
+although only one producer's arithmetic is instantiated. Producer backpressure
+and stalled-beat stability remain required. The earlier hand-ordered
+transpose variant passed before replacement; the current test exercises RTL
+delivery-order control.
+
+Canonical bytes still come from a zero-latency testbench array. The scheduler's
+resident-prefix classification is not connected to resident/HBM service in
+this fixture. V is also testbench-served. This does not establish source
+service, descriptor ownership through the mesh, simultaneous producers,
+cluster cadence, or routed/activity-backed PPA.
+
 The next bounded interface gate now also passes:
 `test_live_canonical_kq_stage_to_numerical_producer` connects the real wide
 K/Q stage to p53 producer 11 and p54 producer 10, each across all four groups.
