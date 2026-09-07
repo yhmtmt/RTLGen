@@ -188,6 +188,21 @@ mesh-to-stage-to-score-producer execution or full-model equivalence.
 
 ### Direct canonical arithmetic evidence
 
+The numerical fixture's `kv` mode now also fills its response store from the
+real V-ingress adapter. Both p53 and p54 cases pass (52.44 seconds total),
+checking four complete V heads: 16,384 accepted V flits and 8,192 transposed
+rows per case, alongside the scheduled K path and 512 numerical result rows.
+Preloaded V values are removed, response rows start unknown, duplicate writes
+are rejected, and every producer read must follow an accepted ingress fill.
+V row acceptance is stalled independently. This verifies selected-producer
+V coordinate mapping and numerical use of the ingressed values.
+
+The V response store is still a testbench array, not the generated cluster
+SRAM service. Only selected-producer rows are retained there; all ingress rows
+are counted, while numerical checks cover the selected producer's rows.
+Full physical SRAM/banking arbitration, mesh source service, simultaneous
+producers, and activity-backed PPA therefore remain unverified.
+
 The composed test now additionally uses `attention_kv_paired_head_schedule`
 to drive canonical flits through the actual paired transposer, wide K/Q stage,
 and selected numerical producer. Both families pass, alongside the two

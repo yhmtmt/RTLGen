@@ -6,6 +6,7 @@ import pytest
 from npu.eval.canonical_attention_producer_inputs import CanonicalProducerInputs
 from npu.eval.canonical_attention_staged_inputs import CanonicalStagedInputs
 from npu.eval.canonical_attention_transposed_inputs import CanonicalTransposedInputs
+from npu.eval.canonical_attention_value_inputs import CanonicalValueIngressInputs
 from npu.eval.probe_attention_score32_exact_partial_gqa8_dual_stream_producer import build_report, compact_report
 
 
@@ -38,11 +39,13 @@ def test_canonical_provider_rejects_truncated_workload():
 
 
 @pytest.mark.parametrize("producers", [53, 54])
-@pytest.mark.parametrize("with_transpose", [False, True])
+@pytest.mark.parametrize("with_transpose", [False, True, "kv"])
 def test_live_canonical_kq_stage_to_numerical_producer(tmp_path, producers, with_transpose):
     if not shutil.which("iverilog") or not shutil.which("vvp"):
         pytest.skip("Icarus unavailable")
     provider = CanonicalTransposedInputs if with_transpose else CanonicalStagedInputs
+    if with_transpose == "kv":
+        provider = CanonicalValueIngressInputs
     inputs = provider(producers=producers, producer=64-producers)
     report = build_report(heads=32, command_count=4, head_dim=128,
         head_bases=(0, 8, 16, 24), block_counts_per_stream=inputs.counts(),
