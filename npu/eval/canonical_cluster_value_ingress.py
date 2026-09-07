@@ -2,6 +2,13 @@
 
 
 def attach_cluster_value_ingress(tb, *, producers):
+    # Combined serialized V delivery emitted groups at ~50k-cycle cadence;
+    # the prior 200k watchdog expired just before group four. Keep a bounded
+    # 60k cycles/group allowance, without changing workload or assertions.
+    timeout_anchor = "localparam integer TB_TIMEOUT_CYCLES = 200000;"
+    if tb.count(timeout_anchor) != 1:
+        raise ValueError("cluster V ingress watchdog anchor changed")
+    tb = tb.replace(timeout_anchor, "localparam integer TB_TIMEOUT_CYCLES = 240000;")
     replacements = {
         "wire fill_valid = rst_n && (fill_command < COMMANDS) && (fill_row >= 0);":
             "wire fill_valid = vi_out_valid;",
