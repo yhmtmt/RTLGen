@@ -6,14 +6,17 @@ their implemented checks; they must not be read as the current closure status.
 The bounded K path is implemented and tested as described below. V integration,
 live score production, full-model execution, and physical recost remain open.
 
-## Canonical full-transport gate in progress
+## Canonical full-transport gate
 
 `test_canonical_refill_mesh_and_kq_stage` now drives the real layer-0 refill,
 resident/HBM gather, paired mesh, transpose, and wide K/Q stage with canonical
 tensor sidecars for tiles 0, 1, and 2, head group zero. Its independent producer
 oracle uses canonical tensor coordinates and the rotated slot assignment;
 checks compare all accepted Q/K/last words under producer backpressure.
-Both p53 and p54 full simulations are pending: no pass or timing claim is made.
+The p53 full simulation passed in 683.60 seconds of host runtime, checking
+69,632 refill writes, 394 completed descriptors, 12,288 ingress and transpose
+beats, and 24,576 producer-facing K/Q/last beats. The p54 simulation remains
+pending. Host runtime is not hardware latency or permission to recost PPA.
 The short canonical query-initialization checks pass for both families (two
 tests, 31.07 seconds), and the legacy counterparts pass (two tests, 10.54
 seconds). CI includes both short gates, not the long transport simulations.
