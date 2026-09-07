@@ -701,16 +701,16 @@ def _run_case(
         generate_tree(run_config, temp_dir / "rtl")
         tb_path = temp_dir / "tb.sv"
         fakeram_path = temp_dir / "fakeram45_2048x39.sv"
-        tb_path.write_text(
-            _testbench(
+        testbench = _testbench(
                 top_name=str(run_config["top_name"]),
                 workload=workload,
                 output_ready_pattern=output_ready_pattern,
                 stress_interfaces=stress_interfaces,
                 input_provider=input_provider,
-            ),
-            encoding="utf-8",
-        )
+            )
+        if input_provider is not None and hasattr(input_provider, "transform_testbench"):
+            testbench = input_provider.transform_testbench(testbench)
+        tb_path.write_text(testbench, encoding="utf-8")
         fakeram_path.write_text(_FAKERAM_MODEL, encoding="utf-8")
         simv = temp_dir / "simv"
         compiled = subprocess.run(
@@ -724,6 +724,8 @@ def _run_case(
                 str(temp_dir / "rtl" / "top.v"),
                 str(fakeram_path),
                 str(tb_path),
+                *(input_provider.rtl_sources() if input_provider is not None
+                  and hasattr(input_provider, "rtl_sources") else []),
             ],
             capture_output=True,
             text=True,

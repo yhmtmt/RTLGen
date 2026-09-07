@@ -4,6 +4,7 @@ import shutil
 import pytest
 
 from npu.eval.canonical_attention_producer_inputs import CanonicalProducerInputs
+from npu.eval.canonical_attention_staged_inputs import CanonicalStagedInputs
 from npu.eval.probe_attention_score32_exact_partial_gqa8_dual_stream_producer import build_report, compact_report
 
 
@@ -33,3 +34,17 @@ def test_canonical_provider_rejects_truncated_workload():
     with pytest.raises(ValueError, match="four full-dimension"):
         inputs.validate_workload(dict(head_dim=16, command_count=4,
             head_bases=(0, 8, 16, 24), block_counts_per_stream=inputs.counts()))
+
+
+@pytest.mark.parametrize("producers", [53, 54])
+def test_live_canonical_kq_stage_to_numerical_producer(tmp_path, producers):
+    if not shutil.which("iverilog") or not shutil.which("vvp"):
+        pytest.skip("Icarus unavailable")
+    inputs = CanonicalStagedInputs(producers=producers, producer=64-producers)
+    report = build_report(heads=32, command_count=4, head_dim=128,
+        head_bases=(0, 8, 16, 24), block_counts_per_stream=inputs.counts(),
+        stress_interfaces=True, input_provider=inputs)
+    (tmp_path / "result.json").write_text(json.dumps(compact_report(report), indent=2) + "\n")
+    assert report["passed"]
+    assert report["outputs"] == 512
+    assert report["input_fixture"]["live_kq_stage"]

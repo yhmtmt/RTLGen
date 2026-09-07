@@ -188,6 +188,22 @@ mesh-to-stage-to-score-producer execution or full-model equivalence.
 
 ### Direct canonical arithmetic evidence
 
+The next bounded interface gate now also passes:
+`test_live_canonical_kq_stage_to_numerical_producer` connects the real wide
+K/Q stage to p53 producer 11 and p54 producer 10, each across all four groups.
+Both pass (19.94 seconds total), comparing 1,024 numerical output rows and
+every accepted K/Q/last beat. The fixture requires actual producer backpressure
+and asserts valid/data stability through every stall. Commands are accepted by
+the stage and producer together, and the next head waits for numerical command
+completion. Ten direct canonical cases and the legacy small arithmetic probe
+also pass after the shared probe change (11 tests, 30.32 seconds).
+
+This composition loads stage query/key write ports directly. Unselected
+producer keys are zero-filled and their ready signals tied high; V responses
+still come from the canonical testbench oracle. It does not connect the mesh,
+transpose, or V ingress, run all producers simultaneously, or measure cluster
+cadence. Those limits are explicit in its `input_fixture` report metadata.
+
 `canonical_numerical_producer_result.json` archives ten direct-producer RTL
 comparisons at source `f63d3796`: p53 producers 0, 11, 22, 33, 52 and p54
 producers 0, 10, 20, 30, 53. Each executes all four groups at 128 dimensions
