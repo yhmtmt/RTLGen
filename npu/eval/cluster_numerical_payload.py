@@ -25,6 +25,7 @@ def pack_observed_cluster(cluster: dict, *, expected_cluster: int) -> list[int]:
     if not isinstance(groups, list) or len(groups) != 4:
         raise ValueError("four group identities required")
     packed = []
+    head_statistics = None
     for index, row in enumerate(rows):
         group_index, offset = divmod(index, 128)
         group = groups[group_index]
@@ -41,8 +42,12 @@ def pack_observed_cluster(cluster: dict, *, expected_cluster: int) -> list[int]:
             or type(row.get("last")) is not bool
             or row["last"] != (offset % 16 == 15)):
             raise ValueError("row order or group metadata mismatch")
-        _integer(row.get("global_max"), -(1 << 31), (1 << 31) - 1, "max")
-        _integer(row.get("exp_sum"), 0, (1 << 33) - 1, "sum")
+        maximum = _integer(row.get("global_max"), -(1 << 31), (1 << 31) - 1, "max")
+        exp_sum = _integer(row.get("exp_sum"), 0, (1 << 33) - 1, "sum")
+        if slice_index == 0:
+            head_statistics = (maximum, exp_sum)
+        elif head_statistics != (maximum, exp_sum):
+            raise ValueError("head statistics change between slices")
         values = row.get("value")
         if not isinstance(values, list) or len(values) != 8:
             raise ValueError("eight numerator lanes required")

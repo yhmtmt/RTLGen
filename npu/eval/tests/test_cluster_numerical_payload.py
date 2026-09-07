@@ -81,3 +81,11 @@ def test_endpoint_command_mismatch_rejected():
         row["command_id"] = 999
     with pytest.raises(ValueError, match="command identities"):
         pack_all_endpoints(data)
+
+
+@pytest.mark.parametrize("field", ["global_max", "exp_sum"])
+def test_stats_once_transport_rejects_inconsistent_head_statistics(field):
+    data = fixture()
+    data["observed_rows"][7][field] -= 1
+    with pytest.raises(ValueError, match="statistics change"):
+        pack_observed_cluster(data, expected_cluster=8)
