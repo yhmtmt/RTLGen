@@ -48,6 +48,7 @@ jobs:
             npu/eval/tests/test_audit_attention_score32_exact_shared_root_storage_physical_frontier.py \
             npu/eval/tests/test_probe_llama7b_score32_exact_cluster_release_cadence.py \
             npu/eval/tests/test_cluster_numerical_payload.py \
+            npu/eval/tests/test_archived_cluster_payloads.py \
             npu/eval/tests/test_numerical_mesh_sidecars.py \
             npu/eval/tests/test_run_numerical_mesh_provenance.py \
             npu/eval/tests/test_exact_cluster_fixture_scope.py \
