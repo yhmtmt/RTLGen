@@ -246,7 +246,7 @@ Evidence:
 | `equivalence` | `open` | No single promoted equivalence gate closes the final selected NoC behavior against the end-to-end attention contract. |
 | `routed_ppa` | `measured_component` | Endpoint-router anchors and the promoted segmented 4x4 mesh r7 physical result provide measured NoC component PPA. |
 | `activity` | `open` | Exact traffic profiling exists, but hierarchy-matched post-route router activity power is still blocked on a promoted bare-router PPA anchor; traffic counts alone are not activity-backed energy. |
-| `composition` | `open` | The final topology/scheduler composition remains open. Ascending K-plane delivery conflicts with the paired-stream transpose contract. An opt-in paired scheduler now matches all 2,113,984 full-model descriptors and propagates widened counters through the mesh wrapper, but real refill-to-mesh-to-transpose transport is still under diagnostic evaluation. |
+| `composition` | `open` | The final topology/scheduler composition remains open. Ascending K-plane delivery conflicts with the paired-stream transpose contract. An opt-in paired scheduler matches all 2,113,984 full-model descriptors and propagates widened counters through the mesh wrapper. Bounded real-refill-to-mesh-to-transpose baselines pass for p53 and p54 over three heads including a resident/HBM split; stronger nonuniform-payload transport remains under diagnostic evaluation, and full-model downstream K/Q composition is unproven. |
 | `scale_validation` | `open` | Topology/scheduler pair studies exist, but a final selected pair is not yet closed as the architecture-level standard. |
 
 Caveats:

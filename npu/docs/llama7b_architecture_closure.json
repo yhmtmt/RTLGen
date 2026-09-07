@@ -708,7 +708,7 @@
         },
         "composition": {
           "status": "open",
-          "summary": "The final topology/scheduler composition remains open. Ascending K-plane delivery conflicts with the paired-stream transpose contract. An opt-in paired scheduler now matches all 2,113,984 full-model descriptors and propagates widened counters through the mesh wrapper, but real refill-to-mesh-to-transpose transport is still under diagnostic evaluation."
+          "summary": "The final topology/scheduler composition remains open. Ascending K-plane delivery conflicts with the paired-stream transpose contract. An opt-in paired scheduler matches all 2,113,984 full-model descriptors and propagates widened counters through the mesh wrapper. Bounded real-refill-to-mesh-to-transpose baselines pass for p53 and p54 over three heads including a resident/HBM split; stronger nonuniform-payload transport remains under diagnostic evaluation, and full-model downstream K/Q composition is unproven."
         },
         "scale_validation": {
           "status": "open",
