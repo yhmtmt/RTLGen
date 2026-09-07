@@ -129,13 +129,29 @@ def _verilator_two_stage_commands(
 
 
 def _alias_module_family(text: str, *, prefix: str, alias: str) -> str:
-    """Shorten generated module names so Verilator does not mangle ``__`` in hier blocks."""
+    """Give an extracted family short names safe for Verilator hierarchy blocks."""
 
     if not prefix or prefix not in text:
         raise ValueError("module family prefix is absent from extracted RTL")
     if not alias or "__" in alias:
         raise ValueError("module family alias must be non-empty and contain no double underscore")
-    return text.replace(prefix, alias)
+    # Verilator rewrites double underscores in hierarchical child names, then its
+    # recursive build cannot find the original module.  Rename the full family,
+    # including descendant separators, so every possible partition is safe.
+    return text.replace(prefix, alias).replace("__", "_h_")
+
+
+def _verilator_control_file_text(compile_top: str) -> str:
+    """Partition the large cluster at reusable architectural boundaries."""
+
+    blocks = (
+        f"{compile_top}_h_compute_cluster_h_producer",
+        f"{compile_top}_h_compute_cluster_h_reducer",
+        f"{compile_top}_h_sram_endpoint",
+    )
+    return "`verilator_config\n" + "".join(
+        f'hier_block -module "{block}"\n' for block in blocks
+    )
 
 
 def extract_cluster_cadence(
@@ -276,8 +292,7 @@ def measure(
             if backend == "verilator":
                 control_path = build_dir / "cluster.vlt"
                 control_path.write_text(
-                    "`verilator_config\n"
-                    f'hier_block -module "{compile_top}"\n',
+                    _verilator_control_file_text(compile_top),
                     encoding="ascii",
                 )
                 compile_commands = _verilator_two_stage_commands(

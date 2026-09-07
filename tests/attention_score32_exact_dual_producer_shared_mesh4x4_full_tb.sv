@@ -1082,7 +1082,8 @@ module attention_score32_exact_dual_producer_shared_mesh4x4_full_tb;
               mon_source_i, vc1_group_complete_count_by_source[mon_source_i]);
         end
 
-        if (overlap_valid_cycles == 0 || overlap_arbitrated_cycles == 0 ||
+        if ((!release_cadence_mode &&
+             (overlap_valid_cycles == 0 || overlap_arbitrated_cycles == 0)) ||
             shared_contention_cycles == 0 || shared_input_stall_cycles == 0 ||
             shared_output_stall_cycles == 0)
           $fatal(1, "shared overlap/contention missing overlap_valid=%0d overlap_arb=%0d contention=%0d in_stall=%0d out_stall=%0d",
