@@ -33,6 +33,22 @@ or the final attention reduction. Its block-constant payload cannot detect
 every intra-block permutation. Separate all-head p53/p54 transpose tests cover
 stream/token/dimension-varying values and producer metadata. No routed area,
 timing frequency, activity power, HBM-controller implementation, or Pareto
-membership is established by this diagnostic. Stronger integrated p53 and p54
-runs using stream/token/dimension-varying payloads are now live; their results
-are not included in these passing baseline claims.
+membership is established by this diagnostic.
+
+## Nonuniform payload result
+
+The stronger p53 integrated transport case passed in 765.60 seconds. It checks
+the same refill, source-read, paired-address, output, and descriptor counts
+with payload bytes varying by block slot, stream, token, and dimension. Both
+canonical mesh ejection values and all transpose output bytes match the
+fixture's expected values. This supersedes the block-constant p53 data check
+for this three-head fixture, not its full-model or physical limitations.
+
+The executed p53 fixture matches commit `397546ae` after producer substitution.
+Fixture SHA-256:
+`c24017e9ac7cd6e3f92a393e62bee641a079666980141ca945dfded885dac860`.
+Runner SHA-256:
+`74abac3b23736b152e4e7838fc9619c8e1785532e333ef64532002709a3f50db`.
+The corresponding nonuniform p54 case remains live. A separate continuous
+mesh-to-wide-K/Q-stage p53 test is also live; neither pending outcome is claimed
+here. Wall-clock test runtime is not simulated workload latency or PPA.
