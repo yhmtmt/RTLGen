@@ -247,13 +247,17 @@ def _assert_release_trace_matches_model(path: Path, replay: dict) -> int:
         )
     assert rows, "release trace is empty"
 
-    p54 = tuple(int(cycle) for cycle in replay["p54_release_cycles"])
-    p53 = tuple(int(cycle) for cycle in replay["p53_release_cycles"])
+    endpoint_cycles = replay.get("endpoint_release_cycles")
+    if endpoint_cycles is None:
+        p54 = tuple(int(cycle) for cycle in replay["p54_release_cycles"])
+        p53 = tuple(int(cycle) for cycle in replay["p53_release_cycles"])
+        endpoint_cycles = [p54 if endpoint < 8 else p53 for endpoint in range(16)]
+    assert len(endpoint_cycles) == 16
     sources = [
-        StallDilatedReleasePlayer(p54 if endpoint < 8 else p53)
+        StallDilatedReleasePlayer(tuple(endpoint_cycles[endpoint]))
         for endpoint in range(15)
     ]
-    root = StallDilatedReleasePlayer(p53)
+    root = StallDilatedReleasePlayer(tuple(endpoint_cycles[15]))
     active_group: int | None = None
     activate_next: int | None = None
     fire_count = 0

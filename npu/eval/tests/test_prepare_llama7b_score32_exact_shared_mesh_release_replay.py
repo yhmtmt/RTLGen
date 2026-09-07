@@ -127,15 +127,20 @@ def test_replay_input_is_not_mutated() -> None:
     assert cadence == original
 
 
-def test_release_trace_checker_covers_all_sixteen_sources(tmp_path: Path) -> None:
+@pytest.mark.parametrize("distinct_endpoints", [False, True])
+def test_release_trace_checker_covers_all_sixteen_sources(tmp_path: Path, distinct_endpoints: bool) -> None:
     replay = build_replay(_cadence())
     p54 = tuple(replay["p54_release_cycles"])
     p53 = tuple(replay["p53_release_cycles"])
+    schedules = [p54 if endpoint < 8 else p53 for endpoint in range(16)]
+    if distinct_endpoints:
+        schedules = [tuple(cycle + endpoint for cycle in p54) for endpoint in range(16)]
+        replay["endpoint_release_cycles"] = schedules
     sources = [
-        StallDilatedReleasePlayer(p54 if endpoint < 8 else p53)
+        StallDilatedReleasePlayer(schedules[endpoint])
         for endpoint in range(15)
     ]
-    root = StallDilatedReleasePlayer(p53)
+    root = StallDilatedReleasePlayer(schedules[15])
     active_group = None
     activate_next = None
     next_group = 0
