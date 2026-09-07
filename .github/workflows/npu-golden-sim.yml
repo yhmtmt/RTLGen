@@ -11,6 +11,9 @@ on:
       - "npu/arch/**"
       - "npu/shell/**"
       - "tests/test_mapper_split.py"
+      - "tests/test_canonical_attention_numerical_producer.py"
+      - "npu/eval/canonical*.py"
+      - "npu/eval/probe_attention_score32_exact_partial_gqa8_dual_stream_producer.py"
       - "tests/test_attention_kv_*.py"
   pull_request:
     paths:
@@ -21,10 +24,31 @@ on:
       - "npu/arch/**"
       - "npu/shell/**"
       - "tests/test_mapper_split.py"
+      - "tests/test_canonical_attention_numerical_producer.py"
+      - "npu/eval/canonical*.py"
+      - "npu/eval/probe_attention_score32_exact_partial_gqa8_dual_stream_producer.py"
       - "tests/test_attention_kv_*.py"
   workflow_dispatch:
 
 jobs:
+  canonical-numerical:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install numerical simulation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends iverilog
+          python3 -m pip install pytest
+          command -v iverilog
+          command -v vvp
+
+      - name: Run canonical numerical producer equivalence
+        run: python3 -m pytest -q tests/test_canonical_attention_numerical_producer.py
+
   golden:
     runs-on: ubuntu-22.04
     timeout-minutes: 45
@@ -97,9 +121,6 @@ jobs:
 
       - name: Run mapper split regression tests
         run: python3 tests/test_mapper_split.py
-
-      - name: Run canonical numerical producer equivalence
-        run: python3 -m pytest -q tests/test_canonical_attention_numerical_producer.py
 
       - name: Run endpoint mesh equivalence tests
         run: |
