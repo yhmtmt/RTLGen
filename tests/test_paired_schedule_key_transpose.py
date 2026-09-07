@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 import shutil
 import subprocess
 import pytest
@@ -147,6 +148,9 @@ endmodule
         str(rtl / "attention_score32_exact_kv_key_stage_wide.sv"),
         str(rtl / "attention_score32_exact_kv_key_pingpong_transpose.sv")],
         check=True, capture_output=True, text=True, timeout=30)
-    result = subprocess.run(["vvp", str(binary)], cwd=tmp_path, capture_output=True, text=True, timeout=30)
+    # Shared CI runners exceed 30 seconds for the wide-stage cases. Preserve
+    # the RTL cycle watchdog and numerical checks; only budget host runtime.
+    result = subprocess.run(["vvp", str(binary)], cwd=tmp_path, capture_output=True, text=True,
+                            timeout=int(os.environ.get("RTLGEN_PAIRED_STAGE_TIMEOUT", "180")))
     assert result.returncode == 0, result.stdout + result.stderr
     assert "PASS full paired head" in result.stdout
