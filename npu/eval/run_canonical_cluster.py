@@ -13,14 +13,18 @@ if str(ROOT) not in sys.path:
 
 from npu.eval import probe_llama7b_score32_exact_cluster_release_cadence as cadence
 from npu.eval.canonical_attention_cluster_reference import canonical_cluster_rows
+from npu.eval.canonical_cluster_kq_stage import attach_cluster_kq_stage
 from npu.eval.collect_score32_cluster_payloads import loaded_project_sources
 from npu.sim.perf.canonical_attention_fixture import CanonicalAttentionFixture
 
 
-def run():
+def run(*, live_kq_stage=False):
     fixture = CanonicalAttentionFixture()
     config_path = cadence.DEFAULT_CONFIG
     sources = loaded_project_sources() | {Path(__file__).resolve(), config_path}
+    stage_rtl = ROOT / "npu/sim/rtl/attention_score32_exact_kv_key_stage_wide.sv"
+    if live_kq_stage:
+        sources.add(stage_rtl)
     hashes = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(sources)}
     config = json.loads(config_path.read_text())
     observations = []
@@ -38,10 +42,14 @@ def run():
             source.mkdir(parents=True)
             top = f"canonical_{kind}"
             (source / "top.v").write_text(cadence._alias_module_family(
-                cadence.extract_module_family(generated, prefix=names[kind]), prefix=names[kind], alias=top))
+                cadence.extract_module_family(generated, prefix=names[kind]), prefix=names[kind], alias=top)
+                + (stage_rtl.read_text() if live_kq_stage else ""))
             tb = build / "tb.sv"
-            tb.write_text(cadence.cluster_testbench(top_name=top, producers=producers,
-                logical_head_groups=4, output_ready_pattern=(True,)))
+            testbench = cadence.cluster_testbench(top_name=top, producers=producers,
+                logical_head_groups=4, output_ready_pattern=(True,))
+            if live_kq_stage:
+                testbench = attach_cluster_kq_stage(testbench, producers=producers)
+            tb.write_text(testbench)
             control = build / "cluster.vlt"
             control.write_text(cadence._verilator_control_file_text(top))
             obj = build / "obj"
@@ -75,13 +83,14 @@ def run():
     for path, digest in hashes.items():
         if hashlib.sha256((ROOT / path).read_bytes()).hexdigest() != digest:
             raise RuntimeError(f"source changed during replay: {path}")
-    return {"passed": True, "source_hashes": hashes, "generated_hashes": generated_hashes,
+    return {"passed": True, "live_kq_stage": live_kq_stage, "source_hashes": hashes, "generated_hashes": generated_hashes,
         "clusters": observations, "scope": "Two separate concurrent cluster RTL runs with canonical sidecar inputs; not live ingress or shared mesh, technology SRAM, workload recost, or PPA."}
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--live-kq-stage", action="store_true")
     args = parser.parse_args()
-    result = run()
+    result = run(live_kq_stage=args.live_kq_stage)
     args.out.write_text(json.dumps(result, indent=2) + "\n")
