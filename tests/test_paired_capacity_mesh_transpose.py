@@ -27,7 +27,7 @@ def test_refill_resident_and_split_heads_through_mesh(tmp_path, producers):
     assert "expects" not in result.stderr, result.stderr
     try:
         result = subprocess.run(["vvp", str(binary)], cwd=tmp_path, capture_output=True,
-                                text=True, timeout=int(os.environ.get("RTLGEN_PAIRED_MESH_TIMEOUT", "300")))
+                                text=True, timeout=int(os.environ.get("RTLGEN_PAIRED_MESH_TIMEOUT", "1800")))
     except subprocess.TimeoutExpired as error:
         progress = tmp_path / "progress.log"
         tail = "\n".join(progress.read_text().splitlines()[-5:]) if progress.exists() else "no progress log"

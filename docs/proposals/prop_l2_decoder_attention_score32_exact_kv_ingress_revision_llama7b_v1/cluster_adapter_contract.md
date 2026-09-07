@@ -137,3 +137,12 @@ destination remains blocked during delayed completion. This verifies the
 guard's ownership rule independently of the mesh. Paired payload delivery
 through the wrapper into the transpose buffer remains unverified, so the
 legacy default has not been switched and no composed PPA claim is made.
+
+The first bounded p53 wrapper transport run has now passed: real layer-0
+refill followed by the first K heads of tiles 0, 1, and 2, including the
+resident/HBM split, delivers 12,288 paired flits and transpose beats with all
+394 descriptors completed. See `paired_transport_validation.md` for scope,
+fixture identity, and limitations. The corresponding p54 transport run is
+pending. A combined 47-test regression covering addressing, scheduling,
+packetization, ownership, legacy mesh behavior, transpose, and closure-matrix
+checks also passes. This is not full-model or downstream K/Q equivalence.
