@@ -81,11 +81,16 @@ Runner SHA-256:
 `3981800607f8c6a91c63c60d82cdc299ccc6bc4b80f86e232b6b45de277d62b4`.
 This is bounded composed numerical evidence; it does not establish full-model
 equivalence, mapped workload timing, routed PPA, or activity-backed power.
-## Canonical p53 result (2026-09-07)
+
+## Canonical p53 and p54 results (2026-09-07)
 
 `test_canonical_refill_mesh_and_kq_stage[53]` passed in 683.60 seconds
 (original execution session 34800, exit code zero). The original session result
 was recovered after its process exited; no duplicate run was needed.
+`test_canonical_refill_mesh_and_kq_stage[54]` also passed in 694.31 seconds
+(original execution session 73512, exit code zero), with the same checked
+counts and scope. Both compiled testbenches match the template below after
+their respective producer-count substitutions.
 
 The run uses deterministic canonical tensors, real layer-0 refill and
 resident/HBM selection, paired mesh delivery, transpose, and wide K/Q staging
@@ -98,7 +103,7 @@ The compiled testbench was compared byte-for-byte with the committed source
 after parameter substitution. Template SHA-256:
 `eb833080b402206c67526cee4ef15e3f329deb06821e20b4d5556d40397aa7a2`.
 The fixture was committed in `6f26a601`; subsequent query-audit and V-oracle
-additions do not change that compiled testbench. The p54 run is still pending.
+additions do not change that compiled testbench.
 
 This is not a score-producer, V-transport, nonzero-layer rotation, full-model,
 activity-power, or physical-PPA result. Host execution time is not simulated

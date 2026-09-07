@@ -708,7 +708,7 @@
         },
         "composition": {
           "status": "open",
-          "summary": "The final topology/scheduler composition remains open. Ascending K-plane delivery conflicts with the paired-stream transpose contract. An opt-in paired scheduler matches all 2,113,984 full-model descriptors and propagates widened counters through the mesh wrapper. Bounded nonuniform-payload real-refill-to-mesh-to-transpose-to-K/Q tests pass for p53 and p54 over three heads including a resident/HBM split, checking 24,576 producer-facing beats per family. This diagnostic evaluation does not execute score production or establish full-model mapped attention equivalence, workload latency, or physical closure."
+          "summary": "The final topology/scheduler composition remains open. Ascending K-plane delivery conflicts with the paired-stream transpose contract. An opt-in paired scheduler matches all 2,113,984 full-model descriptors and propagates widened counters through the mesh wrapper. Bounded nonuniform-payload real-refill-to-mesh-to-transpose-to-K/Q tests pass for p53 and p54 over three heads including a resident/HBM split, checking 24,576 producer-facing beats per family. The same three-tile path now also passes with canonical tensor inputs and an independent producer oracle for both families. This diagnostic evaluation does not execute score production or establish full-model mapped attention equivalence, workload latency, or physical closure."
         },
         "scale_validation": {
           "status": "open",

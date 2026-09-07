@@ -13,10 +13,11 @@ resident/HBM gather, paired mesh, transpose, and wide K/Q stage with canonical
 tensor sidecars for tiles 0, 1, and 2, head group zero. Its independent producer
 oracle uses canonical tensor coordinates and the rotated slot assignment;
 checks compare all accepted Q/K/last words under producer backpressure.
-The p53 full simulation passed in 683.60 seconds of host runtime, checking
+The p53 and p54 full simulations passed in 683.60 and 694.31 seconds of host
+runtime respectively, each checking
 69,632 refill writes, 394 completed descriptors, 12,288 ingress and transpose
-beats, and 24,576 producer-facing K/Q/last beats. The p54 simulation remains
-pending. Host runtime is not hardware latency or permission to recost PPA.
+beats, and 24,576 producer-facing K/Q/last beats.
+Host runtime is not hardware latency or permission to recost PPA.
 The short canonical query-initialization checks pass for both families (two
 tests, 31.07 seconds), and the legacy counterparts pass (two tests, 10.54
 seconds). CI includes both short gates, not the long transport simulations.
