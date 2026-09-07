@@ -338,6 +338,17 @@ run those same tensors through real refill/mesh, score production, full-model
 mapper lowering, or routed/activity evaluation.
 ## Concurrent canonical producers with live K/Q staging
 
+The subsequent `canonical_live_key_ingress_concurrent_cluster_result.json`
+adds the real paired-head scheduler and ping-pong K transposer before the stage.
+Both endpoint replays pass all 512 canonical numerical rows, with 41 source
+and 17 generated-input hashes checked after execution. The testbench requires
+4,096 accepted spans and 131,072 accepted input flits and transpose outputs per
+endpoint. Last-output cycles are 146,269 (p54) and 146,271 (p53), under serialized
+testbench memory delivery; these are diagnostic cycles, not workload latency.
+K memory remains a testbench array and Q writes/V SRAM fills remain sidecars.
+This closes local K ingress-to-all-producer numerical composition, not live
+refill/shared mesh, V ingress, all-16-endpoint execution, or physical PPA.
+
 `canonical_live_kq_concurrent_cluster_result.json` retains the successful
 `run_canonical_cluster.py --live-kq-stage` replay of endpoints 0 (54 producers)
 and 8 (53 producers), separately. Each uses the real wide K/Q stage connected
