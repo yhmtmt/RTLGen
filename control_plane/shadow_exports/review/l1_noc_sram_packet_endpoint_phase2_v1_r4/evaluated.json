@@ -1,0 +1,155 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/noc/l1_sram_packet_endpoint/sweeps/nangate45_macro_frontier_r4.json"
+      ],
+      "configs": [
+        "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/config_l1_noc_sram_packet_endpoint_w256_td4_to8_rx8.json"
+      ],
+      "out_root": "runs/designs/noc",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/config_l1_noc_sram_packet_endpoint_w256_td4_to8_rx8.json --platform nangate45 --sweep runs/campaigns/noc/l1_sram_packet_endpoint/sweeps/nangate45_macro_frontier_r4.json --out_root runs/designs/noc --force_gen --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "metadata": {
+      "acceptance_notes": "Require the destination probe boundary register, finite delay/area/power, unique per-point ORFS provenance, retained configured queue/context state, setup-path identity evidence, and at least one critical_path_ns no greater than CLOCK_PERIOD."
+    },
+    "objective": "Close a timing-feasible Nangate45 operating point for the concrete Phase 2 endpoint using a fully registered macro boundary.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains recorded rows with a status column; allow non-ok metrics such as flow_failed when the row is boundary evidence",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Close registered-boundary Phase 2 SRAM packet endpoint timing r4",
+  "result": {
+    "branch": "eval/l1_noc_sram_packet_endpoint_phase2_v1_r4/s20260827t122610z",
+    "completed_utc": "2026-08-27T12:26:08.855385Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "1f709df75b2c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260827t122610z][host:1f709df75b2c][item:l1_noc_sram_packet_endpoint_phase2_v1_r4]",
+    "metrics_rows": [
+      {
+        "tag": "l1_sram_packet_endpoint_nangate45_macro_frontier_r4_a29018f9",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "22562943",
+        "metrics_csv": "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/metrics.csv",
+        "result_path": "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/work/22562943/result.json"
+      },
+      {
+        "tag": "l1_sram_packet_endpoint_nangate45_macro_frontier_r4_e651eee9",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "8138fb30",
+        "metrics_csv": "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/metrics.csv",
+        "result_path": "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/work/8138fb30/result.json"
+      },
+      {
+        "tag": "l1_sram_packet_endpoint_nangate45_macro_frontier_r4_b172f618",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "60d8b55a",
+        "metrics_csv": "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/metrics.csv",
+        "result_path": "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/work/60d8b55a/result.json"
+      }
+    ],
+    "queue_item_id": "l1_noc_sram_packet_endpoint_phase2_v1_r4",
+    "session_id": "s20260827t122610z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_noc_sram_packet_endpoint_phase2_v1_r4/s20260827t122610z",
+    "pr_title": "eval: run close registered-boundary phase 2 sram packet endpoint timing r4",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "1f709df75b2c",
+      "session_id": "s20260827t122610z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_noc_sram_packet_endpoint_phase2_v1_r4"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_noc_sram_packet_endpoint_phase2_v1_r4",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-08-27T10:54:26.507383Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "comparison": {
+      "role": "phase2_sram_packet_endpoint_physical_anchor",
+      "paired_baseline_item_id": "l1_noc_sram_packet_endpoint_phase2_v1_r2"
+    },
+    "evaluation": {
+      "mode": "ppa",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      },
+      "expected_reason": "Measure comparable register-to-register endpoint timing without an unconstrained combinational destination-probe path changing the selected timing path group.",
+      "expected_direction": "close_registered_boundary_phase2_sram_packet_endpoint"
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_noc_sram_packet_endpoint_phase2_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l1_noc_sram_packet_endpoint_phase2_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "36db6ead58828b52c2d9d62c00db8ac5b6cf1169",
+    "requires_daemon_restart": true
+  },
+  "generation_source_identity": {
+    "clean": true,
+    "proof": "generator_worktree_head_exact",
+    "version": 1,
+    "relation": "exact",
+    "repo_head_sha": "36db6ead58828b52c2d9d62c00db8ac5b6cf1169",
+    "declared_source_commit": "36db6ead58828b52c2d9d62c00db8ac5b6cf1169"
+  },
+  "task_type": "l1_sweep"
+}

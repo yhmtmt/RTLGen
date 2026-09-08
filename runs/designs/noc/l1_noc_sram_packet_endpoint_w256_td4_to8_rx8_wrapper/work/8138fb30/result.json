@@ -1,0 +1,29 @@
+{
+  "design": "l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper",
+  "module": "l1_noc_sram_packet_endpoint_w256_td4_to8_rx8",
+  "platform": "nangate45",
+  "config_path": "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/config_l1_noc_sram_packet_endpoint_w256_td4_to8_rx8.json",
+  "config_hash": "2436dbf84785",
+  "param_hash": "8138fb30",
+  "tag": "l1_sram_packet_endpoint_nangate45_macro_frontier_r4_e651eee9",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.6,
+    "CORE_UTILIZATION": 60,
+    "PLACE_DENSITY": 0.52,
+    "FLOW_VARIANT": "endpoint_component_r4",
+    "TAG": "l1_sram_packet_endpoint_nangate45_macro_frontier_r4_e651eee9"
+  },
+  "effective_flow_variant": "endpoint_component_r4__8138fb30",
+  "timestamp": "2026-08-27T12:24:01.069219Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/nangate45/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/endpoint_component_r4__8138fb30/6_finish.rpt",
+    "def": "/orfs/flow/results/nangate45/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/endpoint_component_r4__8138fb30/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 0.4926,
+    "total_power_mw": 0.0127,
+    "die_area": 20118.5856
+  },
+  "status": "ok",
+  "result_path": "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/work/8138fb30/result.json"
+}
