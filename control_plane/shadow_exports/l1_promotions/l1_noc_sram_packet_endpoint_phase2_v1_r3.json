@@ -1,0 +1,105 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-08-26T14:57:32.024765Z",
+  "item_id": "l1_noc_sram_packet_endpoint_phase2_v1_r3",
+  "run_key": "l1_noc_sram_packet_endpoint_phase2_v1_r3_run_575fe83f5476b4b9",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "b955da0ba0c7110f15b3fbed87f30dd857da2e8f",
+  "objective": "Close a timing-feasible Nangate45 operating point for the concrete Phase 2 endpoint around the r2 measured 2.53 ns boundary.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/noc/l1_sram_packet_endpoint/sweeps/nangate45_macro_frontier_r3.json"
+    ],
+    "configs": [
+      "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/config_l1_noc_sram_packet_endpoint_w256_td4_to8_rx8.json"
+    ],
+    "out_root": "runs/designs/noc",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "ppa",
+    "abstraction_layer": "architecture_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from a completed, timing-feasible Layer 1 row.",
+    "timing_feasible": true,
+    "clock_period_ns": 2.6,
+    "timing_slack_ns": 2.1543
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "68fb3e77",
+        "tag": "l1_sram_packet_endpoint_nangate45_macro_frontier_r3_ad17dd27",
+        "result_path": "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/work/68fb3e77/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.4457,
+        "die_area": 20081.7241,
+        "total_power_mw": 0.00594
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_noc_sram_packet_endpoint_phase2_v1_r3",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "partial_metrics_count": 0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 0.4457,
+        "mean": 0.4457,
+        "median": 0.4457,
+        "max": 0.4457,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 20081.7241,
+        "mean": 20081.7241,
+        "median": 20081.7241,
+        "max": 20081.7241,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.00594,
+        "mean": 0.00594,
+        "median": 0.00594,
+        "max": 0.00594,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    },
+    "aggregation_scope": "current_run_checkout_commit",
+    "aggregation_source_commit": "b955da0ba0c7110f15b3fbed87f30dd857da2e8f",
+    "aggregation_included_attempts": 1,
+    "aggregation_excluded_attempts": 0,
+    "aggregation_excluded_source_commits": {},
+    "aggregation_excluded_attempt_run_keys": [],
+    "aggregation_excluded_attempt_run_keys_truncated": false
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_noc_sram_packet_endpoint_phase2_v1_r3/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_noc_sram_packet_endpoint_phase2_v1_r3/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_noc_sram_packet_endpoint_phase2_v1_r3/trial_table.csv"
+  }
+}

@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_noc_sram_packet_endpoint_phase2_v1_r3_run_575fe83f5476b4b9,1,1,0,succeeded,runs/designs/noc/l1_noc_sram_packet_endpoint_w256_td4_to8_rx8_wrapper/metrics.csv,0.4457,20081.7241,0.00594,none,,
