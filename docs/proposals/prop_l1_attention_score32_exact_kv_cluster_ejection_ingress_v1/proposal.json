@@ -1,0 +1,58 @@
+{
+  "proposal_id": "prop_l1_attention_score32_exact_kv_cluster_ejection_ingress_v1",
+  "created_utc": "2026-09-04T01:52:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Connect canonical mesh ejection to exact K/V ingress",
+  "hypothesis": "Address-derived target control can eliminate the synthetic K/V target source and admit each filled wave atomically into K staging, score compute, and V SRAM residency.",
+  "direct_comparison": {
+    "primary_question": "Can one complete canonical K/V wave traverse the real transposers and produce an executable cluster command without external target metadata?",
+    "include": [
+      "4096 block-paired canonical K flits",
+      "4096 canonical V flits and 128 derived V block targets",
+      "real ping-pong K transpose and 64-bank wide K/Q stage",
+      "real V transpose and 2048 endpoint fill rows",
+      "shared layer/head/wave command identity",
+      "atomic K-stage and externally composed score/SRAM cluster admission",
+      "end-to-end ready-valid backpressure"
+    ],
+    "exclude": [
+      "16-cluster generated hierarchy wrapper",
+      "V transpose fill/drain overlap",
+      "characterized SRAM macros",
+      "HBM controller and PHY"
+    ]
+  },
+  "service_contract": {
+    "canonical_k_flits_per_wave": 4096,
+    "canonical_v_flits_per_wave": 4096,
+    "value_block_targets_per_wave": 128,
+    "value_fill_rows_per_wave": 2048,
+    "p53_producer_beats_per_wave": 8192,
+    "full_model_wave_commands": 1024,
+    "wave_counter_bits": 11,
+    "command_id": "0x8200 + layer*4 + kv_head",
+    "command_scope": "shared across 16 clusters and eight waves of one layer/head group"
+  },
+  "required_evaluations": [],
+  "remaining_abstractions": [
+    "The current V transposer does not overlap fill and drain.",
+    "The full 16-cluster generated hierarchy is not yet structurally wrapped around these ingress blocks.",
+    "SRAM arrays remain inferred and the HBM controller/PHY remains external."
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_attention_kv_block_paired_gather_v1/proposal.json",
+    "docs/proposals/prop_l1_attention_score32_exact_kv_value_ingress_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/attention_score32_exact_kv_cluster_ejection_ingress_contract.md",
+    "npu/sim/rtl/attention_score32_exact_kv_cluster_ejection_control.sv",
+    "npu/sim/rtl/attention_score32_exact_kv_cluster_ejection_ingress.sv",
+    "npu/sim/rtl/attention_score32_exact_kv_wave_command_barrier16.sv",
+    "tests/test_attention_score32_exact_kv_cluster_ejection_control.py",
+    "tests/test_attention_score32_exact_kv_cluster_ejection_ingress.py",
+    "tests/test_attention_score32_exact_kv_wave_command_barrier16_rtl.py"
+  ]
+}

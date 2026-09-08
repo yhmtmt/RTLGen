@@ -33,7 +33,7 @@
   },
   "required_evaluations": [],
   "remaining_abstractions": [
-    "Ordered canonical ejection still requires automatic K/V target-control adaptation.",
+    "All 16 controlled ejection paths still require structural composition into the generated score hierarchy.",
     "V fill/drain overlap and characterized SRAM macros remain open architecture dimensions.",
     "The external HBM controller and PHY remain outside the RTL boundary."
   ],

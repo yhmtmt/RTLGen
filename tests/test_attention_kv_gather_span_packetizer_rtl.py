@@ -50,9 +50,14 @@ def test_rtl_expands_full_and_partial_spans_exactly(tmp_path: Path) -> None:
     hbm_tail = next(
         row
         for row in layer
-        if row.operation == CONSUME and row.tile == 2 and row.plane == 0 and row.source == HBM
+        if row.operation == CONSUME and row.tile == 2 and row.plane == 4 and row.source == HBM
     )
-    descriptors = [layer[0], layer[2], replace(hbm_tail, last=True)]
+    full_key = next(
+        row
+        for row in layer
+        if row.operation == CONSUME and row.tile == 0 and row.plane == 0
+    )
+    descriptors = [layer[0], layer[2], full_key, replace(hbm_tail, last=True)]
     drives = "".join(
         _drive_descriptor(row, last=index + 1 == len(descriptors))
         for index, row in enumerate(descriptors)
@@ -152,8 +157,8 @@ module tb;
 {drives}
     while (!schedule_done) @(posedge clk);
     @(negedge clk);
-    if (protocol_error || accepted_descriptor_count != 14'd3 ||
-        generated_packet_count != 25'd4608) begin
+    if (protocol_error || accepted_descriptor_count != 14'd4 ||
+        generated_packet_count != 25'd5120) begin
       $display("FAIL error=%0d descriptors=%0d packets=%0d", protocol_error,
         accepted_descriptor_count, generated_packet_count);
       $finish(1);
@@ -213,7 +218,7 @@ endmodule
             for packet in packet_commands(descriptor)
         )
     assert observed == expected
-    assert "PASS descriptors=3 packets=4608" in result.stdout
+    assert "PASS descriptors=4 packets=5120" in result.stdout
 
 
 def test_rtl_rejects_each_address_space_overflow(tmp_path: Path) -> None:

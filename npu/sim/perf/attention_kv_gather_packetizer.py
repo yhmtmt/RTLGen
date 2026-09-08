@@ -1,11 +1,13 @@
-"""Exact packet expansion for Llama7B K/V gather spans."""
+"""Exact packet expansion and full-K block pairing for Llama7B gather spans."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
 from npu.sim.perf.attention_kv_capacity_gather_scheduler import (
+    CONSUME,
     HBM,
+    PLANE_BYTES,
     REFILL,
     KvGatherDescriptor,
     llama7b_descriptors,
@@ -15,6 +17,19 @@ from npu.sim.perf.attention_kv_capacity_gather_scheduler import (
 PACKET_BYTES = 256
 FLIT_BYTES = 32
 FLITS_PER_PACKET = PACKET_BYTES // FLIT_BYTES
+
+
+def _packet_offset(descriptor: KvGatherDescriptor, index: int) -> int:
+    if (
+        descriptor.operation == CONSUME
+        and descriptor.plane < 4
+        and descriptor.payload_bytes == PLANE_BYTES
+    ):
+        block = index >> 3
+        stream = (index >> 2) & 1
+        packet_in_block = index & 3
+        return block * 1024 + stream * 64 * 1024 + packet_in_block * PACKET_BYTES
+    return index * PACKET_BYTES
 
 
 @dataclass(frozen=True)
@@ -69,7 +84,7 @@ def packet_commands(
     count = packet_count(descriptor)
     rows = []
     for index in range(count):
-        offset = index * PACKET_BYTES
+        offset = _packet_offset(descriptor, index)
         descriptor_last = index + 1 == count
         rows.append(
             KvGatherPacketCommand(

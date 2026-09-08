@@ -1,0 +1,43 @@
+{
+  "proposal_id": "prop_l1_attention_kv_block_paired_gather_v1",
+  "created_utc": "2026-09-04T01:50:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block_revision",
+  "abstraction_layer": "architecture_block",
+  "title": "Pair K gather streams for the embodied transposer",
+  "hypothesis": "Packet-permuting full K planes and splitting only the mixed-residency tile can satisfy the real paired-stream K transposer without adding a 128 KiB reorder store or changing traffic volume.",
+  "revision": {
+    "supersedes_behavior": "stream-major packets within each group-major K plane",
+    "failure_evidence": "The real K ingress accepted 4096 stream-major flits but raised protocol_error and never completed because stream-1 block data arrived 64 KiB after its stream-0 peer.",
+    "preserves": [
+      "134217728 canonical consume bytes per layer",
+      "134217728 HBM source bytes per layer",
+      "17055744 total packet commands",
+      "one K and one V head per cluster command wave"
+    ]
+  },
+  "service_contract": {
+    "ordinary_k_descriptor_bytes": 131072,
+    "ordinary_k_packet_order": "block_then_stream_then_packet_in_block",
+    "tile2_k_descriptor_bytes": 1024,
+    "tile2_k_descriptors_per_head": 128,
+    "descriptors_per_layer": 1546,
+    "full_model_descriptors": 49472
+  },
+  "required_evaluations": [],
+  "remaining_abstractions": [
+    "V fill/drain overlap and characterized SRAM substitution.",
+    "External HBM controller and PHY."
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_attention_kv_group_major_gather_scheduler_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/sim/perf/attention_kv_capacity_gather_scheduler.py",
+    "npu/sim/perf/attention_kv_gather_packetizer.py",
+    "npu/sim/rtl/attention_kv_capacity_gather_scheduler.sv",
+    "npu/sim/rtl/attention_kv_gather_span_packetizer.sv",
+    "tests/test_attention_score32_exact_kv_cluster_ejection_ingress.py"
+  ]
+}

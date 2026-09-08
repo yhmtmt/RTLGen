@@ -15,7 +15,7 @@
       "transient resident refill and direct-HBM source descriptors",
       "four explicit HBM corner endpoints",
       "locality-aware one-tile-per-cluster wave ownership",
-      "all 33,344 Python/RTL-equivalent descriptors under backpressure",
+      "all 49,472 Python/RTL-equivalent descriptors under backpressure",
       "group-major head and wave order compatible with cluster SRAM residency"
     ],
     "exclude": [
@@ -29,9 +29,9 @@
   },
   "service_contract": {
     "persistence_mode": "transient",
-    "descriptors_per_layer": 1042,
-    "full_model_descriptors": 33344,
-    "consume_order": "head_group_then_wave_then_k_v_then_tile",
+    "descriptors_per_layer": 1546,
+    "full_model_descriptors": 49472,
+    "consume_order": "head_group_then_wave_then_block_paired_k_then_v",
     "resident_bytes_per_layer": 2228224,
     "total_hbm_source_bytes_per_layer": 134217728,
     "total_canonical_consume_bytes_per_layer": 134217728,

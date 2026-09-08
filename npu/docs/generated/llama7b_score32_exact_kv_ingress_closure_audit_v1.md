@@ -25,8 +25,8 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 ## Capacity/HBM Gather Scheduler
 
 - persistence: `transient`
-- descriptors: `1042` per layer, `33344` over 32 layers
-- executable order: `head_group_then_wave_then_k_v_then_tile`
+- descriptors: `1546` per layer, `49472` over 32 layers
+- executable order: `head_group_then_wave_then_block_paired_k_then_v`
 - HBM source bytes per layer: `134217728`
 - canonical bytes delivered per layer: `134217728`
 - balanced delivery: `8388608` bytes per cluster
@@ -45,12 +45,12 @@ The historical VC0 quantity matches a capacity share in aggregate, but its fract
 
 ## Required RTL Ownership
 
-- per-cluster target/control adaptation from canonical ejection into K/V transposers
-- backpressure from exact K/V transposers through canonical ejection and mesh
+- 16-cluster structural composition from mesh ejection through the generated score hierarchy
+- full-mesh backpressure through all 16 exact K/V ingress paths
 - overlapped V transpose buffering selected from measured PPA
 - physical cost of ping-pong K transpose and paired-dimension write control
 - characterized SRAM macro substitution for inferred K/Q and cluster stores
 
 ## Next Gate
 
-Connect per-cluster canonical ejection to exact K/V transposer target/control and verify backpressure through representative full K and V heads; then measure V buffering parallelism and substitute characterized SRAM macros.
+Compose all 16 controlled ejection paths into the generated score hierarchy and verify one complete command wave through the shared mesh; then measure V buffering parallelism and substitute characterized SRAM macros.

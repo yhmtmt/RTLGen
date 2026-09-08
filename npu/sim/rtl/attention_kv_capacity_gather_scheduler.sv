@@ -32,10 +32,12 @@ module attention_kv_capacity_gather_scheduler (
   localparam PHASE_REFILL = 1'b0;
   localparam PHASE_CONSUME = 1'b1;
   localparam [20:0] TILE_BYTES = 21'h100000;
+  localparam [20:0] PLANE_BYTES = 21'h020000;
   localparam [20:0] TAIL_BYTES = 21'h004000;
   localparam [20:0] TAIL_HBM_BYTES = 21'h01c000;
+  localparam [20:0] BLOCK_BYTES = 21'h000400;
   localparam [3:0] ALL_PLANES = 4'd8;
-  localparam [15:0] EXPECTED_DESCRIPTORS = 16'd33344;
+  localparam [15:0] EXPECTED_DESCRIPTORS = 16'd49472;
 
   reg phase_q;
   reg [4:0] layer_q;
@@ -45,6 +47,9 @@ module attention_kv_capacity_gather_scheduler (
   reg [3:0] tile_lane_q;
   reg tensor_q;
   reg split_q;
+  reg key_special_q;
+  reg [5:0] key_block_q;
+  reg key_stream_q;
 
   reg [6:0] tile_r;
   reg [3:0] descriptor_segment_r;
@@ -93,23 +98,46 @@ module attention_kv_capacity_gather_scheduler (
         resident_offset_r = 27'h0200000 + {10'd0, plane_r[2:0], 14'd0};
         payload_r = TAIL_BYTES;
       end
+    end else if (!tensor_q) begin
+      plane_r = {2'd0, group_q};
+      if (key_special_q) begin
+        tile_r = 7'd2;
+        descriptor_segment_r = {key_stream_q, key_block_q[2:0]};
+        canonical_base_r = {1'd0, group_q, 17'd0} +
+          {3'd0, key_stream_q, 16'd0} + {4'd0, key_block_q, 10'd0};
+        source_hbm_r = key_stream_q || key_block_q >= 6'd16;
+        resident_offset_r = 27'h0200000 +
+          {11'd0, group_q, 14'd0} + {11'd0, key_block_q, 10'd0};
+        payload_r = BLOCK_BYTES;
+      end else begin
+        tile_r = {wave_q, tile_lane_q};
+        if (wave_q == 3'd0 && tile_lane_q >= 4'd2)
+          tile_r = {3'd0, tile_lane_q} + 1'b1;
+        descriptor_segment_r = {1'b0, group_q, 1'b0};
+        canonical_base_r = {1'd0, group_q, 17'd0};
+        if (tile_r < 7'd2) begin
+          source_hbm_r = 1'b0;
+          resident_offset_r = {tile_r, 20'd0} + {7'd0, canonical_base_r};
+        end
+        payload_r = PLANE_BYTES;
+      end
     end else begin
       tile_r = {wave_q, tile_lane_q};
-      plane_r = {1'b0, tensor_q, group_q};
+      plane_r = {1'b0, 1'b1, group_q};
       descriptor_segment_r = {plane_r[2:0], 1'b0} + split_q;
       canonical_base_r = {plane_r[2:0], 17'd0} +
         (split_q ? 20'h04000 : 20'd0);
       if (tile_r < 7'd2) begin
         source_hbm_r = 1'b0;
         resident_offset_r = {tile_r, 20'd0} + {7'd0, canonical_base_r};
-        payload_r = 21'h020000;
+        payload_r = PLANE_BYTES;
       end else if (tile_r == 7'd2) begin
         resident_offset_r = 27'h0200000 +
           {10'd0, plane_r[2:0], 14'd0};
         source_hbm_r = split_q;
         payload_r = split_q ? TAIL_HBM_BYTES : TAIL_BYTES;
       end else begin
-        payload_r = 21'h020000;
+        payload_r = PLANE_BYTES;
       end
     end
 
@@ -158,6 +186,9 @@ module attention_kv_capacity_gather_scheduler (
       tile_lane_q <= 4'd0;
       tensor_q <= 1'b0;
       split_q <= 1'b0;
+      key_special_q <= 1'b0;
+      key_block_q <= 6'd0;
+      key_stream_q <= 1'b0;
       done <= 1'b0;
       generated_descriptor_count <= 16'd0;
       protocol_error <= 1'b0;
@@ -171,8 +202,38 @@ module attention_kv_capacity_gather_scheduler (
           tile_lane_q <= 4'd0;
           tensor_q <= 1'b0;
           split_q <= 1'b0;
+          key_special_q <= 1'b0;
+          key_block_q <= 6'd0;
+          key_stream_q <= 1'b0;
         end else begin
           refill_segment_q <= refill_segment_q + 1'b1;
+        end
+      end else if (!tensor_q && key_special_q) begin
+        if (!key_stream_q) begin
+          key_stream_q <= 1'b1;
+        end else begin
+          key_stream_q <= 1'b0;
+          if (key_block_q != 6'd63) begin
+            key_block_q <= key_block_q + 1'b1;
+          end else begin
+            key_block_q <= 6'd0;
+            key_special_q <= 1'b0;
+            tensor_q <= 1'b1;
+            tile_lane_q <= 4'd0;
+          end
+        end
+      end else if (!tensor_q) begin
+        if ((wave_q == 3'd0 && tile_lane_q != 4'd14) ||
+            (wave_q != 3'd0 && tile_lane_q != 4'd15)) begin
+          tile_lane_q <= tile_lane_q + 1'b1;
+        end else if (wave_q == 3'd0) begin
+          tile_lane_q <= 4'd0;
+          key_special_q <= 1'b1;
+          key_block_q <= 6'd0;
+          key_stream_q <= 1'b0;
+        end else begin
+          tile_lane_q <= 4'd0;
+          tensor_q <= 1'b1;
         end
       end else if ({wave_q, tile_lane_q} == 7'd2 && !split_q) begin
         split_q <= 1'b1;
@@ -182,26 +243,22 @@ module attention_kv_capacity_gather_scheduler (
           tile_lane_q <= tile_lane_q + 1'b1;
         end else begin
           tile_lane_q <= 4'd0;
-          if (!tensor_q) begin
-            tensor_q <= 1'b1;
+          tensor_q <= 1'b0;
+          if (wave_q != 3'd7) begin
+            wave_q <= wave_q + 1'b1;
           end else begin
-            tensor_q <= 1'b0;
-            if (wave_q != 3'd7) begin
-              wave_q <= wave_q + 1'b1;
+            wave_q <= 3'd0;
+            if (group_q != 2'd3) begin
+              group_q <= group_q + 1'b1;
+            end else if (layer_q == 5'd31) begin
+              done <= 1'b1;
+              if (generated_descriptor_count + 1'b1 != EXPECTED_DESCRIPTORS)
+                protocol_error <= 1'b1;
             end else begin
-              wave_q <= 3'd0;
-              if (group_q != 2'd3) begin
-                group_q <= group_q + 1'b1;
-              end else if (layer_q == 5'd31) begin
-                done <= 1'b1;
-                if (generated_descriptor_count + 1'b1 != EXPECTED_DESCRIPTORS)
-                  protocol_error <= 1'b1;
-              end else begin
-                phase_q <= PHASE_REFILL;
-                layer_q <= layer_q + 1'b1;
-                refill_segment_q <= 4'd0;
-                group_q <= 2'd0;
-              end
+              phase_q <= PHASE_REFILL;
+              layer_q <= layer_q + 1'b1;
+              refill_segment_q <= 4'd0;
+              group_q <= 2'd0;
             end
           end
         end

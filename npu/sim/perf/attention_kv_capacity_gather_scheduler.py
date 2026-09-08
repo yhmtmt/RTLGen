@@ -13,6 +13,8 @@ CLUSTERS = 16
 RESIDENT_FULL_TILES = 2
 RESIDENT_TAIL_TOKENS = 128
 PLANE_BYTES = 128 * 1024
+STREAM_BYTES = 64 * 1024
+BLOCK_BYTES = 1024
 TAIL_BYTES_PER_PLANE = 16 * 1024
 TAIL_HBM_BYTES_PER_PLANE = PLANE_BYTES - TAIL_BYTES_PER_PLANE
 RESIDENT_BYTES_PER_LAYER = 2_228_224
@@ -140,76 +142,125 @@ def layer_descriptors(layer: int) -> tuple[KvGatherDescriptor, ...]:
             )
         )
 
-    # Match the embodied hierarchy's group-major command cadence. Each wave
-    # delivers one K/V head pair to every cluster before advancing.
+    # Match the embodied hierarchy's group-major command cadence. Full K
+    # planes are packet-permuted downstream into block/stream order. Tile 2
+    # crosses the resident/HBM boundary, so its K plane is explicitly emitted
+    # as 1 KiB block spans after the other 15 tiles in wave 0.
     for group in range(HEAD_GROUPS):
         for wave in range(WAVES):
-            for plane in (group, HEAD_GROUPS + group):
-                for tile_lane in range(TILES_PER_WAVE):
-                    tile = wave * TILES_PER_WAVE + tile_lane
-                    canonical_plane_base = plane * PLANE_BYTES
-                    if tile < RESIDENT_FULL_TILES:
+            key_plane_base = group * PLANE_BYTES
+            ordinary_tiles = list(
+                range(wave * TILES_PER_WAVE, (wave + 1) * TILES_PER_WAVE)
+            )
+            if wave == 0:
+                ordinary_tiles.remove(RESIDENT_FULL_TILES)
+            for tile in ordinary_tiles:
+                rows.append(
+                    _descriptor(
+                        layer=layer,
+                        tile=tile,
+                        segment=group * 2,
+                        operation=CONSUME,
+                        source=RESIDENT if tile < RESIDENT_FULL_TILES else HBM,
+                        plane=group,
+                        canonical_base_address=key_plane_base,
+                        resident_offset=tile * BYTES_PER_KV_TILE + key_plane_base,
+                        payload_bytes=PLANE_BYTES,
+                    )
+                )
+            if wave == 0:
+                for block in range(64):
+                    for stream in range(2):
+                        canonical_base = (
+                            key_plane_base
+                            + stream * STREAM_BYTES
+                            + block * BLOCK_BYTES
+                        )
+                        resident = stream == 0 and block < 16
                         rows.append(
                             _descriptor(
                                 layer=layer,
-                                tile=tile,
-                                segment=plane * 2,
+                                tile=RESIDENT_FULL_TILES,
+                                segment=stream * 8 + block % 8,
                                 operation=CONSUME,
-                                source=RESIDENT,
-                                plane=plane,
-                                canonical_base_address=canonical_plane_base,
+                                source=RESIDENT if resident else HBM,
+                                plane=group,
+                                canonical_base_address=canonical_base,
                                 resident_offset=(
-                                    tile * BYTES_PER_KV_TILE + canonical_plane_base
+                                    2 * BYTES_PER_KV_TILE
+                                    + group * TAIL_BYTES_PER_PLANE
+                                    + block * BLOCK_BYTES
                                 ),
-                                payload_bytes=PLANE_BYTES,
+                                payload_bytes=BLOCK_BYTES,
                             )
                         )
-                    elif tile == RESIDENT_FULL_TILES:
-                        resident_offset = (
-                            2 * BYTES_PER_KV_TILE + plane * TAIL_BYTES_PER_PLANE
+
+            plane = HEAD_GROUPS + group
+            for tile_lane in range(TILES_PER_WAVE):
+                tile = wave * TILES_PER_WAVE + tile_lane
+                canonical_plane_base = plane * PLANE_BYTES
+                if tile < RESIDENT_FULL_TILES:
+                    rows.append(
+                        _descriptor(
+                            layer=layer,
+                            tile=tile,
+                            segment=plane * 2,
+                            operation=CONSUME,
+                            source=RESIDENT,
+                            plane=plane,
+                            canonical_base_address=canonical_plane_base,
+                            resident_offset=(
+                                tile * BYTES_PER_KV_TILE + canonical_plane_base
+                            ),
+                            payload_bytes=PLANE_BYTES,
                         )
-                        rows.append(
-                            _descriptor(
-                                layer=layer,
-                                tile=tile,
-                                segment=plane * 2,
-                                operation=CONSUME,
-                                source=RESIDENT,
-                                plane=plane,
-                                canonical_base_address=canonical_plane_base,
-                                resident_offset=resident_offset,
-                                payload_bytes=TAIL_BYTES_PER_PLANE,
-                            )
+                    )
+                elif tile == RESIDENT_FULL_TILES:
+                    resident_offset = (
+                        2 * BYTES_PER_KV_TILE + plane * TAIL_BYTES_PER_PLANE
+                    )
+                    rows.append(
+                        _descriptor(
+                            layer=layer,
+                            tile=tile,
+                            segment=plane * 2,
+                            operation=CONSUME,
+                            source=RESIDENT,
+                            plane=plane,
+                            canonical_base_address=canonical_plane_base,
+                            resident_offset=resident_offset,
+                            payload_bytes=TAIL_BYTES_PER_PLANE,
                         )
-                        rows.append(
-                            _descriptor(
-                                layer=layer,
-                                tile=tile,
-                                segment=plane * 2 + 1,
-                                operation=CONSUME,
-                                source=HBM,
-                                plane=plane,
-                                canonical_base_address=(
-                                    canonical_plane_base + TAIL_BYTES_PER_PLANE
-                                ),
-                                resident_offset=0,
-                                payload_bytes=TAIL_HBM_BYTES_PER_PLANE,
-                            )
+                    )
+                    rows.append(
+                        _descriptor(
+                            layer=layer,
+                            tile=tile,
+                            segment=plane * 2 + 1,
+                            operation=CONSUME,
+                            source=HBM,
+                            plane=plane,
+                            canonical_base_address=(
+                                canonical_plane_base + TAIL_BYTES_PER_PLANE
+                            ),
+                            resident_offset=0,
+                            payload_bytes=TAIL_HBM_BYTES_PER_PLANE,
                         )
-                    else:
-                        rows.append(
-                            _descriptor(
-                                layer=layer,
-                                tile=tile,
-                                segment=plane * 2,
-                                operation=CONSUME,
-                                source=HBM,
-                                plane=plane,
-                                canonical_base_address=canonical_plane_base,
-                                resident_offset=0,
-                                payload_bytes=PLANE_BYTES,
-                            )
+                    )
+                else:
+                    rows.append(
+                        _descriptor(
+                            layer=layer,
+                            tile=tile,
+                            segment=plane * 2,
+                            operation=CONSUME,
+                            source=HBM,
+                            plane=plane,
+                            canonical_base_address=canonical_plane_base,
+                            resident_offset=0,
+                            payload_bytes=PLANE_BYTES,
                         )
+                    )
     return tuple(rows)
 
 

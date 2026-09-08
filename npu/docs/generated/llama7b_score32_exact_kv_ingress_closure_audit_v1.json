@@ -71,36 +71,37 @@
       "14": 8388608,
       "15": 8388608
     },
-    "consume_descriptors_per_layer": 1032,
-    "consume_order": "head_group_then_wave_then_k_v_then_tile",
-    "descriptor_granularity": "contiguous canonical byte span",
+    "consume_descriptors_per_layer": 1536,
+    "consume_order": "head_group_then_wave_then_block_paired_k_then_v",
+    "descriptor_granularity": "contiguous canonical byte span with deterministic full-K packet permutation",
     "descriptors_by_source": {
-      "0": 8192,
-      "1": 48,
-      "2": 48,
-      "3": 8192,
-      "4": 48,
-      "5": 48,
-      "6": 48,
-      "7": 48,
-      "8": 48,
-      "9": 48,
-      "10": 48,
-      "11": 48,
-      "12": 8192,
-      "13": 48,
-      "14": 48,
-      "15": 8192
+      "0": 11864,
+      "1": 168,
+      "2": 168,
+      "3": 11864,
+      "4": 168,
+      "5": 168,
+      "6": 168,
+      "7": 168,
+      "8": 168,
+      "9": 168,
+      "10": 168,
+      "11": 168,
+      "12": 11864,
+      "13": 168,
+      "14": 168,
+      "15": 11864
     },
-    "descriptors_per_layer": 1042,
+    "descriptors_per_layer": 1546,
     "direct_hbm_consume_bytes_per_layer": 131989504,
     "does_not_include": [
       "HBM controller or PHY",
-      "per-cluster K/V transposer target-control adaptation",
+      "16-cluster structural composition into the generated score hierarchy",
       "V fill/drain overlap",
       "characterized SRAM macros"
     ],
-    "full_model_descriptors": 33344,
+    "full_k_packet_order": "block_then_stream_then_packet_in_block",
+    "full_model_descriptors": 49472,
     "hbm_source_endpoints": [
       0,
       3,
@@ -108,21 +109,21 @@
       15
     ],
     "head_groups": 4,
-    "maximum_descriptors_per_source": 8192,
+    "maximum_descriptors_per_source": 11864,
     "owner_cluster_rule": "(layer*3+tile)%16",
     "packet_expansion": {
       "canonical_consume_packet_count": 16777216,
-      "descriptor_count": 33344,
+      "descriptor_count": 49472,
       "flits_per_packet": 8,
       "hbm_source_packet_count": 16777216,
       "maximum_packets_per_span": 4096,
       "maximum_span_terminal_index_verified": true,
       "packet_bytes": 256,
       "packet_count": 17055744,
-      "representative_rtl_packets_verified": 4608,
+      "representative_rtl_packets_verified": 5120,
       "resident_refill_packet_count": 278528
     },
-    "partial_tile_policy": "eight ordered planes, each consuming a 16KiB resident prefix followed by a 112KiB direct-HBM suffix",
+    "partial_tile_policy": "tile2 K uses block-paired 1KiB spans across its resident/HBM boundary; tile2 V uses a 16KiB resident prefix and 112KiB HBM suffix",
     "per_source_descriptor_counter_bits": 14,
     "persistence_mode": "transient",
     "python_rtl_descriptor_equivalence_verified": true,
@@ -180,23 +181,28 @@
       "resident-write and canonical-ingress payload ejection with metadata",
       "payload-counted transient-refill, consume, and layer-transition barriers",
       "per-destination descriptor completion ordering across split resident/HBM planes",
-      "group-major wave-ordered plane delivery compatible with cluster SRAM residency"
+      "group-major wave-ordered plane delivery compatible with cluster SRAM residency",
+      "block-paired K packet delivery compatible with the embodied K transposer",
+      "address-derived per-cluster K/V target control and atomic command admission"
     ],
     "remaining_before_frontier_recost": [
-      "per-cluster canonical-ejection target/control adapters into exact K/V transposers",
+      "16-cluster structural composition into the generated score hierarchy",
       "V transpose ping-pong or proven fill-drain overlap",
       "characterized SRAM macro substitution"
     ],
     "verified_counts": {
+      "atomic_cluster_commands_per_verified_wave": 1,
+      "automatic_value_block_targets_per_wave": 128,
       "canonical_consume_flits_per_layer": 4194304,
       "canonical_k_input_flits_per_head": 4096,
       "canonical_v_input_flits_per_head": 4096,
       "cluster_sram_v_rows_per_head": 2048,
       "consecutive_pingpong_k_input_flits": 4096,
       "destination_descriptor_locks": 16,
+      "full_model_wave_commands_without_counter_wrap": 1024,
       "gather_consume_bytes_per_cluster": 8388608,
-      "gather_descriptors_full_model": 33344,
-      "gather_descriptors_per_layer": 1042,
+      "gather_descriptors_full_model": 49472,
+      "gather_descriptors_per_layer": 1546,
       "gather_hbm_packets_full_model": 16777216,
       "gather_hbm_source_bytes_per_layer": 134217728,
       "gather_packets_full_model": 17055744,
@@ -205,7 +211,8 @@
       "mesh_simultaneous_packet_commands_verified": 4,
       "pingpong_k_head_cycles_without_stall": 4160,
       "producer_output_beats_per_head": 8192,
-      "resident_refill_flits_per_layer": 69632
+      "resident_refill_flits_per_layer": 69632,
+      "wave_command_counter_bits": 11
     }
   },
   "key_ingress_architecture_frontier": {
@@ -255,7 +262,7 @@
     "tiles": 128
   },
   "model": "llama7b_score32_exact_kv_ingress_closure_audit_v1",
-  "next_gate": "Connect per-cluster canonical ejection to exact K/V transposer target/control and verify backpressure through representative full K and V heads; then measure V buffering parallelism and substitute characterized SRAM macros.",
+  "next_gate": "Compose all 16 controlled ejection paths into the generated score hierarchy and verify one complete command wave through the shared mesh; then measure V buffering parallelism and substitute characterized SRAM macros.",
   "one_buffer_transpose_reference": {
     "key": {
       "input_flits": 64,
@@ -295,16 +302,16 @@
     "whole_kv_tile_packets_256B": 4096
   },
   "required_rtl_ownership": [
-    "per-cluster target/control adaptation from canonical ejection into K/V transposers",
-    "backpressure from exact K/V transposers through canonical ejection and mesh",
+    "16-cluster structural composition from mesh ejection through the generated score hierarchy",
+    "full-mesh backpressure through all 16 exact K/V ingress paths",
     "overlapped V transpose buffering selected from measured PPA",
     "physical cost of ping-pong K transpose and paired-dimension write control",
     "characterized SRAM macro substitution for inferred K/Q and cluster stores"
   ],
   "revision_effect": {
     "frontier_recost_allowed": false,
-    "reason": "Exact K/V endpoint paths, capacity/HBM source descriptors, and packetization are embodied, and payload reaches canonical per-cluster ingress through the shared mesh. Target/control adaptation into the K/V transposers, overlap selection, and physical memory costs are not yet closed for the complete score32 cluster path.",
-    "release_coupled_vc1_role": "exact_reduction_transport_timing_with_vc0_ingress_still_open",
+    "reason": "Exact K/V endpoint paths, capacity/HBM source descriptors, and packetization are embodied, and a complete canonical wave reaches the real K/V transposers through address-derived target control. Full 16-cluster hierarchy composition, overlap selection, and physical memory costs are not yet closed for the complete score32 cluster path.",
+    "release_coupled_vc1_role": "exact_reduction_transport_timing_with_full_kv_hierarchy_composition_still_open",
     "shared_mesh_15769_cycle_result_role": "standalone_historical_traffic_capacity_bound_only"
   },
   "shared_mesh_ingress_composition": {
@@ -350,7 +357,7 @@
   "source_refs": [
     {
       "path": "npu/eval/audit_llama7b_score32_exact_kv_ingress_closure.py",
-      "sha256": "430ac80020861afb87e185e9adf1005b2a00cacaa321e0890264b575522f5248"
+      "sha256": "1b422927cc00d3a90c548dcf36d8bdf46183a7b27385e1415a3cb0ea6475a0df"
     },
     {
       "path": "npu/sim/perf/attention_kv_tile_layout.py",
@@ -410,51 +417,51 @@
     },
     {
       "path": "npu/sim/perf/attention_kv_capacity_gather_scheduler.py",
-      "sha256": "95744c089369237a9d202500b78ffeba3c36ed367b9a96b5d53b6458e76f2c6b"
+      "sha256": "ad8a93f05210865ca2b7e486d5e5ab43e7a6f67b1dfcb2dbba4c4703258001d2"
     },
     {
       "path": "npu/sim/rtl/attention_kv_capacity_gather_scheduler.sv",
-      "sha256": "e0c73b08c05120cd27c36a350c31cfa65e328548f80143d9e5d5933d86b05fe7"
+      "sha256": "6cd2aa43b8cbc318a5d99be1d1baf5f42b7597dd478b3fec6f75d2a0879d2dbe"
     },
     {
       "path": "npu/eval/tests/test_attention_kv_capacity_gather_scheduler.py",
-      "sha256": "bd19693b07c57b53b7b56866ab7d0b72a4ba0c56c144c7b299e6233589c89f94"
+      "sha256": "56fb219a7f615dc290867399218d5149102c020393f8649b47c2d6620b027c52"
     },
     {
       "path": "tests/test_attention_kv_capacity_gather_scheduler_rtl.py",
-      "sha256": "f2765e42eddc802faa9c49fc46904b08da19354c4fb2f4f386a2457b413005fe"
+      "sha256": "3285726235612d3e53c29e388b919692d0dd9b3fd74927a6cf35bf4cd15d0657"
     },
     {
       "path": "npu/docs/attention_kv_capacity_gather_scheduler_contract.md",
-      "sha256": "592449d001f00b33c3d3c326959d4774bf11e3969f45eed15205b634f5117906"
+      "sha256": "55ab8431222cfb3627e0936586c3505e5a404a5dd47e140051ab1406849d92a4"
     },
     {
       "path": "docs/proposals/prop_l1_attention_kv_capacity_gather_scheduler_v1/proposal.json",
-      "sha256": "e23d063a5a2c10ebe8599851bf6b60e573cc460ea964583b95d3f69c5b9131f9"
+      "sha256": "a9230eb2d3ca909da7618bc667efc4480cf06da473d1e2e69ac2110345e63c08"
     },
     {
       "path": "npu/sim/perf/attention_kv_gather_packetizer.py",
-      "sha256": "ac12c8ac69b34ee5a51192a006b53ee4c14ac1e44b28b909471be40967241f17"
+      "sha256": "0e290bb98abb3fa4e5a15c5170e3c543bed8c775e2e43f8f06694ae4cd3f6db2"
     },
     {
       "path": "npu/sim/rtl/attention_kv_gather_span_packetizer.sv",
-      "sha256": "fc3d387c3ea1486ed6f8c474c93dd1f50cb27d2f1fb66d26c6ae597899326c02"
+      "sha256": "fa68fad300443817013e8f179a57782ba0c48cb2d9f9c748b018d24ef1a50ca6"
     },
     {
       "path": "npu/eval/tests/test_attention_kv_gather_packetizer.py",
-      "sha256": "c26b88540ac998c8e3dc6dd0bbd9f64391fb4f0be6c8a5b2a4269424f9dfe939"
+      "sha256": "0d5b33d36575066d46e2859832b515dd598536d4292f54b1d8826c069b810a09"
     },
     {
       "path": "tests/test_attention_kv_gather_span_packetizer_rtl.py",
-      "sha256": "a3de92539aa9660e6954d9bb978bc8724d4133c0f06692872b3c73f6772c10b8"
+      "sha256": "b99e92d60fbdcfacec7413825589d9594fd873b44c829e3ad0105f10e66bb74b"
     },
     {
       "path": "npu/docs/attention_kv_gather_span_packetizer_contract.md",
-      "sha256": "63e8acd9110205dcce9766d6d6a3d78e3adbd37f1892134a585c439e94a404f6"
+      "sha256": "92b2ac8fbaea97c9929c9fc07b3b39d7cf7a12ea84b171f5f3aea63c74f3f09f"
     },
     {
       "path": "docs/proposals/prop_l1_attention_kv_gather_span_packetizer_v1/proposal.json",
-      "sha256": "2adcff857a5f98e81dbcc61997da3bdd9382afbd0d1da022aed5c7b062d15578"
+      "sha256": "f7b891fde1f45fffcdd8f9f10cb0b015bcb9145c2350a12334c81b6d52a0db94"
     },
     {
       "path": "npu/sim/rtl/attention_kv_gather_span_dispatch16.sv",
@@ -490,11 +497,11 @@
     },
     {
       "path": "npu/docs/attention_kv_capacity_gather_mesh_ingress_contract.md",
-      "sha256": "c4f53f7a961921e5e55761f6cb5d4f12266598dd4462715626b058da205a82e6"
+      "sha256": "49a4409061afbb772cc0a7d05c66e18d88df4dc97e65b8982254fcbc10489525"
     },
     {
       "path": "docs/proposals/prop_l1_attention_kv_capacity_gather_mesh_ingress_v1/proposal.json",
-      "sha256": "bac4e22ddad636e1cc75c0251e08f357dd9ec9a2173091222797ae5c476d8742"
+      "sha256": "c7ba50e441b7897553edd8fcd9aef153943799ae2979f33f321047c81181e544"
     },
     {
       "path": "npu/sim/rtl/attention_kv_destination_descriptor_guard16.sv",
@@ -506,11 +513,47 @@
     },
     {
       "path": "docs/proposals/prop_l1_attention_kv_destination_descriptor_guard_v1/proposal.json",
-      "sha256": "ba10503ac646bc4345a5d7ec603c58b3cb4cc2201c1a5ab5f2a45531ba4aec56"
+      "sha256": "cffd317e13f52d8822b6058eba8e58662da54c8fa34ab9f9d1b57fcaa6bb5758"
     },
     {
       "path": "docs/proposals/prop_l1_attention_kv_group_major_gather_scheduler_v1/proposal.json",
-      "sha256": "8f00ddbb2c02be8639b50d231f8c5dcf5f7f11961e160935acfc26d33920e671"
+      "sha256": "c25e5321f13e630e45e8bec42b17c81132e9d50ba4b72396da9372ef82abd1ec"
+    },
+    {
+      "path": "docs/proposals/prop_l1_attention_kv_block_paired_gather_v1/proposal.json",
+      "sha256": "c16793f573c7a9410179e6166bfb735e6a06b8aa4dff18a0062de8f16c4d3e80"
+    },
+    {
+      "path": "npu/docs/attention_score32_exact_kv_cluster_ejection_ingress_contract.md",
+      "sha256": "f66d3bf4a109af93cbf51e10cf0d8e675b5b99afc1f5df8d882ba262c628c868"
+    },
+    {
+      "path": "docs/proposals/prop_l1_attention_score32_exact_kv_cluster_ejection_ingress_v1/proposal.json",
+      "sha256": "fbd6f95d22577469db7cf695b63d717ebc029c986596ecfb2ee7918db1b57a40"
+    },
+    {
+      "path": "npu/sim/rtl/attention_score32_exact_kv_cluster_ejection_control.sv",
+      "sha256": "2f49bfa665ab820e35d38755f8e78c8f6f6dcbee64396faf4c5cff25fb31af4b"
+    },
+    {
+      "path": "npu/sim/rtl/attention_score32_exact_kv_cluster_ejection_ingress.sv",
+      "sha256": "6aa6310ee34a60f2be4497a6df9f4b26356daa9cac90680cb4140489eac9e124"
+    },
+    {
+      "path": "npu/sim/rtl/attention_score32_exact_kv_wave_command_barrier16.sv",
+      "sha256": "a15174a111eaa1688cb835f941aab3fa62b0545e98dcad7d4a08bfdcc5d59094"
+    },
+    {
+      "path": "tests/test_attention_score32_exact_kv_cluster_ejection_control.py",
+      "sha256": "85086386163e766618ee6426d7c802d0db4d0354c463ba593eb3ac8d3ab210cd"
+    },
+    {
+      "path": "tests/test_attention_score32_exact_kv_cluster_ejection_ingress.py",
+      "sha256": "ea1cfcdc95a49b5693b90b0937b01217a0f444b3476f99e612e9696d2eee8050"
+    },
+    {
+      "path": "tests/test_attention_score32_exact_kv_wave_command_barrier16_rtl.py",
+      "sha256": "5ab4fd4480d9e3091d12bf3f68f768847850f6bc6d34fbafa7abf0cb29ac6a43"
     }
   ],
   "version": 1

@@ -40,7 +40,7 @@
   },
   "required_evaluations": [],
   "remaining_abstractions": [
-    "Canonical ejection still requires K/V target-control adaptation into the exact transposers.",
+    "All 16 controlled ejection paths still require structural composition into the generated score hierarchy.",
     "The one-buffer V ingress still lacks measured fill/drain overlap alternatives.",
     "Inferred K/Q, resident, and cluster stores require characterized SRAM substitution.",
     "The external HBM controller and PHY remain outside the RTL boundary."

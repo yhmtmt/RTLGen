@@ -163,20 +163,20 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     )
     gather = report["capacity_hbm_gather_scheduler"]
     assert gather["persistence_mode"] == "transient"
-    assert gather["descriptors_per_layer"] == 1042
+    assert gather["descriptors_per_layer"] == 1546
     assert gather["refill_descriptors_per_layer"] == 10
-    assert gather["consume_descriptors_per_layer"] == 1032
-    assert gather["full_model_descriptors"] == 33344
-    assert gather["consume_order"] == "head_group_then_wave_then_k_v_then_tile"
+    assert gather["consume_descriptors_per_layer"] == 1536
+    assert gather["full_model_descriptors"] == 49472
+    assert gather["consume_order"] == "head_group_then_wave_then_block_paired_k_then_v"
     assert gather["head_groups"] == 4
     assert gather["waves_per_head_group"] == 8
     assert gather["tiles_per_wave"] == 16
     assert gather["superseded_tile_major_descriptor_count"] == 4896
     assert gather["superseded_tile_major_role"] == "byte_accounting_only_buffer_incompatible"
-    assert gather["maximum_descriptors_per_source"] == 8192
+    assert gather["maximum_descriptors_per_source"] == 11864
     assert gather["per_source_descriptor_counter_bits"] == 14
     assert gather["descriptors_by_source"] == {
-        source: 8192 if source in {0, 3, 12, 15} else 48 for source in range(16)
+        source: 11864 if source in {0, 3, 12, 15} else 168 for source in range(16)
     }
     assert gather["resident_refill_bytes_per_layer"] == 2_228_224
     assert gather["resident_consume_bytes_per_layer"] == 2_228_224
@@ -189,13 +189,13 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     assert gather["packet_expansion"] == {
         "packet_bytes": 256,
         "flits_per_packet": 8,
-        "descriptor_count": 33344,
+        "descriptor_count": 49472,
         "packet_count": 17_055_744,
         "hbm_source_packet_count": 16_777_216,
         "canonical_consume_packet_count": 16_777_216,
         "resident_refill_packet_count": 278_528,
         "maximum_packets_per_span": 4096,
-        "representative_rtl_packets_verified": 4608,
+        "representative_rtl_packets_verified": 5120,
         "maximum_span_terminal_index_verified": True,
     }
     mesh_ingress = report["shared_mesh_ingress_composition"]
@@ -256,8 +256,8 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
         "consecutive_pingpong_k_input_flits": 4096,
         "canonical_v_input_flits_per_head": 4096,
         "cluster_sram_v_rows_per_head": 2048,
-        "gather_descriptors_per_layer": 1042,
-        "gather_descriptors_full_model": 33344,
+        "gather_descriptors_per_layer": 1546,
+        "gather_descriptors_full_model": 49472,
         "gather_hbm_source_bytes_per_layer": 128 * 1024 * 1024,
         "gather_consume_bytes_per_cluster": 8 * 1024 * 1024,
         "gather_packets_full_model": 17_055_744,
@@ -268,6 +268,10 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
         "resident_refill_flits_per_layer": 69_632,
         "canonical_consume_flits_per_layer": 4_194_304,
         "destination_descriptor_locks": 16,
+        "automatic_value_block_targets_per_wave": 128,
+        "atomic_cluster_commands_per_verified_wave": 1,
+        "wave_command_counter_bits": 11,
+        "full_model_wave_commands_without_counter_wrap": 1024,
     }
     ownership = "\n".join(report["required_rtl_ownership"])
     assert "future banked" not in ownership
@@ -278,12 +282,12 @@ def test_audit_retracts_direct_fractional_vc0_fill_mapping() -> None:
     assert "locality-aware tile-to-cluster scheduler" not in ownership
     assert "span-to-packet expansion" not in ownership
     assert "multi-source packet dispatch" not in ownership
-    assert "target/control adaptation" in ownership
-    assert "per-cluster canonical ejection" in report["next_gate"]
+    assert "16-cluster structural composition" in ownership
+    assert "all 16 controlled ejection paths" in report["next_gate"]
     assert report["revision_effect"]["frontier_recost_allowed"] is False
     assert "cannot be wired directly" in render_markdown(report)
     assert "p53/p54 parallel readout is verified" in render_markdown(report)
     assert "4,896" not in render_markdown(report)
-    assert "`33344` over 32 layers" in render_markdown(report)
+    assert "`49472` over 32 layers" in render_markdown(report)
     assert "`17055744` commands" in render_markdown(report)
     assert "`69632` flits/layer" in render_markdown(report)

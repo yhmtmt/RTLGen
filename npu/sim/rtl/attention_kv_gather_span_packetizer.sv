@@ -1,8 +1,8 @@
 `timescale 1ns/1ps
 
-// Expands one exact K/V contiguous gather span into 256-byte, eight-flit
-// packet commands. A downstream descriptor-pair scheduler must install the
-// receive descriptor before releasing the corresponding transmit descriptor.
+// Expands one exact K/V gather span into 256-byte, eight-flit packet commands.
+// Full K planes are emitted in block-paired stream order. A downstream
+// descriptor-pair scheduler installs receive state before transmit release.
 module attention_kv_gather_span_packetizer (
   input wire clk,
   input wire rst_n,
@@ -85,6 +85,13 @@ module attention_kv_gather_span_packetizer (
     canonical_end_address <= 21'h100000 &&
     source_end_address <= 35'h400000000 &&
     destination_end_address <= 35'h400000000;
+  wire key_block_interleave = operation_consume_q && plane_q < 4'd4 &&
+    packet_count_q == 13'd512;
+  wire [19:0] packet_byte_offset = key_block_interleave ?
+    ({3'd0, packet_index_q[2], 16'd0} +
+     {4'd0, packet_index_q[8:3], 10'd0} +
+     {10'd0, packet_index_q[1:0], 8'd0}) :
+    {packet_index_q, 8'd0};
 
   assign desc_ready = !protocol_error &&
     (!active_q || (cmd_fire && descriptor_last_w));
@@ -98,11 +105,11 @@ module attention_kv_gather_span_packetizer (
   assign cmd_destination_cluster = destination_cluster_q;
   assign cmd_plane = plane_q;
   assign cmd_canonical_byte_address =
-    canonical_base_q + {packet_index_q, 8'd0};
-  assign cmd_source_byte_address = source_base_q + {14'd0, packet_index_q, 8'd0};
+    canonical_base_q + packet_byte_offset;
+  assign cmd_source_byte_address = source_base_q + {14'd0, packet_byte_offset};
   assign cmd_destination_is_resident_cache = destination_is_resident_q;
   assign cmd_destination_byte_address =
-    destination_base_q + {14'd0, packet_index_q, 8'd0};
+    destination_base_q + {14'd0, packet_byte_offset};
   assign cmd_packet_index = packet_index_q;
   assign cmd_tag = packet_index_q[7:0];
   assign cmd_flit_count = 4'd8;

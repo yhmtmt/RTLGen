@@ -234,7 +234,9 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
         },
         "capacity_hbm_gather_scheduler": {
             "persistence_mode": "transient",
-            "descriptor_granularity": "contiguous canonical byte span",
+            "descriptor_granularity": (
+                "contiguous canonical byte span with deterministic full-K packet permutation"
+            ),
             "descriptors_per_layer": len(gather_layer),
             "refill_descriptors_per_layer": len(refill_descriptors),
             "consume_descriptors_per_layer": len(consume_descriptors),
@@ -257,7 +259,7 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "consume_bytes_per_cluster": consume_bytes_by_cluster,
             "hbm_source_endpoints": list(HBM_CORNER_ENDPOINTS),
             "owner_cluster_rule": "(layer*3+tile)%16",
-            "consume_order": "head_group_then_wave_then_k_v_then_tile",
+            "consume_order": "head_group_then_wave_then_block_paired_k_then_v",
             "head_groups": 4,
             "waves_per_head_group": 8,
             "tiles_per_wave": 16,
@@ -267,9 +269,10 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
             "maximum_descriptors_per_source": max(descriptors_by_source.values()),
             "per_source_descriptor_counter_bits": 14,
             "partial_tile_policy": (
-                "eight ordered planes, each consuming a 16KiB resident prefix followed "
-                "by a 112KiB direct-HBM suffix"
+                "tile2 K uses block-paired 1KiB spans across its resident/HBM boundary; "
+                "tile2 V uses a 16KiB resident prefix and 112KiB HBM suffix"
             ),
+            "full_k_packet_order": "block_then_stream_then_packet_in_block",
             "ready_valid_stall_stability_verified": True,
             "python_rtl_descriptor_equivalence_verified": True,
             "packet_expansion": {
@@ -277,12 +280,12 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "flits_per_packet": FLITS_PER_PACKET,
                 **packet_summary,
                 "maximum_packets_per_span": BYTES_PER_KV_TILE // PACKET_BYTES,
-                "representative_rtl_packets_verified": 4608,
+                "representative_rtl_packets_verified": 5120,
                 "maximum_span_terminal_index_verified": True,
             },
             "does_not_include": [
                 "HBM controller or PHY",
-                "per-cluster K/V transposer target-control adaptation",
+                "16-cluster structural composition into the generated score hierarchy",
                 "V fill/drain overlap",
                 "characterized SRAM macros",
             ],
@@ -429,6 +432,8 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "payload-counted transient-refill, consume, and layer-transition barriers",
                 "per-destination descriptor completion ordering across split resident/HBM planes",
                 "group-major wave-ordered plane delivery compatible with cluster SRAM residency",
+                "block-paired K packet delivery compatible with the embodied K transposer",
+                "address-derived per-cluster K/V target control and atomic command admission",
             ],
             "verified_counts": {
                 "canonical_k_input_flits_per_head": 4096,
@@ -453,36 +458,42 @@ def build_report(*, phase2: JsonDict, source_paths: list[Path] | None = None) ->
                 "resident_refill_flits_per_layer": resident_per_layer // 32,
                 "canonical_consume_flits_per_layer": layer_kv_bytes // 32,
                 "destination_descriptor_locks": 16,
+                "automatic_value_block_targets_per_wave": 128,
+                "atomic_cluster_commands_per_verified_wave": 1,
+                "wave_command_counter_bits": 11,
+                "full_model_wave_commands_without_counter_wrap": 1024,
             },
             "remaining_before_frontier_recost": [
-                "per-cluster canonical-ejection target/control adapters into exact K/V transposers",
+                "16-cluster structural composition into the generated score hierarchy",
                 "V transpose ping-pong or proven fill-drain overlap",
                 "characterized SRAM macro substitution",
             ],
         },
         "required_rtl_ownership": [
-            "per-cluster target/control adaptation from canonical ejection into K/V transposers",
-            "backpressure from exact K/V transposers through canonical ejection and mesh",
+            "16-cluster structural composition from mesh ejection through the generated score hierarchy",
+            "full-mesh backpressure through all 16 exact K/V ingress paths",
             "overlapped V transpose buffering selected from measured PPA",
             "physical cost of ping-pong K transpose and paired-dimension write control",
             "characterized SRAM macro substitution for inferred K/Q and cluster stores",
         ],
         "revision_effect": {
             "shared_mesh_15769_cycle_result_role": "standalone_historical_traffic_capacity_bound_only",
-            "release_coupled_vc1_role": "exact_reduction_transport_timing_with_vc0_ingress_still_open",
+            "release_coupled_vc1_role": (
+                "exact_reduction_transport_timing_with_full_kv_hierarchy_composition_still_open"
+            ),
             "frontier_recost_allowed": False,
             "reason": (
                 "Exact K/V endpoint paths, capacity/HBM source descriptors, and packetization "
-                "are embodied, and payload reaches canonical per-cluster ingress through the "
-                "shared mesh. Target/control adaptation into the K/V transposers, overlap "
-                "selection, and physical memory "
+                "are embodied, and a complete canonical wave reaches the real K/V transposers "
+                "through address-derived target control. Full 16-cluster hierarchy composition, "
+                "overlap selection, and physical memory "
                 "costs are not yet closed for the complete score32 cluster path."
             ),
         },
         "next_gate": (
-            "Connect per-cluster canonical ejection to exact K/V transposer target/control and "
-            "verify backpressure through representative full K and V heads; then measure V "
-            "buffering parallelism and substitute characterized SRAM macros."
+            "Compose all 16 controlled ejection paths into the generated score hierarchy and "
+            "verify one complete command wave through the shared mesh; then measure V buffering "
+            "parallelism and substitute characterized SRAM macros."
         ),
     }
 
